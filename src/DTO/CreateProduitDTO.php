@@ -11,12 +11,12 @@ readonly class CreateProduitDTO
     public function __construct(
         public string $libelle,
         public ProduitEtatEnum $etat,
-        public ?float $largeur,
-        public ?float $hauteur,
-        public ?float $profondeur,
         public string $etage,
         public string $porte,
         public bool $tagTeletravailleur,
+        public ?float $largeur = null,
+        public ?float $hauteur = null,
+        public ?float $profondeur = null,
     ) {
     }
 }
