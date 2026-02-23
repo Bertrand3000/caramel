@@ -43,4 +43,29 @@ class CommandeRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    /** @return list<Commande> */
+    public function findPretesForTodayOrderedBySlot(): array
+    {
+        $start = new \DateTimeImmutable('today');
+        $end = $start->modify('+1 day');
+
+        return $this->createQueryBuilder('c')
+            ->leftJoin('c.creneau', 'creneau')
+            ->addSelect('creneau')
+            ->leftJoin('c.lignesCommande', 'ligneCommande')
+            ->addSelect('ligneCommande')
+            ->leftJoin('ligneCommande.produit', 'produit')
+            ->addSelect('produit')
+            ->andWhere('c.statut = :statut')
+            ->andWhere('creneau.dateHeure >= :start')
+            ->andWhere('creneau.dateHeure < :end')
+            ->setParameter('statut', CommandeStatutEnum::PRETE)
+            ->setParameter('start', $start)
+            ->setParameter('end', $end)
+            ->orderBy('creneau.dateHeure', 'ASC')
+            ->addOrderBy('creneau.heureDebut', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
 }
