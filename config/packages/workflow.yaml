@@ -1,0 +1,47 @@
+when@prod:
+    framework:
+        workflows:
+            commande:
+                type: 'state_machine'
+                marking_store:
+                    type: 'method'
+                    property: 'statut'
+                supports:
+                    - App\Entity\Commande
+                initial_marking: en_attente_validation
+                places:
+                    - en_attente_validation
+                    - confirmee
+                    - refusee
+                    - a_preparer
+                    - en_preparation
+                    - prete
+                    - retiree
+                    - annulee
+                transitions:
+                    confirmer:
+                        from: en_attente_validation
+                        to: confirmee
+                    refuser:
+                        from: en_attente_validation
+                        to: refusee
+                    planifier_preparation:
+                        from: confirmee
+                        to: a_preparer
+                    preparer:
+                        from: a_preparer
+                        to: en_preparation
+                    terminer_preparation:
+                        from: en_preparation
+                        to: prete
+                    retirer:
+                        from: prete
+                        to: retiree
+                    annuler:
+                        from:
+                            - prete
+                            - en_attente_validation
+                            - confirmee
+                            - a_preparer
+                            - en_preparation
+                        to: annulee
