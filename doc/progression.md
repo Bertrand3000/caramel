@@ -52,3 +52,28 @@
 - [x] CreneauManagerTest
 - [x] CheckoutServiceTest
 - [x] Tests fonctionnels Controllers
+
+## Phase 4 — Workflows RH, Remise Logistique et Conformité RGPD
+
+### Bloc A — Automatisation Workflow RH
+- [x] Workflow `commande_lifecycle` configuré (validation, refus, préparation, retrait, annulation)
+- [x] Subscriber Workflow branché (`CommandeWorkflowSubscriber`)
+- [x] Purge RGPD sur transitions de retrait/annulation
+- [x] Service de croisement GRH implémenté
+
+### Bloc B — Notifications Mail
+- [x] Créer `MailerNotifierInterface`
+- [x] Implémenter `MailerNotifier` (validation + refus/annulation)
+- [x] Brancher les notifications sur les transitions Workflow (`valider`, `refuser`, `annuler_commande`)
+
+### Bloc C — Remise Logistique
+- [x] `LogistiqueController` et dashboard de suivi
+- [x] Créer `BonLivraisonGeneratorInterface`
+- [x] Implémenter `BonLivraisonGenerator`
+- [x] Ajouter le template print-friendly `templates/logistique/bon_livraison_print.html.twig`
+
+### Bloc D — Conformité & maintenance
+- [x] Purge RGPD nocturne (commande console + service)
+- [x] Entité temporaire `CommandeContactTmp` utilisée pour les contacts importés
+- [x] Tests unitaires service mailer
+- [x] Tests unitaires générateur de bon de livraison
