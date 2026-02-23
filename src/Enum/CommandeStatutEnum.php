@@ -7,7 +7,7 @@ namespace App\Enum;
 enum CommandeStatutEnum: string
 {
     case EN_ATTENTE_VALIDATION = 'en_attente_validation';
-    case CONFIRMEE = 'confirmee';
+    case VALIDEE = 'validee';
     case REFUSEE = 'refusee';
     case A_PREPARER = 'a_preparer';
     case EN_PREPARATION = 'en_preparation';
