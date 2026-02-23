@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Entity\Commande;
+use App\Interface\BonLivraisonGeneratorInterface;
 use App\Interface\LogistiqueServiceInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -31,10 +32,8 @@ final class LogistiqueController extends AbstractController
     }
 
     #[Route('/logistique/commande/{id}/bon-livraison', name: 'logistique_bon_livraison', methods: ['GET'])]
-    public function bonLivraison(Commande $commande): Response
+    public function bonLivraison(Commande $commande, BonLivraisonGeneratorInterface $generator): Response
     {
-        return $this->render('logistique/bon_livraison.html.twig', [
-            'commande' => $commande,
-        ]);
+        return new Response($generator->generatePrintHtml($commande));
     }
 }
