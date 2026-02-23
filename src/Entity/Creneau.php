@@ -4,10 +4,6 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
-use App\Enum\CreneauTypeEnum;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
-use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
@@ -19,35 +15,43 @@ class Creneau
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(type: Types::DATE_MUTABLE)]
-    private \DateTimeInterface $date;
-
-    #[ORM\Column(type: Types::TIME_MUTABLE)]
-    private \DateTimeInterface $heureDebut;
-
-    #[ORM\Column(type: Types::TIME_MUTABLE)]
-    private \DateTimeInterface $heureFin;
+    #[ORM\Column(type: 'datetime_immutable')]
+    private \DateTimeImmutable $dateHeure;
 
     #[ORM\Column]
-    private int $capaciteMax = 10;
-
-    #[ORM\Column]
-    private int $capaciteUtilisee = 0;
-
-    #[ORM\Column(enumType: CreneauTypeEnum::class)]
-    private CreneauTypeEnum $type;
-
-    #[ORM\OneToMany(mappedBy: 'creneau', targetEntity: Commande::class)]
-    private Collection $commandes;
+    private int $nbMax = 10;
 
     public function __construct()
     {
-        $this->commandes = new ArrayCollection();
-        $this->type = CreneauTypeEnum::GENERAL;
+        $this->dateHeure = new \DateTimeImmutable();
     }
 
     public function getId(): ?int
     {
         return $this->id;
+    }
+
+    public function getDateHeure(): \DateTimeImmutable
+    {
+        return $this->dateHeure;
+    }
+
+    public function setDateHeure(\DateTimeImmutable $dateHeure): self
+    {
+        $this->dateHeure = $dateHeure;
+
+        return $this;
+    }
+
+    public function getNbMax(): int
+    {
+        return $this->nbMax;
+    }
+
+    public function setNbMax(int $nbMax): self
+    {
+        $this->nbMax = $nbMax;
+
+        return $this;
     }
 }

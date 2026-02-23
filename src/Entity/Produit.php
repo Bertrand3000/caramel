@@ -65,6 +65,9 @@ class Produit
     #[ORM\Column(enumType: ProduitStatutEnum::class)]
     private ProduitStatutEnum $statut = ProduitStatutEnum::DISPONIBLE;
 
+    #[ORM\Column(options: ['default' => 0])]
+    private int $quantite = 0;
+
 
     #[ORM\OneToMany(mappedBy: 'produit', targetEntity: LigneCommande::class)]
     private iterable $lignesCommande;
@@ -99,4 +102,6 @@ class Produit
     public function setProfondeur(?float $profondeur): self { $this->profondeur = $profondeur; return $this; }
     public function getStatut(): ProduitStatutEnum { return $this->statut; }
     public function setStatut(ProduitStatutEnum $statut): self { $this->statut = $statut; return $this; }
+    public function getQuantite(): int { return $this->quantite; }
+    public function setQuantite(int $quantite): self { $this->quantite = $quantite; return $this; }
 }

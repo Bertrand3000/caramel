@@ -14,4 +14,9 @@ class ParametreRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Parametre::class);
     }
+
+    public function findOneByKey(string $key): ?Parametre
+    {
+        return $this->findOneBy(['cle' => $key]);
+    }
 }
