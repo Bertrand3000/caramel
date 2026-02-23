@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\EventSubscriber;
 
 use App\Entity\Commande;
-use App\Service\RgpdPurgeService;
+use App\Service\PurgeServiceInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Workflow\Event\Event;
@@ -14,7 +14,7 @@ final class CommandeWorkflowSubscriber implements EventSubscriberInterface
 {
     public function __construct(
         private readonly LoggerInterface $logger,
-        private readonly RgpdPurgeService $purgeService,
+        private readonly PurgeServiceInterface $purgeService,
     ) {
     }
 
