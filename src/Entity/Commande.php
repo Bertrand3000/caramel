@@ -26,6 +26,15 @@ class Commande
     #[ORM\Column(length: 255)]
     private string $sessionId = '';
 
+    #[ORM\Column(length: 5, nullable: true)]
+    private ?string $numeroAgent = null;
+
+    #[ORM\Column(length: 120, nullable: true)]
+    private ?string $nom = null;
+
+    #[ORM\Column(length: 120, nullable: true)]
+    private ?string $prenom = null;
+
     #[ORM\ManyToOne(inversedBy: 'commandes')]
     #[ORM\JoinColumn(nullable: true)]
     private ?Creneau $creneau = null;
@@ -38,6 +47,12 @@ class Commande
 
     #[ORM\OneToMany(mappedBy: 'commande', targetEntity: LigneCommande::class)]
     private Collection $lignesCommande;
+
+    #[ORM\OneToOne(mappedBy: 'commande', targetEntity: BonLivraison::class)]
+    private ?BonLivraison $bonLivraison = null;
+
+    #[ORM\OneToOne(mappedBy: 'commande', targetEntity: CommandeContactTmp::class)]
+    private ?CommandeContactTmp $commandeContactTmp = null;
 
     public function __construct()
     {
@@ -59,6 +74,42 @@ class Commande
     public function setSessionId(string $sessionId): self
     {
         $this->sessionId = $sessionId;
+
+        return $this;
+    }
+
+    public function getNumeroAgent(): ?string
+    {
+        return $this->numeroAgent;
+    }
+
+    public function setNumeroAgent(?string $numeroAgent): self
+    {
+        $this->numeroAgent = $numeroAgent;
+
+        return $this;
+    }
+
+    public function getNom(): ?string
+    {
+        return $this->nom;
+    }
+
+    public function setNom(?string $nom): self
+    {
+        $this->nom = $nom;
+
+        return $this;
+    }
+
+    public function getPrenom(): ?string
+    {
+        return $this->prenom;
+    }
+
+    public function setPrenom(?string $prenom): self
+    {
+        $this->prenom = $prenom;
 
         return $this;
     }
@@ -96,6 +147,35 @@ class Commande
     public function setDateValidation(\DateTimeInterface $dateValidation): self
     {
         $this->dateValidation = $dateValidation;
+
+        return $this;
+    }
+
+    public function getDateValidation(): \DateTimeInterface
+    {
+        return $this->dateValidation;
+    }
+
+    public function getBonLivraison(): ?BonLivraison
+    {
+        return $this->bonLivraison;
+    }
+
+    public function setBonLivraison(?BonLivraison $bonLivraison): self
+    {
+        $this->bonLivraison = $bonLivraison;
+
+        return $this;
+    }
+
+    public function getCommandeContactTmp(): ?CommandeContactTmp
+    {
+        return $this->commandeContactTmp;
+    }
+
+    public function setCommandeContactTmp(?CommandeContactTmp $commandeContactTmp): self
+    {
+        $this->commandeContactTmp = $commandeContactTmp;
 
         return $this;
     }

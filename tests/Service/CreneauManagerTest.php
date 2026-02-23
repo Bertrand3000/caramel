@@ -29,7 +29,7 @@ final class CreneauManagerTest extends TestCase
 
     public function testGetJaugeDisponibleRetourneDiff(): void
     {
-        $creneau = (new Creneau())->setNbMax(10);
+        $creneau = (new Creneau())->setCapaciteMax(10);
         $item = $this->createMock(CacheItemInterface::class);
         $item->method('isHit')->willReturn(false);
         $item->method('set')->willReturnSelf();
@@ -51,7 +51,7 @@ final class CreneauManagerTest extends TestCase
     {
         $this->expectException(\RuntimeException::class);
 
-        $creneau = (new Creneau())->setNbMax(1);
+        $creneau = (new Creneau())->setCapaciteMax(1);
         $cache = $this->createMock(CacheItemPoolInterface::class);
         $query = $this->createMock(Query::class);
         $query->method('getSingleScalarResult')->willReturn(1);
@@ -65,8 +65,8 @@ final class CreneauManagerTest extends TestCase
     public function testGetDisponiblesFiltreDateEtJauge(): void
     {
         $d = new \DateTimeImmutable('2026-03-21 10:00:00');
-        $c1 = (new Creneau())->setDateHeure($d)->setNbMax(1);
-        $c2 = (new Creneau())->setDateHeure($d->modify('+1 hour'))->setNbMax(1);
+        $c1 = (new Creneau())->setDateHeure($d)->setCapaciteMax(1);
+        $c2 = (new Creneau())->setDateHeure($d->modify('+1 hour'))->setCapaciteMax(1);
 
         $queryList = $this->createMock(Query::class);
         $queryList->method('getResult')->willReturn([$c1, $c2]);

@@ -47,6 +47,11 @@ class CartManager implements CartManagerInterface
             ->setParameter('sessionId', $sessionId)
             ->setParameter('produitId', $produitId)
             ->execute();
+
+        $this->em->createQuery('DELETE FROM App\\Entity\\LignePanier lp WHERE lp.produit = :produitId AND lp.panier IN (SELECT p.id FROM App\\Entity\\Panier p WHERE p.sessionId = :sessionId)')
+            ->setParameter('sessionId', $sessionId)
+            ->setParameter('produitId', $produitId)
+            ->execute();
     }
 
     public function getContents(string $sessionId): array
