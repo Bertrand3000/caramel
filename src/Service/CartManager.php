@@ -99,6 +99,11 @@ class CartManager implements CartManagerInterface
             ->execute();
     }
 
+    public function getAvailableStockForDisplay(Produit $produit): int
+    {
+        return $this->getAvailableStock($produit, null);
+    }
+
     private function validateCartInternal(string $sessionId): Commande
     {
         $reservations = $this->em->getRepository(ReservationTemporaire::class)->findBy(['sessionId' => $sessionId]);
