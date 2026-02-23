@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Bon de livraison #{{ commande.id }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 24px; color: #1a1a1a; }
+        h1 { margin-bottom: 24px; }
+        .meta { margin-bottom: 16px; }
+        .meta strong { display: inline-block; width: 120px; }
+        table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; }
+        th, td { border: 1px solid #444; padding: 8px; text-align: left; }
+        .signature { margin-top: 48px; }
+        .signature-box { border-top: 1px solid #000; width: 280px; padding-top: 8px; }
+
+        @media print {
+            body { margin: 8mm; font-size: 12pt; }
+            a, button { display: none !important; }
+            .page-break-avoid { break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+    <h1>Bon de livraison</h1>
+
+    <section class="meta page-break-avoid">
+        <p><strong>ID Commande :</strong> #{{ commande.id }}</p>
+        <p><strong>Date :</strong> {{ commande.creneau ? commande.creneau.dateHeure|date('d/m/Y') : commande.dateValidation|date('d/m/Y') }}</p>
+        <p>
+            <strong>Créneau :</strong>
+            {% if commande.creneau %}
+                {{ commande.creneau.heureDebut|date('H:i') }} - {{ commande.creneau.heureFin|date('H:i') }}
+            {% else %}
+                Non renseigné
+            {% endif %}
+        </p>
+    </section>
+
+    <section class="page-break-avoid">
+        <h2>Articles</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Article</th>
+                    <th>Quantité</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ligne in commande.lignesCommande %}
+                    <tr>
+                        <td>{{ ligne.produit.libelle }}</td>
+                        <td>{{ ligne.quantite }}</td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="2">Aucun article sur cette commande.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
+    <section class="signature page-break-avoid">
+        <p>Signature du bénéficiaire :</p>
+        <div class="signature-box"></div>
+    </section>
+</body>
+</html>
