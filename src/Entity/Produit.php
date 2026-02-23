@@ -44,6 +44,9 @@ class Produit
     #[ORM\Column]
     private bool $tagTeletravailleur = false;
 
+    #[ORM\Column(type: 'boolean', options: ['default' => false])]
+    private bool $isTeletravailleur = false;
+
     #[ORM\Column(length: 20)]
     private string $etage;
 
@@ -82,6 +85,8 @@ class Produit
     public function setEtat(ProduitEtatEnum $etat): self { $this->etat = $etat; return $this; }
     public function isTagTeletravailleur(): bool { return $this->tagTeletravailleur; }
     public function setTagTeletravailleur(bool $tagTeletravailleur): self { $this->tagTeletravailleur = $tagTeletravailleur; return $this; }
+    public function isTeletravailleur(): bool { return $this->isTeletravailleur; }
+    public function setIsTeletravailleur(bool $isTeletravailleur): self { $this->isTeletravailleur = $isTeletravailleur; return $this; }
     public function getEtage(): string { return $this->etage; }
     public function setEtage(string $etage): self { $this->etage = $etage; return $this; }
     public function getPorte(): string { return $this->porte; }
