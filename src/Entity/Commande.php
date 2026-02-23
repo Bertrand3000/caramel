@@ -20,24 +20,18 @@ class Commande
     private ?int $id = null;
 
     #[ORM\ManyToOne(inversedBy: 'commandes')]
-    #[ORM\JoinColumn(nullable: false)]
-    private Utilisateur $utilisateur;
+    #[ORM\JoinColumn(nullable: true)]
+    private ?Utilisateur $utilisateur = null;
 
-    #[ORM\Column(length: 5, nullable: true)]
-    private ?string $numeroAgent = null;
-
-    #[ORM\Column(length: 120, nullable: true)]
-    private ?string $nom = null;
-
-    #[ORM\Column(length: 120, nullable: true)]
-    private ?string $prenom = null;
+    #[ORM\Column(length: 255)]
+    private string $sessionId = '';
 
     #[ORM\ManyToOne(inversedBy: 'commandes')]
     #[ORM\JoinColumn(nullable: true)]
     private ?Creneau $creneau = null;
 
-    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTimeInterface $dateValidation = null;
+    #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    private \DateTimeInterface $dateValidation;
 
     #[ORM\Column(enumType: CommandeStatutEnum::class)]
     private CommandeStatutEnum $statut;
@@ -45,20 +39,64 @@ class Commande
     #[ORM\OneToMany(mappedBy: 'commande', targetEntity: LigneCommande::class)]
     private Collection $lignesCommande;
 
-    #[ORM\OneToOne(mappedBy: 'commande', targetEntity: BonLivraison::class)]
-    private ?BonLivraison $bonLivraison = null;
-
-    #[ORM\OneToOne(mappedBy: 'commande', targetEntity: CommandeContactTmp::class)]
-    private ?CommandeContactTmp $commandeContactTmp = null;
-
     public function __construct()
     {
         $this->lignesCommande = new ArrayCollection();
         $this->statut = CommandeStatutEnum::EN_ATTENTE_VALIDATION;
+        $this->dateValidation = new \DateTimeImmutable();
     }
 
     public function getId(): ?int
     {
         return $this->id;
+    }
+
+    public function getSessionId(): string
+    {
+        return $this->sessionId;
+    }
+
+    public function setSessionId(string $sessionId): self
+    {
+        $this->sessionId = $sessionId;
+
+        return $this;
+    }
+
+    public function getCreneau(): ?Creneau
+    {
+        return $this->creneau;
+    }
+
+    public function setCreneau(?Creneau $creneau): self
+    {
+        $this->creneau = $creneau;
+
+        return $this;
+    }
+
+    public function getStatut(): CommandeStatutEnum
+    {
+        return $this->statut;
+    }
+
+    public function setStatut(CommandeStatutEnum $statut): self
+    {
+        $this->statut = $statut;
+
+        return $this;
+    }
+
+    /** @return Collection<int, LigneCommande> */
+    public function getLignesCommande(): Collection
+    {
+        return $this->lignesCommande;
+    }
+
+    public function setDateValidation(\DateTimeInterface $dateValidation): self
+    {
+        $this->dateValidation = $dateValidation;
+
+        return $this;
     }
 }

@@ -18,9 +18,12 @@ class Panier
     #[ORM\Column]
     private ?int $id = null;
 
+    #[ORM\Column(length: 255, unique: true)]
+    private string $sessionId;
+
     #[ORM\OneToOne(inversedBy: 'panier')]
-    #[ORM\JoinColumn(nullable: false)]
-    private Utilisateur $utilisateur;
+    #[ORM\JoinColumn(nullable: true)]
+    private ?Utilisateur $utilisateur = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
     private \DateTimeInterface $dateExpiration;
@@ -37,5 +40,35 @@ class Panier
     public function getId(): ?int
     {
         return $this->id;
+    }
+
+    public function getSessionId(): string
+    {
+        return $this->sessionId;
+    }
+
+    public function setSessionId(string $sessionId): self
+    {
+        $this->sessionId = $sessionId;
+
+        return $this;
+    }
+
+    public function getDateExpiration(): \DateTimeInterface
+    {
+        return $this->dateExpiration;
+    }
+
+    public function setDateExpiration(\DateTimeInterface $dateExpiration): self
+    {
+        $this->dateExpiration = $dateExpiration;
+
+        return $this;
+    }
+
+    /** @return Collection<int, LignePanier> */
+    public function getLignesPanier(): Collection
+    {
+        return $this->lignesPanier;
     }
 }
