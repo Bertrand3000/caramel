@@ -6,14 +6,21 @@ namespace App\Entity;
 
 use App\Enum\ProduitEtatEnum;
 use App\Enum\ProduitStatutEnum;
+use App\Repository\ProduitRepository;
 use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity]
+#[ORM\Entity(repositoryClass: ProduitRepository::class)]
 #[ORM\Table(name: 'produits')]
 class Produit
 {
+    public function __construct()
+    {
+        $this->lignesCommande = new ArrayCollection();
+        $this->lignesPanier = new ArrayCollection();
+        $this->etat = ProduitEtatEnum::BON;
+    }
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -53,24 +60,38 @@ class Produit
     private ?float $profondeur = null;
 
     #[ORM\Column(enumType: ProduitStatutEnum::class)]
-    private ProduitStatutEnum $statut;
+    private ProduitStatutEnum $statut = ProduitStatutEnum::DISPONIBLE;
+
 
     #[ORM\OneToMany(mappedBy: 'produit', targetEntity: LigneCommande::class)]
-    private Collection $lignesCommande;
+    private iterable $lignesCommande;
 
     #[ORM\OneToMany(mappedBy: 'produit', targetEntity: LignePanier::class)]
-    private Collection $lignesPanier;
+    private iterable $lignesPanier;
 
-    public function __construct()
-    {
-        $this->lignesCommande = new ArrayCollection();
-        $this->lignesPanier = new ArrayCollection();
-        $this->etat = ProduitEtatEnum::BON;
-        $this->statut = ProduitStatutEnum::DISPONIBLE;
-    }
-
-    public function getId(): ?int
-    {
-        return $this->id;
-    }
+    public function getId(): ?int { return $this->id; }
+    public function getNumeroInventaire(): ?string { return $this->numeroInventaire; }
+    public function setNumeroInventaire(?string $numeroInventaire): self { $this->numeroInventaire = $numeroInventaire; return $this; }
+    public function getLibelle(): string { return $this->libelle; }
+    public function setLibelle(string $libelle): self { $this->libelle = $libelle; return $this; }
+    public function getPhotoProduit(): string { return $this->photoProduit; }
+    public function setPhotoProduit(string $photoProduit): self { $this->photoProduit = $photoProduit; return $this; }
+    public function getPhotoNumeroInventaire(): ?string { return $this->photoNumeroInventaire; }
+    public function setPhotoNumeroInventaire(?string $photoNumeroInventaire): self { $this->photoNumeroInventaire = $photoNumeroInventaire; return $this; }
+    public function getEtat(): ProduitEtatEnum { return $this->etat; }
+    public function setEtat(ProduitEtatEnum $etat): self { $this->etat = $etat; return $this; }
+    public function isTagTeletravailleur(): bool { return $this->tagTeletravailleur; }
+    public function setTagTeletravailleur(bool $tagTeletravailleur): self { $this->tagTeletravailleur = $tagTeletravailleur; return $this; }
+    public function getEtage(): string { return $this->etage; }
+    public function setEtage(string $etage): self { $this->etage = $etage; return $this; }
+    public function getPorte(): string { return $this->porte; }
+    public function setPorte(string $porte): self { $this->porte = $porte; return $this; }
+    public function getLargeur(): ?float { return $this->largeur; }
+    public function setLargeur(?float $largeur): self { $this->largeur = $largeur; return $this; }
+    public function getHauteur(): ?float { return $this->hauteur; }
+    public function setHauteur(?float $hauteur): self { $this->hauteur = $hauteur; return $this; }
+    public function getProfondeur(): ?float { return $this->profondeur; }
+    public function setProfondeur(?float $profondeur): self { $this->profondeur = $profondeur; return $this; }
+    public function getStatut(): ProduitStatutEnum { return $this->statut; }
+    public function setStatut(ProduitStatutEnum $statut): self { $this->statut = $statut; return $this; }
 }

@@ -1,0 +1,11 @@
+{% extends 'base.html.twig' %}
+{% block title %}Nouveau produit{% endblock %}
+{% block body %}
+<div style="max-width:600px;margin:0 auto;padding:1rem;">
+    <h1>Nouveau produit</h1>
+    {{ form_start(form) }}
+    <div style="display:grid;gap:.75rem;">{{ form_widget(form) }}</div>
+    <button style="margin-top:1rem;min-height:44px;padding:12px 16px;">Enregistrer</button>
+    {{ form_end(form) }}
+</div>
+{% endblock %}

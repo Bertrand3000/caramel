@@ -6,12 +6,7 @@ namespace App\DTO;
 
 readonly class GrhImportRowDTO
 {
-    public function __construct(
-        public string $numeroAgent,
-        public string $nom,
-        public string $prenom,
-        public string $email,
-        public string $telephone,
-    ) {
+    public function __construct(public string $numeroAgent)
+    {
     }
 }
