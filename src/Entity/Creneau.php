@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Enum\CreneauTypeEnum;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
@@ -18,12 +22,31 @@ class Creneau
     #[ORM\Column(type: 'datetime_immutable')]
     private \DateTimeImmutable $dateHeure;
 
+    #[ORM\Column(type: Types::TIME_MUTABLE)]
+    private \DateTimeInterface $heureDebut;
+
+    #[ORM\Column(type: Types::TIME_MUTABLE)]
+    private \DateTimeInterface $heureFin;
+
     #[ORM\Column]
-    private int $nbMax = 10;
+    private int $capaciteMax = 10;
+
+    #[ORM\Column]
+    private int $capaciteUtilisee = 0;
+
+    #[ORM\Column(enumType: CreneauTypeEnum::class)]
+    private CreneauTypeEnum $type;
+
+    #[ORM\OneToMany(mappedBy: 'creneau', targetEntity: Commande::class)]
+    private Collection $commandes;
 
     public function __construct()
     {
         $this->dateHeure = new \DateTimeImmutable();
+        $this->heureDebut = new \DateTimeImmutable('09:00:00');
+        $this->heureFin = new \DateTimeImmutable('10:00:00');
+        $this->type = CreneauTypeEnum::GENERAL;
+        $this->commandes = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -43,14 +66,62 @@ class Creneau
         return $this;
     }
 
-    public function getNbMax(): int
+    public function getHeureDebut(): \DateTimeInterface
     {
-        return $this->nbMax;
+        return $this->heureDebut;
     }
 
-    public function setNbMax(int $nbMax): self
+    public function setHeureDebut(\DateTimeInterface $heureDebut): self
     {
-        $this->nbMax = $nbMax;
+        $this->heureDebut = $heureDebut;
+
+        return $this;
+    }
+
+    public function getHeureFin(): \DateTimeInterface
+    {
+        return $this->heureFin;
+    }
+
+    public function setHeureFin(\DateTimeInterface $heureFin): self
+    {
+        $this->heureFin = $heureFin;
+
+        return $this;
+    }
+
+    public function getCapaciteMax(): int
+    {
+        return $this->capaciteMax;
+    }
+
+    public function setCapaciteMax(int $capaciteMax): self
+    {
+        $this->capaciteMax = $capaciteMax;
+
+        return $this;
+    }
+
+    public function getCapaciteUtilisee(): int
+    {
+        return $this->capaciteUtilisee;
+    }
+
+    public function setCapaciteUtilisee(int $capaciteUtilisee): self
+    {
+        $this->capaciteUtilisee = $capaciteUtilisee;
+
+        return $this;
+    }
+
+    public function getType(): CreneauTypeEnum
+    {
+        return $this->type;
+    }
+
+    public function setType(CreneauTypeEnum $type): self
+    {
+        $this->type = $type;
 
         return $this;
     }

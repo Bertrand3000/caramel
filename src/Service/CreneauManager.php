@@ -36,7 +36,7 @@ class CreneauManager implements SlotManagerInterface
 
     public function reserverCreneau(Creneau $creneau, Commande $commande): void
     {
-        if ($this->countActiveForSlot($creneau) >= $creneau->getNbMax()) {
+        if ($this->countActiveForSlot($creneau) >= $creneau->getCapaciteMax()) {
             throw new \RuntimeException('Créneau complet');
         }
 
@@ -54,7 +54,7 @@ class CreneauManager implements SlotManagerInterface
             $this->cache->save($item);
         }
 
-        return $creneau->getNbMax() - (int) $item->get();
+        return $creneau->getCapaciteMax() - (int) $item->get();
     }
 
     public function libererCreneau(Creneau $creneau, Commande $commande): void

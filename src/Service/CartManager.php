@@ -43,7 +43,14 @@ class CartManager implements CartManagerInterface
 
     public function removeItem(string $sessionId, int $produitId): void
     {
-        $this->em->createQuery('DELETE FROM App\\Entity\\ReservationTemporaire r WHERE r.sessionId = :sessionId AND r.produit = :produitId')
+        $this->em->createQuery('DELETE FROM App\Entity\ReservationTemporaire r WHERE r.sessionId = :sessionId AND r.produit = :produitId')
+            ->setParameter('sessionId', $sessionId)
+            ->setParameter('produitId', $produitId)
+            ->execute();
+
+        $this->em->createQuery(
+            'DELETE FROM App\Entity\LignePanier lp WHERE lp.produit = :produitId AND lp.panier IN (SELECT p.id FROM App\Entity\Panier p WHERE p.sessionId = :sessionId)'
+        )
             ->setParameter('sessionId', $sessionId)
             ->setParameter('produitId', $produitId)
             ->execute();
