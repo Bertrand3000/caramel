@@ -28,4 +28,19 @@ class CommandeRepository extends ServiceEntityRepository
             ->getQuery()
             ->getSingleScalarResult();
     }
+
+    /** @return list<Commande> */
+    public function findRetireeOuAnnuleeWithContactTmp(): array
+    {
+        return $this->createQueryBuilder('c')
+            ->innerJoin('c.commandeContactTmp', 'ct')
+            ->andWhere('c.statut IN (:statuts)')
+            ->setParameter('statuts', [
+                CommandeStatutEnum::RETIREE,
+                CommandeStatutEnum::ANNULEE,
+            ])
+            ->getQuery()
+            ->getResult();
+    }
+
 }
