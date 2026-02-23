@@ -1,0 +1,47 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Connexion — CARAMEL{% endblock %}
+
+{% block body %}
+    <section style="max-width: 400px; margin: 3rem auto; padding: 1.5rem; border: 1px solid #ddd; border-radius: 8px; font-family: Arial, sans-serif;">
+        <h1 style="margin-top: 0;">Connexion</h1>
+
+        {% if error %}
+            <div style="margin-bottom: 1rem; padding: 0.75rem; border-radius: 4px; background: #fdecea; color: #611a15;">
+                {{ error.messageKey|trans(error.messageData, 'security') }}
+            </div>
+        {% endif %}
+
+        <form method="post" action="{{ path('login') }}">
+            <div style="margin-bottom: 1rem;">
+                <label for="username" style="display: block; margin-bottom: 0.25rem;">Identifiant</label>
+                <input
+                    id="username"
+                    type="text"
+                    name="_username"
+                    value="{{ last_username }}"
+                    required
+                    autofocus
+                    style="width: 100%; padding: 0.5rem; border: 1px solid #bbb; border-radius: 4px;"
+                >
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <label for="password" style="display: block; margin-bottom: 0.25rem;">Mot de passe</label>
+                <input
+                    id="password"
+                    type="password"
+                    name="_password"
+                    required
+                    style="width: 100%; padding: 0.5rem; border: 1px solid #bbb; border-radius: 4px;"
+                >
+            </div>
+
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+
+            <button type="submit" style="width: 100%; padding: 0.6rem; border: 0; border-radius: 4px; background: #1e3a8a; color: #fff; cursor: pointer;">
+                Se connecter
+            </button>
+        </form>
+    </section>
+{% endblock %}

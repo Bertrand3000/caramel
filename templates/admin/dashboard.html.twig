@@ -1,0 +1,9 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Administration — CARAMEL{% endblock %}
+
+{% block body %}
+    <h1>Administration</h1>
+    <p>Utilisateur connecté : {{ app.user ? app.user.userIdentifier : 'anonyme' }}</p>
+    <p>Rôles : {{ app.user ? app.user.roles|join(', ') : 'aucun' }}</p>
+{% endblock %}
