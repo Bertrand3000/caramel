@@ -13,6 +13,7 @@ use Symfony\Component\Form\Extension\Core\Type\NumberType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints as Assert;
 
 class ProduitType extends AbstractType
 {
@@ -24,9 +25,18 @@ class ProduitType extends AbstractType
             ->add('etage', TextType::class)
             ->add('porte', TextType::class)
             ->add('tagTeletravailleur', CheckboxType::class, ['required' => false])
-            ->add('largeur', NumberType::class, ['required' => false])
-            ->add('hauteur', NumberType::class, ['required' => false])
-            ->add('profondeur', NumberType::class, ['required' => false])
+            ->add('largeur', NumberType::class, [
+                'required' => true,
+                'constraints' => [new Assert\NotNull()],
+            ])
+            ->add('hauteur', NumberType::class, [
+                'required' => true,
+                'constraints' => [new Assert\NotNull()],
+            ])
+            ->add('profondeur', NumberType::class, [
+                'required' => true,
+                'constraints' => [new Assert\NotNull()],
+            ])
             ->add('photoProduit', FileType::class, ['mapped' => false, 'required' => $options['photo_required']])
             ->add('photoNumeroInventaire', FileType::class, ['mapped' => false, 'required' => false]);
     }

@@ -29,7 +29,16 @@ class DashboardController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             $data = $form->getData();
-            $dto = new CreateProduitDTO($data['libelle'], $data['etat'], $data['etage'], $data['porte'], (bool) $data['tagTeletravailleur'], $data['largeur'], $data['hauteur'], $data['profondeur']);
+            $dto = new CreateProduitDTO(
+                $data['libelle'],
+                $data['etat'],
+                $data['etage'],
+                $data['porte'],
+                (bool) $data['tagTeletravailleur'],
+                (float) $data['largeur'],
+                (float) $data['hauteur'],
+                (float) $data['profondeur'],
+            );
             $photo = $form->get('photoProduit')->getData();
             $photoInv = $form->get('photoNumeroInventaire')->getData();
             $inventoryManager->createProduit($dto, $photo, $photoInv);
@@ -57,7 +66,16 @@ class DashboardController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             $data = $form->getData();
-            $dto = new CreateProduitDTO($data['libelle'], $data['etat'], $data['etage'], $data['porte'], (bool) $data['tagTeletravailleur'], $data['largeur'], $data['hauteur'], $data['profondeur']);
+            $dto = new CreateProduitDTO(
+                $data['libelle'],
+                $data['etat'],
+                $data['etage'],
+                $data['porte'],
+                (bool) $data['tagTeletravailleur'],
+                (float) $data['largeur'],
+                (float) $data['hauteur'],
+                (float) $data['profondeur'],
+            );
             $inventoryManager->updateProduit($id, $dto, $form->get('photoProduit')->getData(), $form->get('photoNumeroInventaire')->getData());
             $this->addFlash('success', 'Produit mis à jour.');
 

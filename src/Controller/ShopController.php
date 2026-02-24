@@ -33,7 +33,7 @@ final class ShopController extends AbstractController
         $catalogue = [];
 
         foreach ($produits as $produit) {
-            if ($onlyTeletravailleur && !$produit->isTeletravailleur()) {
+            if ($onlyTeletravailleur && !$produit->isTagTeletravailleur()) {
                 continue;
             }
 

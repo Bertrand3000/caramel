@@ -14,9 +14,9 @@ readonly class CreateProduitDTO
         public string $etage,
         public string $porte,
         public bool $tagTeletravailleur,
-        public ?float $largeur = null,
-        public ?float $hauteur = null,
-        public ?float $profondeur = null,
+        public float $largeur,
+        public float $hauteur,
+        public float $profondeur,
     ) {
     }
 }

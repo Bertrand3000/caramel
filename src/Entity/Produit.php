@@ -44,23 +44,20 @@ class Produit
     #[ORM\Column]
     private bool $tagTeletravailleur = false;
 
-    #[ORM\Column(type: 'boolean', options: ['default' => false])]
-    private bool $isTeletravailleur = false;
-
     #[ORM\Column(length: 20)]
     private string $etage;
 
     #[ORM\Column(length: 20)]
     private string $porte;
 
-    #[ORM\Column(nullable: true)]
-    private ?float $largeur = null;
+    #[ORM\Column]
+    private float $largeur;
 
-    #[ORM\Column(nullable: true)]
-    private ?float $hauteur = null;
+    #[ORM\Column]
+    private float $hauteur;
 
-    #[ORM\Column(nullable: true)]
-    private ?float $profondeur = null;
+    #[ORM\Column]
+    private float $profondeur;
 
     #[ORM\Column(enumType: ProduitStatutEnum::class)]
     private ProduitStatutEnum $statut = ProduitStatutEnum::DISPONIBLE;
@@ -88,18 +85,16 @@ class Produit
     public function setEtat(ProduitEtatEnum $etat): self { $this->etat = $etat; return $this; }
     public function isTagTeletravailleur(): bool { return $this->tagTeletravailleur; }
     public function setTagTeletravailleur(bool $tagTeletravailleur): self { $this->tagTeletravailleur = $tagTeletravailleur; return $this; }
-    public function isTeletravailleur(): bool { return $this->isTeletravailleur; }
-    public function setIsTeletravailleur(bool $isTeletravailleur): self { $this->isTeletravailleur = $isTeletravailleur; return $this; }
     public function getEtage(): string { return $this->etage; }
     public function setEtage(string $etage): self { $this->etage = $etage; return $this; }
     public function getPorte(): string { return $this->porte; }
     public function setPorte(string $porte): self { $this->porte = $porte; return $this; }
-    public function getLargeur(): ?float { return $this->largeur; }
-    public function setLargeur(?float $largeur): self { $this->largeur = $largeur; return $this; }
-    public function getHauteur(): ?float { return $this->hauteur; }
-    public function setHauteur(?float $hauteur): self { $this->hauteur = $hauteur; return $this; }
-    public function getProfondeur(): ?float { return $this->profondeur; }
-    public function setProfondeur(?float $profondeur): self { $this->profondeur = $profondeur; return $this; }
+    public function getLargeur(): float { return $this->largeur; }
+    public function setLargeur(float $largeur): self { $this->largeur = $largeur; return $this; }
+    public function getHauteur(): float { return $this->hauteur; }
+    public function setHauteur(float $hauteur): self { $this->hauteur = $hauteur; return $this; }
+    public function getProfondeur(): float { return $this->profondeur; }
+    public function setProfondeur(float $profondeur): self { $this->profondeur = $profondeur; return $this; }
     public function getStatut(): ProduitStatutEnum { return $this->statut; }
     public function setStatut(ProduitStatutEnum $statut): self { $this->statut = $statut; return $this; }
     public function getQuantite(): int { return $this->quantite; }

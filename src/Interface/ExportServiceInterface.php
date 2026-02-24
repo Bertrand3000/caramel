@@ -6,4 +6,9 @@ namespace App\Interface;
 
 interface ExportServiceInterface
 {
+    public function exportVentesCsv(): string;
+
+    public function exportStockRestantCsv(): string;
+
+    public function exportComptabiliteCsv(): string;
 }

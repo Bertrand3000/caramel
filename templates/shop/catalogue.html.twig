@@ -47,7 +47,7 @@
                         <img src="{{ item.produit.photoProduit }}" class="card-img-top" alt="{{ item.produit.libelle }}">
                         <div class="card-body d-flex flex-column">
                             <h2 class="h6 card-title">{{ item.produit.libelle }}</h2>
-                            {% if item.produit.isTeletravailleur %}
+                            {% if item.produit.tagTeletravailleur %}
                                 <span class="badge text-bg-info mb-2">Réservé Télétravailleur</span>
                             {% endif %}
                             <p class="small text-body-secondary mb-1">Étage {{ item.produit.etage }} — Porte {{ item.produit.porte }}</p>

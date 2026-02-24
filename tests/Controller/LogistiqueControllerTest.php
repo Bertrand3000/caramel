@@ -62,6 +62,9 @@ final class LogistiqueControllerTest extends WebTestCase
             ->setEtat(ProduitEtatEnum::BON)
             ->setEtage('1')
             ->setPorte('A')
+            ->setLargeur(45.0)
+            ->setHauteur(80.0)
+            ->setProfondeur(40.0)
             ->setQuantite(1);
 
         $creneau = (new Creneau())

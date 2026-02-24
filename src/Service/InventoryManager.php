@@ -9,6 +9,7 @@ use App\DTO\ProduitFilterDTO;
 use App\Entity\Produit;
 use App\Enum\ProduitStatutEnum;
 use App\Interface\InventoryManagerInterface;
+use App\Interface\TaggingRuleServiceInterface;
 use App\Repository\ProduitRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -19,6 +20,7 @@ class InventoryManager implements InventoryManagerInterface
         private readonly ProduitRepository $produitRepository,
         private readonly EntityManagerInterface $entityManager,
         private readonly ImageProcessorService $imageProcessor,
+        private readonly TaggingRuleServiceInterface $taggingRuleService,
     ) {
     }
 
@@ -72,12 +74,20 @@ class InventoryManager implements InventoryManagerInterface
 
     private function hydrateProduit(Produit $produit, CreateProduitDTO $dto): Produit
     {
+        $tagTeletravailleur = $dto->tagTeletravailleur;
+        if ($tagTeletravailleur === false) {
+            $ruleTag = $this->taggingRuleService->resolveTagForLibelle($dto->libelle);
+            if ($ruleTag !== null) {
+                $tagTeletravailleur = $ruleTag;
+            }
+        }
+
         return $produit
             ->setLibelle($dto->libelle)
             ->setEtat($dto->etat)
             ->setEtage($dto->etage)
             ->setPorte($dto->porte)
-            ->setTagTeletravailleur($dto->tagTeletravailleur)
+            ->setTagTeletravailleur($tagTeletravailleur)
             ->setLargeur($dto->largeur)
             ->setHauteur($dto->hauteur)
             ->setProfondeur($dto->profondeur);

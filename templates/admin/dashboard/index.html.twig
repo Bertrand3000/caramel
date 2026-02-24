@@ -17,5 +17,17 @@
         <button style="margin-top:1rem;min-height:44px;padding:12px 16px;">Importer CSV</button>
         {{ form_end(importForm) }}
     </section>
+
+    <section>
+        <h2>Exports CDC §13</h2>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.75rem;">
+            <a href="{{ path('admin_export_ventes', {format: 'csv'}) }}" style="display:inline-block;padding:12px 16px;border:1px solid #ddd;text-decoration:none;">Ventes (CSV)</a>
+            <a href="{{ path('admin_export_ventes', {format: 'xls'}) }}" style="display:inline-block;padding:12px 16px;border:1px solid #ddd;text-decoration:none;">Ventes (Excel)</a>
+            <a href="{{ path('admin_export_stock_restant', {format: 'csv'}) }}" style="display:inline-block;padding:12px 16px;border:1px solid #ddd;text-decoration:none;">Stock restant (CSV)</a>
+            <a href="{{ path('admin_export_stock_restant', {format: 'xls'}) }}" style="display:inline-block;padding:12px 16px;border:1px solid #ddd;text-decoration:none;">Stock restant (Excel)</a>
+            <a href="{{ path('admin_export_comptabilite', {format: 'csv'}) }}" style="display:inline-block;padding:12px 16px;border:1px solid #ddd;text-decoration:none;">Comptabilité (CSV)</a>
+            <a href="{{ path('admin_export_comptabilite', {format: 'xls'}) }}" style="display:inline-block;padding:12px 16px;border:1px solid #ddd;text-decoration:none;">Comptabilité (Excel)</a>
+        </div>
+    </section>
 </div>
 {% endblock %}

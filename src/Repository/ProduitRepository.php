@@ -31,4 +31,16 @@ class ProduitRepository extends ServiceEntityRepository
 
         return $qb->orderBy('p.id', 'DESC')->getQuery()->getResult();
     }
+
+    /** @return list<Produit> */
+    public function findForStockRestantExport(): array
+    {
+        return $this->createQueryBuilder('p')
+            ->andWhere('p.statut = :statut')
+            ->andWhere('p.quantite > 0')
+            ->setParameter('statut', ProduitStatutEnum::DISPONIBLE)
+            ->orderBy('p.id', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
 }

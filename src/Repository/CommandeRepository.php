@@ -81,4 +81,29 @@ class CommandeRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    /** @return list<Commande> */
+    public function findForVentesExport(): array
+    {
+        return $this->createQueryBuilder('c')
+            ->leftJoin('c.utilisateur', 'u')
+            ->addSelect('u')
+            ->leftJoin('c.creneau', 'creneau')
+            ->addSelect('creneau')
+            ->leftJoin('c.lignesCommande', 'ligneCommande')
+            ->addSelect('ligneCommande')
+            ->leftJoin('ligneCommande.produit', 'produit')
+            ->addSelect('produit')
+            ->andWhere('c.statut IN (:statuts)')
+            ->setParameter('statuts', [
+                CommandeStatutEnum::VALIDEE,
+                CommandeStatutEnum::A_PREPARER,
+                CommandeStatutEnum::EN_PREPARATION,
+                CommandeStatutEnum::PRETE,
+                CommandeStatutEnum::RETIREE,
+            ])
+            ->orderBy('c.dateValidation', 'ASC')
+            ->addOrderBy('c.id', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
 }
