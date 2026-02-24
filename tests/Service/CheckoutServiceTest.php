@@ -26,7 +26,7 @@ final class CheckoutServiceTest extends TestCase
         $commande = new Commande();
         $utilisateur = (new Utilisateur())->setLogin('agent@test.local')->setPassword('dummy')->setRoles(['ROLE_AGENT']);
         $cart = $this->createMock(CartManagerInterface::class);
-        $cart->method('getContents')->willReturn([['quantite' => 2]]);
+        $cart->method('getContents')->willReturn([['quantite' => 1], ['quantite' => 1]]);
         $cart->method('validateCart')->willReturn($commande);
 
         $quota = $this->createMock(QuotaCheckerService::class);
@@ -86,8 +86,8 @@ final class CheckoutServiceTest extends TestCase
 
     public function testAnnulerCommandeRestitueStock(): void
     {
-        $produit = (new Produit())->setQuantite(1);
-        $ligne = (new LigneCommande())->setProduit($produit)->setQuantite(2);
+        $produit = (new Produit())->setQuantite(0);
+        $ligne = (new LigneCommande())->setProduit($produit)->setQuantite(1);
         $commande = new Commande();
         $commande->getLignesCommande()->add($ligne);
 
@@ -107,7 +107,7 @@ final class CheckoutServiceTest extends TestCase
         );
         $service->annulerCommande($commande);
 
-        self::assertSame(3, $produit->getQuantite());
+        self::assertSame(1, $produit->getQuantite());
     }
 
     public function testConfirmCommandePartenaireAssigneProfilCommandePartenaire(): void

@@ -26,7 +26,9 @@ final class InventoryManagerTest extends TestCase
         $img->method('processProductPhoto')->willReturn('photo.jpg');
         $img->method('processInventoryPhoto')->willReturn('inv.png');
         $taggingRuleService->method('resolveTagForLibelle')->willReturn(null);
-        $em->expects(self::once())->method('persist')->with(self::isInstanceOf(Produit::class));
+        $em->expects(self::once())->method('persist')->with(self::callback(
+            static fn (Produit $produit): bool => $produit->getQuantite() === 1,
+        ));
         $em->expects(self::once())->method('flush');
 
         $service = new InventoryManager($repo, $em, $img, $taggingRuleService);

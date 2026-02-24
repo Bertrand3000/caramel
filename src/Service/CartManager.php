@@ -22,24 +22,30 @@ class CartManager implements CartManagerInterface
     ) {
     }
 
-    public function addItem(string $sessionId, Produit $produit, int $quantite): void
+    public function addItem(string $sessionId, Produit $produit): void
     {
         /** @var ReservationTemporaire|null $reservation */
         $reservation = $this->em->getRepository(ReservationTemporaire::class)->findOneBy([
             'sessionId' => $sessionId,
             'produit' => $produit,
         ]);
-        $quantiteActuelle = $reservation?->getQuantite() ?? 0;
-        $stockDisponiblePourSession = $this->getAvailableStock($produit, $sessionId);
-        if (($quantiteActuelle + $quantite) > $stockDisponiblePourSession) {
+        if ($reservation !== null) {
+            throw new \RuntimeException('Produit déjà dans votre panier');
+        }
+
+        if ($this->getAvailableStock($produit, $sessionId) < 1) {
             throw new \RuntimeException('Stock insuffisant');
         }
 
-        $reservation ??= new ReservationTemporaire();
-        $reservation->setSessionId($sessionId)->setProduit($produit)->setQuantite($quantiteActuelle + $quantite)->setExpireAt(new \DateTimeImmutable('+30 minutes'));
+        $reservation = (new ReservationTemporaire())
+            ->setSessionId($sessionId)
+            ->setProduit($produit)
+            ->setQuantite(1)
+            ->setExpireAt(new \DateTimeImmutable('+30 minutes'));
+
         $panier = $this->em->getRepository(Panier::class)->findOneBy(['sessionId' => $sessionId]) ?? (new Panier())->setSessionId($sessionId);
         $ligne = $this->em->getRepository(LignePanier::class)->findOneBy(['panier' => $panier, 'produit' => $produit]) ?? new LignePanier();
-        $ligne->setPanier($panier)->setProduit($produit)->setQuantite($ligne->getQuantite() + $quantite);
+        $ligne->setPanier($panier)->setProduit($produit)->setQuantite(1);
 
         $this->em->persist($panier);
         $this->em->persist($reservation);
@@ -103,6 +109,10 @@ class CartManager implements CartManagerInterface
         $this->em->createQuery('DELETE FROM App\\Entity\\ReservationTemporaire r WHERE r.sessionId = :sessionId')
             ->setParameter('sessionId', $sessionId)
             ->execute();
+
+        $this->em->createQuery('DELETE FROM App\\Entity\\LignePanier lp WHERE lp.panier IN (SELECT p.id FROM App\\Entity\\Panier p WHERE p.sessionId = :sessionId)')
+            ->setParameter('sessionId', $sessionId)
+            ->execute();
     }
 
     public function getAvailableStockForDisplay(Produit $produit): int
@@ -121,11 +131,11 @@ class CartManager implements CartManagerInterface
         foreach ($reservations as $reservation) {
             $produit = $reservation->getProduit();
             $this->em->lock($produit, LockMode::PESSIMISTIC_WRITE);
-            if ($this->getAvailableStock($produit, $sessionId) < $reservation->getQuantite()) {
+            if ($this->getAvailableStock($produit, $sessionId) < 1) {
                 throw new \RuntimeException('Stock épuisé lors de la validation');
             }
-            $produit->setQuantite($produit->getQuantite() - $reservation->getQuantite());
-            $this->em->persist((new LigneCommande())->setCommande($commande)->setProduit($produit)->setQuantite($reservation->getQuantite()));
+            $produit->setQuantite(0);
+            $this->em->persist((new LigneCommande())->setCommande($commande)->setProduit($produit)->setQuantite(1));
             $this->em->remove($reservation);
         }
 
@@ -148,6 +158,10 @@ class CartManager implements CartManagerInterface
             $qb->andWhere('r.sessionId != :sessionId')->setParameter('sessionId', $excludeSessionId);
         }
 
-        return $produit->getQuantite() - (int) $qb->getQuery()->getSingleScalarResult();
+        $stock = $produit->getQuantite() > 0 ? 1 : 0;
+        $activeReservations = (int) $qb->getQuery()->getSingleScalarResult();
+        $reserved = $activeReservations > 0 ? 1 : 0;
+
+        return max(0, $stock - $reserved);
     }
 }

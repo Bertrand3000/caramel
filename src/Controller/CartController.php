@@ -49,7 +49,6 @@ final class CartController extends AbstractController
     {
         $this->boutiqueAccessChecker->assertOpenForRoles($this->getUser()?->getRoles() ?? []);
         $produitId = $request->request->getInt('produitId');
-        $quantite = max(1, $request->request->getInt('quantite', 1));
         $produit = $produitRepository->find($produitId);
 
         if ($produit === null) {
@@ -59,7 +58,7 @@ final class CartController extends AbstractController
         }
 
         try {
-            $this->cartManager->addItem($request->getSession()->getId(), $produit, $quantite);
+            $this->cartManager->addItem($request->getSession()->getId(), $produit);
             $this->addFlash('success', 'Produit ajouté au panier.');
         } catch (\RuntimeException $exception) {
             $this->addFlash('error', $exception->getMessage());

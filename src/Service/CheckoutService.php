@@ -37,7 +37,7 @@ class CheckoutService implements CheckoutServiceInterface
     ): Commande {
         return $this->em->wrapInTransaction(function () use ($sessionId, $creneau, $profil, $utilisateur, $numeroAgent): Commande {
             $panier = $this->cartManager->getContents($sessionId);
-            $totalQuantite = array_sum(array_column($panier, 'quantite'));
+            $totalQuantite = count($panier);
             if (!$this->quotaChecker->check($sessionId, $profil, $totalQuantite, $numeroAgent)) {
                 throw new \RuntimeException('Quota d articles dépassé');
             }
@@ -60,7 +60,7 @@ class CheckoutService implements CheckoutServiceInterface
         return $this->quotaChecker->check(
             $sessionId,
             $profil,
-            (int) array_sum(array_column($panier, 'quantite')),
+            count($panier),
             $numeroAgent,
         );
     }
@@ -79,7 +79,7 @@ class CheckoutService implements CheckoutServiceInterface
 
             foreach ($commande->getLignesCommande() as $ligne) {
                 $produit = $ligne->getProduit();
-                $produit->setQuantite($produit->getQuantite() + $ligne->getQuantite());
+                $produit->setQuantite(1);
             }
             if ($commande->getCreneau() !== null) {
                 $this->creneauManager->libererCreneau($commande->getCreneau(), $commande);

@@ -27,6 +27,7 @@ class InventoryManager implements InventoryManagerInterface
     public function createProduit(CreateProduitDTO $dto, UploadedFile $photo, ?UploadedFile $photoInventaire): Produit
     {
         $produit = $this->hydrateProduit(new Produit(), $dto);
+        $produit->setQuantite(1);
         $produit->setPhotoProduit($this->imageProcessor->processProductPhoto($photo));
         $produit->setPhotoNumeroInventaire($photoInventaire ? $this->imageProcessor->processInventoryPhoto($photoInventaire) : null);
         $this->entityManager->persist($produit);

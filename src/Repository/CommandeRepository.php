@@ -19,7 +19,7 @@ class CommandeRepository extends ServiceEntityRepository
     public function countArticlesActifsForSession(string $sessionId): int
     {
         return (int) $this->createQueryBuilder('c')
-            ->select('COALESCE(SUM(lc.quantite), 0)')
+            ->select('COUNT(lc.id)')
             ->leftJoin('c.lignesCommande', 'lc')
             ->andWhere('c.sessionId = :sessionId')
             ->andWhere('c.statut != :annulee')
@@ -32,7 +32,7 @@ class CommandeRepository extends ServiceEntityRepository
     public function countArticlesActifsForNumeroAgent(string $numeroAgent): int
     {
         return (int) $this->createQueryBuilder('c')
-            ->select('COALESCE(SUM(lc.quantite), 0)')
+            ->select('COUNT(lc.id)')
             ->leftJoin('c.lignesCommande', 'lc')
             ->andWhere('c.numeroAgent = :numeroAgent')
             ->andWhere('c.statut != :annulee')

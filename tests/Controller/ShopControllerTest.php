@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace App\Tests\Controller;
 
 use App\Entity\Parametre;
+use App\Entity\Produit;
 use App\Entity\Utilisateur;
+use App\Enum\ProduitEtatEnum;
+use App\Enum\ProduitStatutEnum;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -42,6 +45,36 @@ final class ShopControllerTest extends WebTestCase
         self::assertSelectorTextContains('.alert.alert-danger', 'La boutique n\'est pas encore ouverte pour votre profil.');
     }
 
+    public function testCatalogueNafficheQueLesProduitsDisponibles(): void
+    {
+        $client = static::createClient();
+        $client->loginUser($this->createAgentUser());
+        $this->setBoutiqueOpenForAgents(true);
+        $this->createProduit('Produit disponible', ProduitStatutEnum::DISPONIBLE, 1);
+        $this->createProduit('Produit remis', ProduitStatutEnum::REMIS, 0);
+
+        $client->request('GET', '/boutique');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('main', 'Produit disponible');
+        self::assertSelectorTextNotContains('main', 'Produit remis');
+    }
+
+    public function testCatalogueRechercheParMotClePartiel(): void
+    {
+        $client = static::createClient();
+        $client->loginUser($this->createAgentUser());
+        $this->setBoutiqueOpenForAgents(true);
+        $this->createProduit('Armoire métal', ProduitStatutEnum::DISPONIBLE, 1);
+        $this->createProduit('Bureau compact', ProduitStatutEnum::DISPONIBLE, 1);
+
+        $client->request('GET', '/boutique?q=moi');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('main', 'Armoire métal');
+        self::assertSelectorTextNotContains('main', 'Bureau compact');
+    }
+
     private function createAgentUser(): Utilisateur
     {
         $entityManager = static::getContainer()->get(EntityManagerInterface::class);
@@ -62,6 +95,25 @@ final class ShopControllerTest extends WebTestCase
         $param = $entityManager->getRepository(Parametre::class)->findOneBy(['cle' => 'boutique_ouverte_agents']) ?? (new Parametre())->setCle('boutique_ouverte_agents');
         $param->setValeur($open ? '1' : '0');
         $entityManager->persist($param);
+        $entityManager->flush();
+    }
+
+    private function createProduit(string $libelle, ProduitStatutEnum $statut, int $quantite): void
+    {
+        $entityManager = static::getContainer()->get(EntityManagerInterface::class);
+        $produit = (new Produit())
+            ->setLibelle($libelle)
+            ->setPhotoProduit('test.jpg')
+            ->setEtat(ProduitEtatEnum::BON)
+            ->setEtage('1')
+            ->setPorte('A')
+            ->setLargeur(50)
+            ->setHauteur(70)
+            ->setProfondeur(50)
+            ->setStatut($statut)
+            ->setQuantite($quantite);
+
+        $entityManager->persist($produit);
         $entityManager->flush();
     }
 }

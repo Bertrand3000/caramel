@@ -62,8 +62,8 @@ class Produit
     #[ORM\Column(enumType: ProduitStatutEnum::class)]
     private ProduitStatutEnum $statut = ProduitStatutEnum::DISPONIBLE;
 
-    #[ORM\Column(options: ['default' => 0])]
-    private int $quantite = 0;
+    #[ORM\Column(options: ['default' => 1])]
+    private int $quantite = 1;
 
 
     #[ORM\OneToMany(mappedBy: 'produit', targetEntity: LigneCommande::class)]

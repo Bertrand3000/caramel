@@ -14,25 +14,19 @@
 
         <form method="get" class="row g-2 mb-4">
             <div class="col-12 col-md-4">
-                <label class="form-label" for="profil">Profil</label>
-                <select class="form-select" id="profil" name="profil">
-                    <option value="">Tous</option>
-                    <option value="teletravailleur" {{ filtres.profil == 'teletravailleur' ? 'selected' : '' }}>Télétravailleur</option>
-                    <option value="public" {{ filtres.profil == 'public' ? 'selected' : '' }}>Public</option>
-                </select>
-            </div>
-            <div class="col-12 col-md-4">
-                <label class="form-label" for="categorie">Catégorie</label>
-                <input class="form-control" id="categorie" name="categorie" value="{{ filtres.categorie }}" placeholder="Bureau, chaise...">
-            </div>
-            <div class="col-12 col-md-2 d-flex align-items-end">
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="dispo" name="dispo" value="1" {{ filtres.dispo ? 'checked' : '' }}>
-                    <label class="form-check-label" for="dispo">Disponible</label>
-                </div>
+                <label class="form-label" for="q">Recherche</label>
+                <input
+                    class="form-control"
+                    id="q"
+                    name="q"
+                    type="search"
+                    autocomplete="off"
+                    value="{{ filtres.q }}"
+                    placeholder="Ex: bure, chai, armo..."
+                >
             </div>
             <div class="col-12 col-md-2 d-flex align-items-end">
-                <button class="btn btn-primary w-100" type="submit">Filtrer</button>
+                <button class="btn btn-primary w-100" type="submit">Rechercher</button>
             </div>
         </form>
 
@@ -40,15 +34,17 @@
             {% for item in catalogue %}
                 <div class="col-12 col-sm-6 col-lg-4">
                     <div class="card h-100">
-                        <img src="{{ asset(item.produit.photoProduitPublicPath) }}" class="card-img-top" alt="{{ item.produit.libelle }}">
+                        <button
+                            type="button"
+                            class="catalogue-photo-trigger"
+                            data-full-src="{{ asset(item.produit.photoProduitPublicPath) }}"
+                            data-alt="{{ item.produit.libelle }}"
+                            aria-label="Agrandir l'image de {{ item.produit.libelle }}"
+                        >
+                            <img src="{{ asset(item.produit.photoProduitPublicPath) }}" class="card-img-top" alt="{{ item.produit.libelle }}">
+                        </button>
                         <div class="card-body d-flex flex-column">
-                            <h2 class="h6 card-title">{{ item.produit.libelle }}</h2>
-                            {% if item.produit.tagTeletravailleur %}
-                                <span class="badge text-bg-info mb-2">Réservé Télétravailleur</span>
-                            {% endif %}
-                            <p class="small text-body-secondary mb-1">Étage {{ item.produit.etage }} — Porte {{ item.produit.porte }}</p>
-                            <p class="fw-semibold mb-3">Stock disponible : {{ item.stockDisponible }}</p>
-
+                            <h2 class="h6 card-title catalogue-product-title">{{ item.produit.libelle }}</h2>
                             <form method="post" action="{{ path('cart_add') }}" class="mt-auto">
                                 <input type="hidden" name="produitId" value="{{ item.produit.id }}">
                                 <button class="btn btn-outline-primary w-100" type="submit" {{ item.stockDisponible < 1 ? 'disabled' : '' }}>
@@ -65,4 +61,59 @@
             {% endfor %}
         </div>
     </main>
+
+    <div id="catalogue-image-modal" class="catalogue-image-modal" hidden>
+        <div class="catalogue-image-backdrop" data-close-modal></div>
+        <figure class="catalogue-image-dialog" role="dialog" aria-modal="true" aria-label="Image produit agrandie">
+            <button type="button" class="catalogue-image-close" data-close-modal aria-label="Fermer l'image agrandie">Fermer</button>
+            <img id="catalogue-image-full" class="catalogue-image-full" src="" alt="">
+            <figcaption id="catalogue-image-caption" class="catalogue-image-caption"></figcaption>
+        </figure>
+    </div>
+
+    <script>
+        (() => {
+            const modal = document.getElementById('catalogue-image-modal');
+            const fullImage = document.getElementById('catalogue-image-full');
+            const caption = document.getElementById('catalogue-image-caption');
+            const triggers = document.querySelectorAll('.catalogue-photo-trigger');
+            const closeButtons = modal ? modal.querySelectorAll('[data-close-modal]') : [];
+
+            if (!modal || !fullImage || !caption || triggers.length === 0) {
+                return;
+            }
+
+            const openModal = (src, alt) => {
+                fullImage.src = src;
+                fullImage.alt = alt;
+                caption.textContent = alt;
+                modal.hidden = false;
+                document.body.style.overflow = 'hidden';
+            };
+
+            const closeModal = () => {
+                modal.hidden = true;
+                fullImage.src = '';
+                fullImage.alt = '';
+                caption.textContent = '';
+                document.body.style.overflow = '';
+            };
+
+            triggers.forEach((trigger) => {
+                trigger.addEventListener('click', () => {
+                    openModal(trigger.dataset.fullSrc || '', trigger.dataset.alt || '');
+                });
+            });
+
+            closeButtons.forEach((button) => {
+                button.addEventListener('click', closeModal);
+            });
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && !modal.hidden) {
+                    closeModal();
+                }
+            });
+        })();
+    </script>
 {% endblock %}

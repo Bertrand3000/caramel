@@ -10,7 +10,7 @@ use App\Entity\Utilisateur;
 
 interface CartManagerInterface
 {
-    public function addItem(string $sessionId, Produit $produit, int $quantite): void;
+    public function addItem(string $sessionId, Produit $produit): void;
 
     public function removeItem(string $sessionId, int $produitId): void;
 

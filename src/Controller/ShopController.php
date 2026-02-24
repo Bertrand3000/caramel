@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\Enum\ProfilUtilisateur;
+use App\Enum\ProduitStatutEnum;
 use App\Interface\BoutiqueAccessCheckerInterface;
 use App\Repository\ProduitRepository;
 use App\Service\CartManager;
@@ -31,22 +31,23 @@ final class ShopController extends AbstractController
         $this->boutiqueAccessChecker->assertOpenForRoles($this->getUser()?->getRoles() ?? []);
         $this->cartManager->releaseExpired();
 
-        $profil = $request->query->getString('profil');
-        $onlyTeletravailleur = $profil === ProfilUtilisateur::TELETRAVAILLEUR->value;
+        $keyword = trim($request->query->getString('q'));
+        $keywordNormalized = mb_strtolower($keyword);
 
-        $produits = $produitRepository->findBy([], ['id' => 'DESC']);
+        $produits = $produitRepository->findBy([
+            'statut' => ProduitStatutEnum::DISPONIBLE,
+        ], ['id' => 'DESC']);
         $catalogue = [];
 
         foreach ($produits as $produit) {
-            if ($onlyTeletravailleur && !$produit->isTagTeletravailleur()) {
+            if (
+                $keywordNormalized !== ''
+                && !str_contains(mb_strtolower($produit->getLibelle()), $keywordNormalized)
+            ) {
                 continue;
             }
 
             $stockDisponible = $this->cartManager->getAvailableStockForDisplay($produit);
-            $showOnlyAvailable = $request->query->getBoolean('dispo', false);
-            if ($showOnlyAvailable && $stockDisponible < 1) {
-                continue;
-            }
 
             $catalogue[] = [
                 'produit' => $produit,
@@ -57,9 +58,7 @@ final class ShopController extends AbstractController
         return $this->render('shop/catalogue.html.twig', [
             'catalogue' => $catalogue,
             'filtres' => [
-                'profil' => $profil,
-                'categorie' => $request->query->getString('categorie'),
-                'dispo' => $request->query->getBoolean('dispo', false),
+                'q' => $keyword,
             ],
         ]);
     }
