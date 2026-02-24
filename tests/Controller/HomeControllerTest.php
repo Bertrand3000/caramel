@@ -36,13 +36,13 @@ final class HomeControllerTest extends WebTestCase
         self::assertResponseRedirects('/dmax/');
     }
 
-    public function testAgentHomeRedirectsToShopDashboard(): void
+    public function testAgentHomeRedirectsToShopCatalogue(): void
     {
         $client = static::createClient();
         $client->loginUser($this->createUserWithRoles(['ROLE_AGENT'], 'agent-home'));
         $client->request('GET', '/');
 
-        self::assertResponseRedirects('/boutique/dashboard');
+        self::assertResponseRedirects('/boutique');
     }
 
     /**
@@ -61,4 +61,3 @@ final class HomeControllerTest extends WebTestCase
         return $user;
     }
 }
-

@@ -28,7 +28,6 @@
                         {% endif %}
 
                         {% if is_granted('ROLE_AGENT') or is_granted('ROLE_TELETRAVAILLEUR') or is_granted('ROLE_PARTENAIRE') %}
-                            <a href="{{ path('shop_dashboard') }}">Dashboard boutique</a>
                             <a href="{{ path('shop_catalogue') }}">Catalogue</a>
                             <a href="{{ path('cart_index') }}">Panier</a>
                             <a href="{{ path('checkout_creneaux') }}">Commande</a>

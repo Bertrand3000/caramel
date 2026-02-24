@@ -33,7 +33,7 @@ final class SecurityControllerTest extends WebTestCase
         );
     }
 
-    public function testLoginSuccessRedirectsToHomeThenShopDashboard(): void
+    public function testLoginSuccessRedirectsToHomeThenShopCatalogue(): void
     {
         $client = static::createClient();
         $login = sprintf('agent-ok-%s@test.local', bin2hex(random_bytes(4)));
@@ -47,7 +47,7 @@ final class SecurityControllerTest extends WebTestCase
 
         self::assertResponseRedirects('/');
         $client->followRedirect();
-        self::assertResponseRedirects('/boutique/dashboard');
+        self::assertResponseRedirects('/boutique');
     }
 
     /**
@@ -68,4 +68,3 @@ final class SecurityControllerTest extends WebTestCase
         $entityManager->flush();
     }
 }
-

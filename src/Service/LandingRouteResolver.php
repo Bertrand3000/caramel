@@ -19,7 +19,6 @@ final class LandingRouteResolver
             return 'dmax_dashboard';
         }
 
-        return 'shop_dashboard';
+        return 'shop_catalogue';
     }
 }
-
