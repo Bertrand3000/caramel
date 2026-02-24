@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Controller;
 
 use App\Entity\Commande;
+use App\Entity\Parametre;
 use App\Entity\Utilisateur;
 use App\Enum\CommandeStatutEnum;
 use Doctrine\ORM\EntityManagerInterface;
@@ -100,6 +101,7 @@ final class CheckoutControllerTest extends WebTestCase
 
     private function createUser(string $prefix): Utilisateur
     {
+        $this->setBoutiqueOpenForAgents();
         $entityManager = static::getContainer()->get(EntityManagerInterface::class);
         $user = (new Utilisateur())
             ->setLogin(sprintf('%s-%s@test.local', $prefix, bin2hex(random_bytes(4))))
@@ -147,5 +149,14 @@ final class CheckoutControllerTest extends WebTestCase
         $crawler = $client->request('GET', '/commande/confirmation');
 
         return (string) $crawler->filter('input[name="_token"]')->attr('value');
+    }
+
+    private function setBoutiqueOpenForAgents(): void
+    {
+        $entityManager = static::getContainer()->get(EntityManagerInterface::class);
+        $param = $entityManager->getRepository(Parametre::class)->findOneBy(['cle' => 'boutique_ouverte_agents']) ?? (new Parametre())->setCle('boutique_ouverte_agents');
+        $param->setValeur('1');
+        $entityManager->persist($param);
+        $entityManager->flush();
     }
 }

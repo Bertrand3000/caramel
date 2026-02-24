@@ -6,6 +6,7 @@ namespace App\Controller;
 
 use App\Entity\Utilisateur;
 use App\Enum\ProfilUtilisateur;
+use App\Interface\BoutiqueAccessCheckerInterface;
 use App\Interface\CheckoutServiceInterface;
 use App\Interface\SlotManagerInterface;
 use App\Repository\CommandeRepository;
@@ -22,12 +23,14 @@ final class CheckoutController extends AbstractController
     public function __construct(
         private readonly SlotManagerInterface $creneauManager,
         private readonly CheckoutServiceInterface $checkoutService,
+        private readonly BoutiqueAccessCheckerInterface $boutiqueAccessChecker,
     ) {
     }
 
     #[Route('/creneaux', name: 'checkout_creneaux', methods: ['GET'])]
     public function creneaux(): Response
     {
+        $this->boutiqueAccessChecker->assertOpenForRoles($this->getUser()?->getRoles() ?? []);
         $date = new \DateTimeImmutable('today');
         $creneaux = [];
 
@@ -47,6 +50,7 @@ final class CheckoutController extends AbstractController
     #[Route('/confirmer', name: 'checkout_confirmer', methods: ['POST'])]
     public function confirmCommande(Request $request, CreneauRepository $creneauRepository): RedirectResponse
     {
+        $this->boutiqueAccessChecker->assertOpenForRoles($this->getUser()?->getRoles() ?? []);
         $sessionId = $request->getSession()->getId();
         $creneauId = $request->request->getInt('creneauId');
         $numeroAgent = trim($request->request->getString('numeroAgent'));
@@ -87,6 +91,7 @@ final class CheckoutController extends AbstractController
     #[Route('/confirmation', name: 'checkout_confirmation', methods: ['GET'])]
     public function confirmation(Request $request, CommandeRepository $commandeRepository): Response
     {
+        $this->boutiqueAccessChecker->assertOpenForRoles($this->getUser()?->getRoles() ?? []);
         $id = $request->getSession()->get('checkout_last_commande_id');
         $commande = $id ? $commandeRepository->find($id) : null;
 
@@ -96,6 +101,7 @@ final class CheckoutController extends AbstractController
     #[Route('/annuler/{id}', name: 'checkout_annuler', methods: ['POST'])]
     public function annulerCommande(int $id, Request $request, CommandeRepository $commandeRepository): RedirectResponse
     {
+        $this->boutiqueAccessChecker->assertOpenForRoles($this->getUser()?->getRoles() ?? []);
         $user = $this->getUser();
         if (!$user instanceof Utilisateur) {
             $this->addFlash('error', 'Connexion requise pour annuler la commande.');

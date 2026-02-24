@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Interface\BoutiqueAccessCheckerInterface;
 use App\Repository\ProduitRepository;
 use App\Service\CartManager;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -15,13 +16,17 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/panier')]
 final class CartController extends AbstractController
 {
-    public function __construct(private readonly CartManager $cartManager)
+    public function __construct(
+        private readonly CartManager $cartManager,
+        private readonly BoutiqueAccessCheckerInterface $boutiqueAccessChecker,
+    )
     {
     }
 
     #[Route('', name: 'cart_index', methods: ['GET'])]
     public function index(Request $request): Response
     {
+        $this->boutiqueAccessChecker->assertOpenForRoles($this->getUser()?->getRoles() ?? []);
         $sessionId = $request->getSession()->getId();
         $items = $this->cartManager->getContents($sessionId);
 
@@ -42,6 +47,7 @@ final class CartController extends AbstractController
     #[Route('/ajouter', name: 'cart_add', methods: ['POST'])]
     public function addItem(Request $request, ProduitRepository $produitRepository): RedirectResponse
     {
+        $this->boutiqueAccessChecker->assertOpenForRoles($this->getUser()?->getRoles() ?? []);
         $produitId = $request->request->getInt('produitId');
         $quantite = max(1, $request->request->getInt('quantite', 1));
         $produit = $produitRepository->find($produitId);
@@ -65,6 +71,7 @@ final class CartController extends AbstractController
     #[Route('/retirer/{id}', name: 'cart_remove', methods: ['POST'])]
     public function removeItem(int $id, Request $request): RedirectResponse
     {
+        $this->boutiqueAccessChecker->assertOpenForRoles($this->getUser()?->getRoles() ?? []);
         $this->cartManager->removeItem($request->getSession()->getId(), $id);
         $this->addFlash('success', 'Article retiré du panier.');
 
@@ -74,6 +81,7 @@ final class CartController extends AbstractController
     #[Route('/vider', name: 'cart_clear', methods: ['POST'])]
     public function clear(Request $request): RedirectResponse
     {
+        $this->boutiqueAccessChecker->assertOpenForRoles($this->getUser()?->getRoles() ?? []);
         $this->cartManager->clear($request->getSession()->getId());
         $this->addFlash('success', 'Panier vidé.');
 

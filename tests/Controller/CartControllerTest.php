@@ -7,6 +7,7 @@ namespace App\Tests\Controller;
 use App\Entity\Produit;
 use App\Entity\ReservationTemporaire;
 use App\Entity\Utilisateur;
+use App\Entity\Parametre;
 use App\Enum\ProduitEtatEnum;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -110,6 +111,7 @@ final class CartControllerTest extends WebTestCase
 
     private function createAgentUser(): Utilisateur
     {
+        $this->setBoutiqueOpenForAgents();
         $entityManager = static::getContainer()->get(EntityManagerInterface::class);
         $user = (new Utilisateur())
             ->setLogin(sprintf('agent-cart-%s@test.local', bin2hex(random_bytes(4))))
@@ -119,6 +121,15 @@ final class CartControllerTest extends WebTestCase
         $entityManager->flush();
 
         return $user;
+    }
+
+    private function setBoutiqueOpenForAgents(): void
+    {
+        $entityManager = static::getContainer()->get(EntityManagerInterface::class);
+        $param = $entityManager->getRepository(Parametre::class)->findOneBy(['cle' => 'boutique_ouverte_agents']) ?? (new Parametre())->setCle('boutique_ouverte_agents');
+        $param->setValeur('1');
+        $entityManager->persist($param);
+        $entityManager->flush();
     }
 
     private function forceClientSession(KernelBrowser $client): string
