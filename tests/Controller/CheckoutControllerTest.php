@@ -5,11 +5,8 @@ declare(strict_types=1);
 namespace App\Tests\Controller;
 
 use App\Entity\Commande;
-use App\Entity\Creneau;
 use App\Entity\Utilisateur;
 use App\Enum\CommandeStatutEnum;
-use App\Enum\ProfilUtilisateur;
-use App\Interface\CheckoutServiceInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -81,31 +78,24 @@ final class CheckoutControllerTest extends WebTestCase
         self::assertSame(CommandeStatutEnum::ANNULEE, $reloaded->getStatut());
     }
 
-    public function testDmaxPeutConfirmerSansNumeroAgent(): void
+    public function testAgentPeutAccederAuxCreneaux(): void
     {
         $client = static::createClient();
-        $dmax = $this->createDmaxUser();
-        $creneau = $this->createCreneau();
-        $client->loginUser($dmax);
-        $checkoutService = $this->createMock(CheckoutServiceInterface::class);
-        $checkoutService->expects(self::once())
-            ->method('confirmCommande')
-            ->with(
-                self::isType('string'),
-                self::isInstanceOf(Creneau::class),
-                ProfilUtilisateur::DMAX,
-                self::callback(static fn (Utilisateur $user): bool => $user->getId() !== null),
-                null,
-            )
-            ->willReturn((new Commande())->setUtilisateur($dmax)->setSessionId('s')->setDateValidation(new \DateTime()));
-        static::getContainer()->set(CheckoutServiceInterface::class, $checkoutService);
+        $client->loginUser($this->createUser('agent-creneaux'));
 
-        $client->request('POST', '/commande/confirmer', [
-            'creneauId' => $creneau->getId(),
-            'numeroAgent' => '',
-        ]);
+        $client->request('GET', '/commande/creneaux');
 
-        self::assertResponseRedirects('/commande/confirmation');
+        self::assertResponseIsSuccessful();
+    }
+
+    public function testDmaxNePeutPasAccederAuxCreneauxCommande(): void
+    {
+        $client = static::createClient();
+        $client->loginUser($this->createDmaxUser());
+
+        $client->request('GET', '/commande/creneaux');
+
+        self::assertResponseStatusCodeSame(403);
     }
 
     private function createUser(string $prefix): Utilisateur
@@ -133,19 +123,6 @@ final class CheckoutControllerTest extends WebTestCase
         $entityManager->flush();
 
         return $commande;
-    }
-
-    private function createCreneau(): Creneau
-    {
-        $entityManager = static::getContainer()->get(EntityManagerInterface::class);
-        $creneau = (new Creneau())
-            ->setDateHeure(new \DateTimeImmutable('today 09:00:00'))
-            ->setHeureDebut(new \DateTime('09:00:00'))
-            ->setHeureFin(new \DateTime('09:30:00'));
-        $entityManager->persist($creneau);
-        $entityManager->flush();
-
-        return $creneau;
     }
 
     private function createDmaxUser(): Utilisateur

@@ -6,6 +6,7 @@ namespace App\Tests\Controller;
 
 use App\Entity\Produit;
 use App\Entity\ReservationTemporaire;
+use App\Entity\Utilisateur;
 use App\Enum\ProduitEtatEnum;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -14,9 +15,21 @@ use Symfony\Component\BrowserKit\Cookie;
 
 final class CartControllerTest extends WebTestCase
 {
+    public function testAnonymousAddRedirectsToLogin(): void
+    {
+        $client = static::createClient();
+        $client->request('POST', '/panier/ajouter', [
+            'produitId' => 1,
+            'quantite' => 1,
+        ]);
+
+        self::assertResponseRedirects('/login');
+    }
+
     public function testAjoutProduitValideCreeReservationTemporaire(): void
     {
         $client = static::createClient();
+        $client->loginUser($this->createAgentUser());
         $sessionId = $this->forceClientSession($client);
         $produit = $this->createProduit('Chaise test', 5);
 
@@ -32,6 +45,7 @@ final class CartControllerTest extends WebTestCase
     public function testAjoutPanierAvecProduitInexistantRedirigeVersPanier(): void
     {
         $client = static::createClient();
+        $client->loginUser($this->createAgentUser());
         $client->request('POST', '/panier/ajouter', ['produitId' => 9999, 'quantite' => 1]);
 
         self::assertResponseRedirects('/panier');
@@ -40,6 +54,7 @@ final class CartControllerTest extends WebTestCase
     public function testRetirerProduitSupprimeLaReservation(): void
     {
         $client = static::createClient();
+        $client->loginUser($this->createAgentUser());
         $sessionId = $this->forceClientSession($client);
         $produit = $this->createProduit('Bureau test', 3);
         $client->request('POST', '/panier/ajouter', [
@@ -57,6 +72,7 @@ final class CartControllerTest extends WebTestCase
     public function testViderPanierSupprimeToutesLesReservations(): void
     {
         $client = static::createClient();
+        $client->loginUser($this->createAgentUser());
         $sessionId = $this->forceClientSession($client);
         $produitA = $this->createProduit('Armoire test', 5);
         $produitB = $this->createProduit('Table test', 5);
@@ -90,6 +106,19 @@ final class CartControllerTest extends WebTestCase
         $entityManager->flush();
 
         return $produit;
+    }
+
+    private function createAgentUser(): Utilisateur
+    {
+        $entityManager = static::getContainer()->get(EntityManagerInterface::class);
+        $user = (new Utilisateur())
+            ->setLogin(sprintf('agent-cart-%s@test.local', bin2hex(random_bytes(4))))
+            ->setPassword('dummy')
+            ->setRoles(['ROLE_AGENT']);
+        $entityManager->persist($user);
+        $entityManager->flush();
+
+        return $user;
     }
 
     private function forceClientSession(KernelBrowser $client): string
