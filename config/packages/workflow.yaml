@@ -4,7 +4,7 @@ framework:
             type: state_machine
             marking_store:
                 type: method
-                property: statut
+                property: statutValue
             supports:
                 - App\Entity\Commande
             initial_marking: en_attente_validation

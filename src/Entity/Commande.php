@@ -138,6 +138,18 @@ class Commande
         return $this;
     }
 
+    public function getStatutValue(): string
+    {
+        return $this->statut->value;
+    }
+
+    public function setStatutValue(string $statutValue): self
+    {
+        $this->statut = CommandeStatutEnum::from($statutValue);
+
+        return $this;
+    }
+
     /** @return Collection<int, LigneCommande> */
     public function getLignesCommande(): Collection
     {

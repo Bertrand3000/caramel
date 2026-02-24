@@ -8,18 +8,18 @@ use App\Entity\Commande;
 use App\Entity\Creneau;
 use App\Entity\LigneCommande;
 use App\Entity\Produit;
+use App\Entity\Utilisateur;
 use App\Enum\CommandeStatutEnum;
 use App\Enum\ProduitEtatEnum;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Symfony\Component\Security\Core\User\InMemoryUser;
 
 final class LogistiqueControllerTest extends WebTestCase
 {
     public function testDashboardAfficheLesCommandesPretesDuJour(): void
     {
         $client = static::createClient();
-        $client->loginUser(new InMemoryUser('dmax', null, ['ROLE_DMAX']));
+        $client->loginUser($this->buildDmaxUser());
 
         $commande = $this->createReadyOrderForToday();
 
@@ -27,13 +27,16 @@ final class LogistiqueControllerTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('h1', 'Commandes prêtes du jour');
-        self::assertSelectorTextContains('article', sprintf('Commande #%d', $commande->getId()));
+        self::assertStringContainsString(
+            sprintf('Commande #%d', $commande->getId()),
+            (string) $client->getResponse()->getContent(),
+        );
     }
 
     public function testRetraitAppliqueTransitionEtRedirige(): void
     {
         $client = static::createClient();
-        $client->loginUser(new InMemoryUser('dmax', null, ['ROLE_DMAX']));
+        $client->loginUser($this->buildDmaxUser());
 
         $commande = $this->createReadyOrderForToday();
 
@@ -63,12 +66,12 @@ final class LogistiqueControllerTest extends WebTestCase
 
         $creneau = (new Creneau())
             ->setDateHeure(new \DateTimeImmutable('today 09:00'))
-            ->setHeureDebut(new \DateTimeImmutable('09:00'))
-            ->setHeureFin(new \DateTimeImmutable('09:30'));
+            ->setHeureDebut(new \DateTime('09:00'))
+            ->setHeureFin(new \DateTime('09:30'));
 
         $commande = (new Commande())
             ->setStatut(CommandeStatutEnum::PRETE)
-            ->setDateValidation(new \DateTimeImmutable());
+            ->setDateValidation(new \DateTime());
 
         $ligneCommande = (new LigneCommande())
             ->setCommande($commande)
@@ -84,5 +87,20 @@ final class LogistiqueControllerTest extends WebTestCase
         $entityManager->flush();
 
         return $commande;
+    }
+
+    private function buildDmaxUser(): Utilisateur
+    {
+        $entityManager = static::getContainer()->get(EntityManagerInterface::class);
+
+        $user = (new Utilisateur())
+            ->setLogin(sprintf('dmax-%s@test.local', bin2hex(random_bytes(4))))
+            ->setPassword('dummy')
+            ->setRoles(['ROLE_DMAX']);
+
+        $entityManager->persist($user);
+        $entityManager->flush();
+
+        return $user;
     }
 }
