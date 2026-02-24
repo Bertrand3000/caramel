@@ -1,47 +1,62 @@
 {% extends 'base.html.twig' %}
+{% set hide_layout_header = true %}
 
 {% block title %}Connexion — CARAMEL{% endblock %}
+{% block body_class %}login-page{% endblock %}
 
 {% block body %}
-    <section style="max-width: 400px; margin: 3rem auto; padding: 1.5rem; border: 1px solid #ddd; border-radius: 8px; font-family: Arial, sans-serif;">
-        <h1 style="margin-top: 0;">Connexion</h1>
+    <main class="login-screen" style="--login-bg-image: url('{{ asset('images/caramel.jpg') }}');">
+        <div class="login-hero">
+            <h1 class="login-hero-title">CARAMEL</h1>
+            <p class="login-hero-subtitle">
+                <span class="login-acrostic">C</span>ollecte
+                <span class="login-acrostic">A</span>nti-gaspillage,
+                <span class="login-acrostic">R</span>écupération,
+                <span class="login-acrostic">A</span>meublement,
+                <span class="login-acrostic">M</span>obilier,
+                <span class="login-acrostic">E</span>nlèvements &
+                <span class="login-acrostic">L</span>ogistique
+            </p>
+        </div>
 
-        {% if error %}
-            <div style="margin-bottom: 1rem; padding: 0.75rem; border-radius: 4px; background: #fdecea; color: #611a15;">
-                {{ error.messageKey|trans(error.messageData, 'security') }}
-            </div>
-        {% endif %}
+        <section class="login-panel">
+            <h2 class="login-panel-title">Connexion</h2>
 
-        <form method="post" action="{{ path('login') }}">
-            <div style="margin-bottom: 1rem;">
-                <label for="username" style="display: block; margin-bottom: 0.25rem;">Identifiant</label>
-                <input
-                    id="username"
-                    type="text"
-                    name="_username"
-                    value="{{ last_username }}"
-                    required
-                    autofocus
-                    style="width: 100%; padding: 0.5rem; border: 1px solid #bbb; border-radius: 4px;"
-                >
-            </div>
+            {% if error %}
+                <div class="login-error">
+                    {{ error.messageKey|trans(error.messageData, 'security') }}
+                </div>
+            {% endif %}
 
-            <div style="margin-bottom: 1rem;">
-                <label for="password" style="display: block; margin-bottom: 0.25rem;">Mot de passe</label>
-                <input
-                    id="password"
-                    type="password"
-                    name="_password"
-                    required
-                    style="width: 100%; padding: 0.5rem; border: 1px solid #bbb; border-radius: 4px;"
-                >
-            </div>
+            <form method="post" action="{{ path('login') }}" class="login-form">
+                <div>
+                    <label for="username" class="form-label">Identifiant</label>
+                    <input
+                        id="username"
+                        type="text"
+                        name="_username"
+                        value="{{ last_username }}"
+                        required
+                        autofocus
+                        class="form-control"
+                    >
+                </div>
 
-            <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+                <div>
+                    <label for="password" class="form-label">Mot de passe</label>
+                    <input
+                        id="password"
+                        type="password"
+                        name="_password"
+                        required
+                        class="form-control"
+                    >
+                </div>
 
-            <button type="submit" style="width: 100%; padding: 0.6rem; border: 0; border-radius: 4px; background: #1e3a8a; color: #fff; cursor: pointer;">
-                Se connecter
-            </button>
-        </form>
-    </section>
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+
+                <button type="submit" class="btn btn-primary login-submit">Se connecter</button>
+            </form>
+        </section>
+    </main>
 {% endblock %}

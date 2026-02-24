@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Controller;
 
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class UploadControllerTest extends WebTestCase
@@ -40,5 +41,16 @@ final class UploadControllerTest extends WebTestCase
         $client->request('GET', '/uploads/produits/missing-file.jpg');
 
         self::assertResponseStatusCodeSame(404);
+    }
+
+    public function testReturnsPublicImageFromImagesDirectory(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/images/caramel.jpg');
+
+        self::assertResponseIsSuccessful();
+        $response = $client->getResponse();
+        self::assertInstanceOf(BinaryFileResponse::class, $response);
+        self::assertStringEndsWith('/public/images/caramel.jpg', $response->getFile()->getPathname());
     }
 }

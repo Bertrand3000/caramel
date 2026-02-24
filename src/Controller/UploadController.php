@@ -23,6 +23,21 @@ final class UploadController extends AbstractController
     public function show(string $bucket, string $filename): BinaryFileResponse
     {
         $baseDir = $this->kernel->getProjectDir().'/public/uploads/'.$bucket;
+        return $this->serveFile($baseDir, $filename);
+    }
+
+    #[Route('/images/{filename}', name: 'public_image_asset', methods: ['GET'], requirements: [
+        'filename' => '[A-Za-z0-9._-]+\.(?:jpe?g|png|webp|gif|svg)',
+    ])]
+    public function image(string $filename): BinaryFileResponse
+    {
+        $baseDir = $this->kernel->getProjectDir().'/public/images';
+
+        return $this->serveFile($baseDir, $filename);
+    }
+
+    private function serveFile(string $baseDir, string $filename): BinaryFileResponse
+    {
         $path = $baseDir.'/'.$filename;
         $realPath = realpath($path);
         $realBase = realpath($baseDir);
@@ -34,4 +49,3 @@ final class UploadController extends AbstractController
         return new BinaryFileResponse($realPath);
     }
 }
-
