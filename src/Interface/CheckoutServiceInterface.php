@@ -10,9 +10,18 @@ use App\Enum\ProfilUtilisateur;
 
 interface CheckoutServiceInterface
 {
-    public function confirmCommande(string $sessionId, Creneau $creneau, ProfilUtilisateur $profil): Commande;
+    public function confirmCommande(
+        string $sessionId,
+        Creneau $creneau,
+        ProfilUtilisateur $profil,
+        ?string $numeroAgent = null,
+    ): Commande;
 
-    public function checkQuota(string $sessionId, ProfilUtilisateur $profil): bool;
+    public function checkQuota(
+        string $sessionId,
+        ProfilUtilisateur $profil,
+        ?string $numeroAgent = null,
+    ): bool;
 
     public function assignCreneau(Commande $commande, Creneau $creneau): void;
 

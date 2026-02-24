@@ -34,8 +34,10 @@ final class CheckoutServiceTest extends TestCase
         $em = $this->createMock(EntityManagerInterface::class);
         $em->expects(self::once())->method('wrapInTransaction')->willReturnCallback(fn ($cb) => $cb());
 
-        $result = (new CheckoutService($em, $cart, $quota, $slot))->confirmCommande('s', new Creneau(), ProfilUtilisateur::PUBLIC);
+        $result = (new CheckoutService($em, $cart, $quota, $slot))
+            ->confirmCommande('s', new Creneau(), ProfilUtilisateur::PUBLIC, '12345');
         self::assertSame($commande, $result);
+        self::assertSame('12345', $commande->getNumeroAgent());
     }
 
     public function testConfirmCommandeEchoueQuotaDepasse(): void
@@ -50,7 +52,8 @@ final class CheckoutServiceTest extends TestCase
         $em = $this->createMock(EntityManagerInterface::class);
         $em->method('wrapInTransaction')->willReturnCallback(fn ($cb) => $cb());
 
-        (new CheckoutService($em, $cart, $quota, $this->createMock(SlotManagerInterface::class)))->confirmCommande('s', new Creneau(), ProfilUtilisateur::PUBLIC);
+        (new CheckoutService($em, $cart, $quota, $this->createMock(SlotManagerInterface::class)))
+            ->confirmCommande('s', new Creneau(), ProfilUtilisateur::PUBLIC, '12345');
     }
 
     public function testConfirmCommandeEchoueCreneauPlein(): void
@@ -67,7 +70,8 @@ final class CheckoutServiceTest extends TestCase
         $em = $this->createMock(EntityManagerInterface::class);
         $em->method('wrapInTransaction')->willReturnCallback(fn ($cb) => $cb());
 
-        (new CheckoutService($em, $cart, $quota, $slot))->confirmCommande('s', new Creneau(), ProfilUtilisateur::PUBLIC);
+        (new CheckoutService($em, $cart, $quota, $slot))
+            ->confirmCommande('s', new Creneau(), ProfilUtilisateur::PUBLIC, '12345');
     }
 
     public function testAnnulerCommandeRestitueStock(): void

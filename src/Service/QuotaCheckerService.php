@@ -11,6 +11,7 @@ use App\Repository\ParametreRepository;
 class QuotaCheckerService
 {
     private const DEFAULT_QUOTA = 3;
+    private const AGENT_NUMBER_PATTERN = '/^\d{5}$/';
 
     public function __construct(
         private readonly ParametreRepository $parametreRepository,
@@ -18,25 +19,34 @@ class QuotaCheckerService
     ) {
     }
 
-    public function check(string $sessionId, ProfilUtilisateur $profil, int $quantiteDemandee): bool
-    {
+    public function check(
+        string $sessionId,
+        ProfilUtilisateur $profil,
+        int $quantiteDemandee,
+        ?string $numeroAgent = null,
+    ): bool {
         if ($profil === ProfilUtilisateur::PARTENAIRE) {
             return true;
         }
 
         $quota = $this->readQuota();
-        $existing = $this->commandeRepository->countArticlesActifsForSession($sessionId);
+        $existing = $this->readExistingArticlesCount($sessionId, $profil, $numeroAgent);
 
         return ($existing + $quantiteDemandee) <= $quota;
     }
 
-    public function getQuotaRestant(string $sessionId, ProfilUtilisateur $profil): int
-    {
+    public function getQuotaRestant(
+        string $sessionId,
+        ProfilUtilisateur $profil,
+        ?string $numeroAgent = null,
+    ): int {
         if ($profil === ProfilUtilisateur::PARTENAIRE) {
             return PHP_INT_MAX;
         }
 
-        return max(0, $this->readQuota() - $this->commandeRepository->countArticlesActifsForSession($sessionId));
+        $existing = $this->readExistingArticlesCount($sessionId, $profil, $numeroAgent);
+
+        return max(0, $this->readQuota() - $existing);
     }
 
     private function readQuota(): int
@@ -44,5 +54,22 @@ class QuotaCheckerService
         $param = $this->parametreRepository->findOneByKey('quota_articles_max');
 
         return $param ? (int) $param->getValeur() : self::DEFAULT_QUOTA;
+    }
+
+    private function readExistingArticlesCount(
+        string $sessionId,
+        ProfilUtilisateur $profil,
+        ?string $numeroAgent,
+    ): int {
+        if ($profil === ProfilUtilisateur::TELETRAVAILLEUR || $profil === ProfilUtilisateur::PUBLIC) {
+            $normalizedNumeroAgent = trim((string) $numeroAgent);
+            if (!preg_match(self::AGENT_NUMBER_PATTERN, $normalizedNumeroAgent)) {
+                throw new \RuntimeException('Numero agent invalide (5 chiffres requis).');
+            }
+
+            return $this->commandeRepository->countArticlesActifsForNumeroAgent($normalizedNumeroAgent);
+        }
+
+        return $this->commandeRepository->countArticlesActifsForSession($sessionId);
     }
 }

@@ -29,6 +29,19 @@ class CommandeRepository extends ServiceEntityRepository
             ->getSingleScalarResult();
     }
 
+    public function countArticlesActifsForNumeroAgent(string $numeroAgent): int
+    {
+        return (int) $this->createQueryBuilder('c')
+            ->select('COALESCE(SUM(lc.quantite), 0)')
+            ->leftJoin('c.lignesCommande', 'lc')
+            ->andWhere('c.numeroAgent = :numeroAgent')
+            ->andWhere('c.statut != :annulee')
+            ->setParameter('numeroAgent', $numeroAgent)
+            ->setParameter('annulee', CommandeStatutEnum::ANNULEE)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
     /** @return list<Commande> */
     public function findRetireeOuAnnuleeWithContactTmp(): array
     {

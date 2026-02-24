@@ -23,28 +23,40 @@ class CheckoutService implements CheckoutServiceInterface
     ) {
     }
 
-    public function confirmCommande(string $sessionId, Creneau $creneau, ProfilUtilisateur $profil): Commande
-    {
-        return $this->em->wrapInTransaction(function () use ($sessionId, $creneau, $profil): Commande {
+    public function confirmCommande(
+        string $sessionId,
+        Creneau $creneau,
+        ProfilUtilisateur $profil,
+        ?string $numeroAgent = null,
+    ): Commande {
+        return $this->em->wrapInTransaction(function () use ($sessionId, $creneau, $profil, $numeroAgent): Commande {
             $panier = $this->cartManager->getContents($sessionId);
             $totalQuantite = array_sum(array_column($panier, 'quantite'));
-            if (!$this->quotaChecker->check($sessionId, $profil, $totalQuantite)) {
+            if (!$this->quotaChecker->check($sessionId, $profil, $totalQuantite, $numeroAgent)) {
                 throw new \RuntimeException('Quota d articles dépassé');
             }
 
             $commande = $this->cartManager->validateCart($sessionId);
             $this->creneauManager->reserverCreneau($creneau, $commande);
+            if ($numeroAgent !== null && trim($numeroAgent) !== '') {
+                $commande->setNumeroAgent(trim($numeroAgent));
+            }
             $commande->setStatut(CommandeStatutEnum::EN_ATTENTE_VALIDATION);
 
             return $commande;
         });
     }
 
-    public function checkQuota(string $sessionId, ProfilUtilisateur $profil): bool
+    public function checkQuota(string $sessionId, ProfilUtilisateur $profil, ?string $numeroAgent = null): bool
     {
         $panier = $this->cartManager->getContents($sessionId);
 
-        return $this->quotaChecker->check($sessionId, $profil, (int) array_sum(array_column($panier, 'quantite')));
+        return $this->quotaChecker->check(
+            $sessionId,
+            $profil,
+            (int) array_sum(array_column($panier, 'quantite')),
+            $numeroAgent,
+        );
     }
 
     public function assignCreneau(Commande $commande, Creneau $creneau): void

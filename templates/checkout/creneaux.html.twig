@@ -20,6 +20,10 @@
             {% for slot in creneaux %}
                 <form method="post" action="{{ path('checkout_confirmer') }}" class="list-group-item">
                     <input type="hidden" name="creneauId" value="{{ slot.entity.id }}">
+                    <div class="mb-2">
+                        <label class="form-label" for="numeroAgent-{{ slot.entity.id }}">Numero agent</label>
+                        <input class="form-control" id="numeroAgent-{{ slot.entity.id }}" type="text" name="numeroAgent" inputmode="numeric" pattern="\d{5}" maxlength="5" required>
+                    </div>
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <span>{{ slot.entity.heureDebut|date('H\\hi') }} — {{ slot.used }}/{{ slot.entity.capaciteMax }} places</span>
                         <button class="btn btn-sm btn-primary" type="submit">Sélectionner</button>

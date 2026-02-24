@@ -17,48 +17,63 @@ final class QuotaCheckerServiceTest extends TestCase
     {
         $service = new QuotaCheckerService(
             $this->createMock(ParametreRepository::class),
-            $this->createMock(CommandeRepository::class)
+            $this->createMock(CommandeRepository::class),
         );
 
         self::assertTrue($service->check('s', ProfilUtilisateur::PARTENAIRE, 999));
         self::assertSame(PHP_INT_MAX, $service->getQuotaRestant('s', ProfilUtilisateur::PARTENAIRE));
     }
 
-    public function testTeletravailleurRespecteLimite(): void
+    public function testTeletravailleurRespecteLimiteParNumeroAgent(): void
     {
         $param = (new Parametre())->setCle('quota_articles_max')->setValeur('5');
         $paramRepo = $this->createMock(ParametreRepository::class);
         $paramRepo->method('findOneByKey')->willReturn($param);
         $commandeRepo = $this->createMock(CommandeRepository::class);
-        $commandeRepo->method('countArticlesActifsForSession')->willReturn(2);
+        $commandeRepo->method('countArticlesActifsForNumeroAgent')->with('12345')->willReturn(2);
 
         $service = new QuotaCheckerService($paramRepo, $commandeRepo);
 
-        self::assertTrue($service->check('s', ProfilUtilisateur::TELETRAVAILLEUR, 3));
-        self::assertSame(3, $service->getQuotaRestant('s', ProfilUtilisateur::TELETRAVAILLEUR));
+        self::assertTrue($service->check('session-ignored', ProfilUtilisateur::TELETRAVAILLEUR, 3, '12345'));
+        self::assertSame(3, $service->getQuotaRestant('session-ignored', ProfilUtilisateur::TELETRAVAILLEUR, '12345'));
     }
 
-    public function testQuotaParDefautEstTrois(): void
+    public function testQuotaParDefautEstTroisPourPublicParNumeroAgent(): void
     {
         $paramRepo = $this->createMock(ParametreRepository::class);
         $paramRepo->method('findOneByKey')->willReturn(null);
         $commandeRepo = $this->createMock(CommandeRepository::class);
-        $commandeRepo->method('countArticlesActifsForSession')->willReturn(1);
+        $commandeRepo->method('countArticlesActifsForNumeroAgent')->with('54321')->willReturn(1);
 
         $service = new QuotaCheckerService($paramRepo, $commandeRepo);
 
-        self::assertTrue($service->check('s', ProfilUtilisateur::PUBLIC, 2));
-        self::assertFalse($service->check('s', ProfilUtilisateur::PUBLIC, 3));
+        self::assertTrue($service->check('session-ignored', ProfilUtilisateur::PUBLIC, 2, '54321'));
+        self::assertFalse($service->check('session-ignored', ProfilUtilisateur::PUBLIC, 3, '54321'));
     }
 
-    public function testQuotaLuDepuisParametre(): void
+    public function testQuotaLuDepuisParametrePourPublicParNumeroAgent(): void
     {
         $param = (new Parametre())->setCle('quota_articles_max')->setValeur('7');
         $paramRepo = $this->createMock(ParametreRepository::class);
         $paramRepo->method('findOneByKey')->willReturn($param);
         $commandeRepo = $this->createMock(CommandeRepository::class);
-        $commandeRepo->method('countArticlesActifsForSession')->willReturn(4);
+        $commandeRepo->method('countArticlesActifsForNumeroAgent')->with('11111')->willReturn(4);
 
-        self::assertTrue((new QuotaCheckerService($paramRepo, $commandeRepo))->check('s', ProfilUtilisateur::PUBLIC, 3));
+        $service = new QuotaCheckerService($paramRepo, $commandeRepo);
+
+        self::assertTrue($service->check('session-ignored', ProfilUtilisateur::PUBLIC, 3, '11111'));
+    }
+
+    public function testPublicSansNumeroAgentValideDeclencheErreur(): void
+    {
+        $service = new QuotaCheckerService(
+            $this->createMock(ParametreRepository::class),
+            $this->createMock(CommandeRepository::class),
+        );
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Numero agent invalide');
+
+        $service->check('s', ProfilUtilisateur::PUBLIC, 1, null);
     }
 }

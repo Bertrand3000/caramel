@@ -48,6 +48,7 @@ final class CheckoutController extends AbstractController
     {
         $sessionId = $request->getSession()->getId();
         $creneauId = $request->request->getInt('creneauId');
+        $numeroAgent = trim($request->request->getString('numeroAgent'));
         $creneau = $creneauRepository->find($creneauId);
 
         if ($creneau === null) {
@@ -57,7 +58,12 @@ final class CheckoutController extends AbstractController
         }
 
         try {
-            $commande = $this->checkoutService->confirmCommande($sessionId, $creneau, ProfilUtilisateur::PUBLIC);
+            $commande = $this->checkoutService->confirmCommande(
+                $sessionId,
+                $creneau,
+                ProfilUtilisateur::PUBLIC,
+                $numeroAgent !== '' ? $numeroAgent : null,
+            );
             $request->getSession()->set('checkout_last_commande_id', $commande->getId());
             $this->addFlash('success', 'Commande confirmée.');
 
