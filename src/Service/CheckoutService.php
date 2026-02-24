@@ -92,6 +92,7 @@ class CheckoutService implements CheckoutServiceInterface
     private function mapCommandeProfil(ProfilUtilisateur $profil): CommandeProfilEnum
     {
         return match ($profil) {
+            ProfilUtilisateur::DMAX => CommandeProfilEnum::DMAX,
             ProfilUtilisateur::PARTENAIRE => CommandeProfilEnum::PARTENAIRE,
             ProfilUtilisateur::TELETRAVAILLEUR => CommandeProfilEnum::TELETRAVAILLEUR,
             default => CommandeProfilEnum::AGENT,

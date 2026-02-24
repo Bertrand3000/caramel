@@ -7,7 +7,6 @@ namespace App\Tests\Service;
 use App\Entity\Produit;
 use App\Entity\ReservationTemporaire;
 use App\Entity\Utilisateur;
-use App\Repository\ParametreRepository;
 use App\Service\CartManager;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
@@ -51,7 +50,7 @@ final class CartManagerTest extends TestCase
         $em->method('createQueryBuilder')->willReturn($qb);
         $em->expects(self::once())->method('flush');
 
-        $service = new CartManager($em, $this->createMock(ParametreRepository::class));
+        $service = new CartManager($em);
         $service->addItem('sess', $produit, 2);
 
         self::assertSame(5, $produit->getQuantite());
@@ -69,7 +68,7 @@ final class CartManagerTest extends TestCase
         $qb = $this->buildQb($em, $query);
         $em->method('createQueryBuilder')->willReturn($qb);
 
-        (new CartManager($em, $this->createMock(ParametreRepository::class)))->addItem('s', $produit, 2);
+        (new CartManager($em))->addItem('s', $produit, 2);
     }
 
     public function testValidateCartUsesLockPessimisticWrite(): void
@@ -83,7 +82,7 @@ final class CartManagerTest extends TestCase
         $repo->method('findBy')->willReturn([]);
         $em->method('getRepository')->willReturn($repo);
 
-        $service = new CartManager($em, $this->createMock(ParametreRepository::class));
+        $service = new CartManager($em);
         $service->validateCart('sess', (new Utilisateur())->setLogin('agent@test.local')->setPassword('dummy')->setRoles(['ROLE_AGENT']));
     }
 
@@ -115,7 +114,7 @@ final class CartManagerTest extends TestCase
         ]);
         $em->method('createQueryBuilder')->willReturn($qb);
 
-        $service = new CartManager($em, $this->createMock(ParametreRepository::class));
+        $service = new CartManager($em);
         $service->addItem('sess', $produit, 2);
     }
 
@@ -128,7 +127,7 @@ final class CartManagerTest extends TestCase
         $em = $this->createMock(EntityManagerInterface::class);
         $em->expects(self::once())->method('createQuery')->willReturn($query);
 
-        $service = new CartManager($em, $this->createMock(ParametreRepository::class));
+        $service = new CartManager($em);
         self::assertSame(4, $service->releaseExpired());
     }
 }

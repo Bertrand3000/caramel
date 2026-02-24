@@ -12,7 +12,6 @@ use App\Entity\Produit;
 use App\Entity\ReservationTemporaire;
 use App\Entity\Utilisateur;
 use App\Interface\CartManagerInterface;
-use App\Repository\ParametreRepository;
 use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -20,7 +19,6 @@ class CartManager implements CartManagerInterface
 {
     public function __construct(
         private readonly EntityManagerInterface $em,
-        private readonly ParametreRepository $parametreRepository,
     ) {
     }
 

@@ -7,6 +7,7 @@ namespace App\Enum;
 enum CommandeProfilEnum: string
 {
     case AGENT = 'agent';
+    case DMAX = 'dmax';
     case TELETRAVAILLEUR = 'teletravailleur';
     case PARTENAIRE = 'partenaire';
 }

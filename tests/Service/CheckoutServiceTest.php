@@ -133,4 +133,28 @@ final class CheckoutServiceTest extends TestCase
 
         self::assertSame(CommandeProfilEnum::PARTENAIRE, $commande->getProfilCommande());
     }
+
+    public function testConfirmCommandeDmaxAssigneProfilCommandeDmax(): void
+    {
+        $commande = new Commande();
+        $utilisateur = (new Utilisateur())->setLogin('dmax@test.local')->setPassword('dummy')->setRoles(['ROLE_DMAX']);
+        $cart = $this->createMock(CartManagerInterface::class);
+        $cart->method('getContents')->willReturn([['quantite' => 1]]);
+        $cart->method('validateCart')->willReturn($commande);
+
+        $quota = $this->createMock(QuotaCheckerService::class);
+        $quota->method('check')->willReturn(true);
+
+        $slot = $this->createMock(SlotManagerInterface::class);
+        $slot->method('reserverCreneau');
+        $workflow = $this->createMock(WorkflowInterface::class);
+
+        $em = $this->createMock(EntityManagerInterface::class);
+        $em->method('wrapInTransaction')->willReturnCallback(fn ($cb) => $cb());
+
+        (new CheckoutService($em, $cart, $quota, $slot, $workflow))
+            ->confirmCommande('s', new Creneau(), ProfilUtilisateur::DMAX, $utilisateur, null);
+
+        self::assertSame(CommandeProfilEnum::DMAX, $commande->getProfilCommande());
+    }
 }
