@@ -9,6 +9,7 @@ use App\Enum\ProduitEtatEnum;
 readonly class CreateProduitDTO
 {
     public function __construct(
+        public ?string $numeroInventaire,
         public string $libelle,
         public ProduitEtatEnum $etat,
         public string $etage,

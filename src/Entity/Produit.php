@@ -81,6 +81,25 @@ class Produit
     public function setPhotoProduit(string $photoProduit): self { $this->photoProduit = $photoProduit; return $this; }
     public function getPhotoNumeroInventaire(): ?string { return $this->photoNumeroInventaire; }
     public function setPhotoNumeroInventaire(?string $photoNumeroInventaire): self { $this->photoNumeroInventaire = $photoNumeroInventaire; return $this; }
+    public function getPhotoProduitPublicPath(): string
+    {
+        if (str_starts_with($this->photoProduit, '/uploads/') || str_starts_with($this->photoProduit, 'uploads/')) {
+            return ltrim($this->photoProduit, '/');
+        }
+
+        return 'uploads/produits/'.ltrim($this->photoProduit, '/');
+    }
+    public function getPhotoNumeroInventairePublicPath(): ?string
+    {
+        if ($this->photoNumeroInventaire === null || $this->photoNumeroInventaire === '') {
+            return null;
+        }
+        if (str_starts_with($this->photoNumeroInventaire, '/uploads/') || str_starts_with($this->photoNumeroInventaire, 'uploads/')) {
+            return ltrim($this->photoNumeroInventaire, '/');
+        }
+
+        return 'uploads/inventaire/'.ltrim($this->photoNumeroInventaire, '/');
+    }
     public function getEtat(): ProduitEtatEnum { return $this->etat; }
     public function setEtat(ProduitEtatEnum $etat): self { $this->etat = $etat; return $this; }
     public function isTagTeletravailleur(): bool { return $this->tagTeletravailleur; }

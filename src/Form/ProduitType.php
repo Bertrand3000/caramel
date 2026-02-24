@@ -20,8 +20,31 @@ class ProduitType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
+            ->add('numeroInventaire', TextType::class, [
+                'required' => false,
+                'constraints' => [
+                    new Assert\Regex([
+                        'pattern' => '/^[0-9.-]+$/',
+                        'message' => 'Le numero inventaire doit contenir uniquement des chiffres, des tirets et des points.',
+                    ]),
+                ],
+                'attr' => [
+                    'pattern' => '[0-9.-]*',
+                    'inputmode' => 'numeric',
+                    'placeholder' => '85.2000.100.2000',
+                ],
+            ])
             ->add('libelle', TextType::class)
-            ->add('etat', ChoiceType::class, ['choices' => ProduitEtatEnum::cases(), 'choice_label' => static fn (ProduitEtatEnum $e) => $e->value])
+            ->add('etat', ChoiceType::class, [
+                'choices' => ProduitEtatEnum::cases(),
+                'choice_label' => static function (ProduitEtatEnum $etat): string {
+                    return match ($etat) {
+                        ProduitEtatEnum::TRES_BON_ETAT => 'Très Bon Etat',
+                        ProduitEtatEnum::BON => 'Bon Etat',
+                        ProduitEtatEnum::ABIME => 'Abîmé',
+                    };
+                },
+            ])
             ->add('etage', TextType::class)
             ->add('porte', TextType::class)
             ->add('tagTeletravailleur', CheckboxType::class, ['required' => false])

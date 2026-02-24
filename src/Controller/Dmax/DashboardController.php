@@ -16,9 +16,17 @@ use Symfony\Component\Routing\Attribute\Route;
 class DashboardController extends AbstractController
 {
     #[Route('/dmax/', name: 'dmax_dashboard', methods: ['GET'])]
-    public function index(InventoryManagerInterface $inventoryManager): Response
+    public function index(Request $request, InventoryManagerInterface $inventoryManager): Response
     {
-        return $this->render('dmax/dashboard/index.html.twig', ['produits' => $inventoryManager->findAllAvailable(null)]);
+        $etage = trim($request->query->getString('etage'));
+        $bureau = trim($request->query->getString('bureau'));
+        $page = max(1, $request->query->getInt('page', 1));
+
+        return $this->render('dmax/dashboard/index.html.twig', $inventoryManager->findDashboardPage(
+            $etage !== '' ? $etage : null,
+            $bureau !== '' ? $bureau : null,
+            $page,
+        ));
     }
 
     #[Route('/dmax/produit/nouveau', name: 'dmax_produit_new', methods: ['GET', 'POST'])]
@@ -28,17 +36,7 @@ class DashboardController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $data = $form->getData();
-            $dto = new CreateProduitDTO(
-                $data['libelle'],
-                $data['etat'],
-                $data['etage'],
-                $data['porte'],
-                (bool) $data['tagTeletravailleur'],
-                (float) $data['largeur'],
-                (float) $data['hauteur'],
-                (float) $data['profondeur'],
-            );
+            $dto = $this->buildCreateProduitDto($form->getData());
             $photo = $form->get('photoProduit')->getData();
             $photoInv = $form->get('photoNumeroInventaire')->getData();
             $inventoryManager->createProduit($dto, $photo, $photoInv);
@@ -61,21 +59,21 @@ class DashboardController extends AbstractController
             throw $this->createNotFoundException();
         }
 
-        $form = $this->createForm(ProduitType::class, ['libelle' => $produit->getLibelle(), 'etat' => $produit->getEtat(), 'etage' => $produit->getEtage(), 'porte' => $produit->getPorte(), 'tagTeletravailleur' => $produit->isTagTeletravailleur(), 'largeur' => $produit->getLargeur(), 'hauteur' => $produit->getHauteur(), 'profondeur' => $produit->getProfondeur()], ['photo_required' => false]);
+        $form = $this->createForm(ProduitType::class, [
+            'numeroInventaire' => $produit->getNumeroInventaire(),
+            'libelle' => $produit->getLibelle(),
+            'etat' => $produit->getEtat(),
+            'etage' => $produit->getEtage(),
+            'porte' => $produit->getPorte(),
+            'tagTeletravailleur' => $produit->isTagTeletravailleur(),
+            'largeur' => $produit->getLargeur(),
+            'hauteur' => $produit->getHauteur(),
+            'profondeur' => $produit->getProfondeur(),
+        ], ['photo_required' => false]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $data = $form->getData();
-            $dto = new CreateProduitDTO(
-                $data['libelle'],
-                $data['etat'],
-                $data['etage'],
-                $data['porte'],
-                (bool) $data['tagTeletravailleur'],
-                (float) $data['largeur'],
-                (float) $data['hauteur'],
-                (float) $data['profondeur'],
-            );
+            $dto = $this->buildCreateProduitDto($form->getData());
             $inventoryManager->updateProduit($id, $dto, $form->get('photoProduit')->getData(), $form->get('photoNumeroInventaire')->getData());
             $this->addFlash('success', 'Produit mis à jour.');
 
@@ -94,5 +92,25 @@ class DashboardController extends AbstractController
         }
 
         return $this->redirectToRoute('dmax_dashboard');
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function buildCreateProduitDto(array $data): CreateProduitDTO
+    {
+        $numeroInventaire = trim((string) ($data['numeroInventaire'] ?? ''));
+
+        return new CreateProduitDTO(
+            $numeroInventaire !== '' ? $numeroInventaire : null,
+            (string) $data['libelle'],
+            $data['etat'],
+            (string) $data['etage'],
+            (string) $data['porte'],
+            (bool) $data['tagTeletravailleur'],
+            (float) $data['largeur'],
+            (float) $data['hauteur'],
+            (float) $data['profondeur'],
+        );
     }
 }

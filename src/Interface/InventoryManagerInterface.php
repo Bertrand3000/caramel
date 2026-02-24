@@ -21,4 +21,19 @@ interface InventoryManagerInterface
      * @return array<int, Produit>
      */
     public function findAllAvailable(?ProduitFilterDTO $filter): array;
+
+    /**
+     * @return array{
+     *   items: array<int, Produit>,
+     *   total: int,
+     *   page: int,
+     *   perPage: int,
+     *   totalPages: int,
+     *   etage: ?string,
+     *   bureau: ?string,
+     *   etageOptions: list<string>,
+     *   bureauOptions: list<string>
+     * }
+     */
+    public function findDashboardPage(?string $etage, ?string $bureau, int $page, int $perPage = 8): array;
 }

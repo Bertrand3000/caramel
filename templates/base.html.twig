@@ -5,6 +5,7 @@
         <title>{% block title %}Welcome!{% endblock %}</title>
         <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text><text y=%221.3em%22 x=%220.2em%22 font-size=%2276%22 fill=%22%23fff%22>sf</text></svg>">
         {% block stylesheets %}
+            <link rel="stylesheet" href="{{ asset('styles/app.css') }}">
         {% endblock %}
 
         {% block javascripts %}
@@ -12,6 +13,41 @@
         {% endblock %}
     </head>
     <body>
+        <header style="border-bottom:1px solid #e5e7eb;padding:0.75rem 1rem;">
+            <nav style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center;">
+                {% if app.user %}
+                    {% if is_granted('ROLE_ADMIN') %}
+                        <a href="{{ path('admin_dashboard') }}">Admin</a>
+                    {% endif %}
+
+                    {% if is_granted('ROLE_DMAX') or is_granted('ROLE_AGENT_RECUPERATION') %}
+                        <a href="{{ path('dmax_dashboard') }}">DMAX</a>
+                        <a href="{{ path('logistique_dashboard') }}">Logistique</a>
+                    {% endif %}
+
+                    {% if is_granted('ROLE_AGENT') or is_granted('ROLE_TELETRAVAILLEUR') or is_granted('ROLE_PARTENAIRE') %}
+                        <a href="{{ path('shop_dashboard') }}">Dashboard boutique</a>
+                        <a href="{{ path('shop_catalogue') }}">Catalogue</a>
+                        <a href="{{ path('cart_index') }}">Panier</a>
+                        <a href="{{ path('checkout_creneaux') }}">Commande</a>
+                    {% endif %}
+
+                    <a href="{{ path('app_logout') }}">Se déconnecter</a>
+                    <span style="margin-left:auto;color:#6b7280;">{{ app.user.userIdentifier }}</span>
+                {% else %}
+                    <a href="{{ path('login') }}" style="margin-left:auto;">Se connecter</a>
+                {% endif %}
+            </nav>
+        </header>
+
+        {% for label, messages in app.flashes %}
+            {% for message in messages %}
+                <div style="margin:0.75rem 1rem;padding:0.75rem;border-radius:6px;background:#f3f4f6;">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endfor %}
+
         {% block body %}{% endblock %}
     </body>
 </html>

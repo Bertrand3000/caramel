@@ -62,6 +62,29 @@ class InventoryManager implements InventoryManagerInterface
         return $this->produitRepository->findAvailableWithFilter($filter);
     }
 
+    public function findDashboardPage(?string $etage, ?string $bureau, int $page, int $perPage = 8): array
+    {
+        $page = max(1, $page);
+        $perPage = max(1, min(24, $perPage));
+        $total = $this->produitRepository->countAvailableDashboard($etage, $bureau);
+        $totalPages = max(1, (int) ceil($total / $perPage));
+        if ($page > $totalPages) {
+            $page = $totalPages;
+        }
+
+        return [
+            'items' => $this->produitRepository->findAvailableDashboardPage($etage, $bureau, $page, $perPage),
+            'total' => $total,
+            'page' => $page,
+            'perPage' => $perPage,
+            'totalPages' => $totalPages,
+            'etage' => $etage,
+            'bureau' => $bureau,
+            'etageOptions' => $this->produitRepository->findDistinctAvailableEtages(),
+            'bureauOptions' => $this->produitRepository->findDistinctAvailablePortes(),
+        ];
+    }
+
     private function getProduitOrFail(int $id): Produit
     {
         $produit = $this->produitRepository->find($id);
@@ -83,6 +106,7 @@ class InventoryManager implements InventoryManagerInterface
         }
 
         return $produit
+            ->setNumeroInventaire($dto->numeroInventaire)
             ->setLibelle($dto->libelle)
             ->setEtat($dto->etat)
             ->setEtage($dto->etage)

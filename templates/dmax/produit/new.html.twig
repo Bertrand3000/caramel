@@ -1,11 +1,90 @@
 {% extends 'base.html.twig' %}
 {% block title %}Nouveau produit{% endblock %}
 {% block body %}
-<div style="max-width:600px;margin:0 auto;padding:1rem;">
-    <h1>Nouveau produit</h1>
-    {{ form_start(form) }}
-    <div style="display:grid;gap:.75rem;">{{ form_widget(form) }}</div>
-    <button style="margin-top:1rem;min-height:44px;padding:12px 16px;">Enregistrer</button>
-    {{ form_end(form) }}
-</div>
+    <main class="container py-4">
+        <section class="form-shell">
+            <header class="form-head">
+                <h1>Nouveau produit</h1>
+            </header>
+
+            {{ form_start(form, {'attr': {'class': 'produit-form'}}) }}
+                <section class="form-section">
+                    <h2>Identification</h2>
+                    <div class="form-grid-two">
+                        {{ form_row(form.libelle, {
+                            'label': 'Libellé du produit',
+                            'attr': {
+                                'class': 'form-control',
+                                'placeholder': 'Ex: Bureau droit 160 cm'
+                            }
+                        }) }}
+                        {{ form_row(form.etat, {
+                            'label': 'État',
+                            'attr': {'class': 'form-select'}
+                        }) }}
+                        {{ form_row(form.etage, {
+                            'label': 'Étage',
+                            'attr': {'class': 'form-control'}
+                        }) }}
+                        {{ form_row(form.porte, {
+                            'label': 'Porte / Bureau',
+                            'attr': {'class': 'form-control'}
+                        }) }}
+                        {{ form_row(form.numeroInventaire, {
+                            'label': 'Numéro d’inventaire (optionnel)',
+                            'attr': {
+                                'class': 'form-control',
+                                'placeholder': 'Exemple : 85.2000.100.2000'
+                            }
+                        }) }}
+                        <div class="form-end-checkbox">
+                            <div class="form-check">
+                                {{ form_widget(form.tagTeletravailleur, {'attr': {'class': 'form-check-input'}}) }}
+                                {{ form_label(form.tagTeletravailleur, 'Produit télétravailleur', {'label_attr': {'class': 'form-check-label'}}) }}
+                            </div>
+                            {{ form_errors(form.tagTeletravailleur) }}
+                        </div>
+                    </div>
+                </section>
+
+                <section class="form-section">
+                    <h2>Dimensions (cm)</h2>
+                    <div class="form-grid-three">
+                        {{ form_row(form.largeur, {
+                            'label': 'Largeur',
+                            'attr': {'class': 'form-control', 'min': '0', 'step': '0.1'}
+                        }) }}
+                        {{ form_row(form.hauteur, {
+                            'label': 'Hauteur',
+                            'attr': {'class': 'form-control', 'min': '0', 'step': '0.1'}
+                        }) }}
+                        {{ form_row(form.profondeur, {
+                            'label': 'Profondeur',
+                            'attr': {'class': 'form-control', 'min': '0', 'step': '0.1'}
+                        }) }}
+                    </div>
+                </section>
+
+                <section class="form-section">
+                    <h2>Photos</h2>
+                    <div class="form-grid-two">
+                        {{ form_row(form.photoProduit, {
+                            'label': 'Photo produit (obligatoire)',
+                            'attr': {'class': 'form-control'}
+                        }) }}
+                        {{ form_row(form.photoNumeroInventaire, {
+                            'label': 'Photo numéro inventaire (optionnel)',
+                            'attr': {'class': 'form-control'}
+                        }) }}
+                    </div>
+                    <p class="form-help">Formats recommandés: photo produit compressée, photo inventaire lisible.</p>
+                </section>
+
+                <div class="form-actions">
+                    <a class="btn btn-outline-secondary" href="{{ path('dmax_dashboard') }}">Annuler</a>
+                    <button class="btn btn-primary" type="submit">Enregistrer</button>
+                </div>
+            {{ form_end(form) }}
+        </section>
+    </main>
 {% endblock %}

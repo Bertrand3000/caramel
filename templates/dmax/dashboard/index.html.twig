@@ -3,24 +3,106 @@
 {% block title %}DMAX Inventaire{% endblock %}
 
 {% block body %}
-<div style="max-width:900px;margin:0 auto;padding:1rem;">
-    <h1>Inventaire DMAX</h1>
-    <a href="{{ path('dmax_produit_new') }}" style="display:inline-block;padding:12px 16px;min-height:44px;background:#0d6efd;color:#fff;text-decoration:none;border-radius:6px;">Nouveau produit</a>
-    <ul style="list-style:none;padding:0;margin-top:1rem;display:grid;gap:.75rem;">
-        {% for produit in produits %}
-            <li style="border:1px solid #ddd;padding:.75rem;border-radius:8px;">
-                <strong>{{ produit.libelle }}</strong> — {{ produit.statut.value }}
-                <div style="margin-top:.5rem;display:flex;gap:.5rem;flex-wrap:wrap;">
-                    <a href="{{ path('dmax_produit_edit', {id: produit.id}) }}" style="padding:10px 12px;min-height:44px;border:1px solid #333;border-radius:6px;text-decoration:none;">Éditer</a>
-                    <form method="post" action="{{ path('dmax_produit_delete', {id: produit.id}) }}">
-                        <input type="hidden" name="_token" value="{{ csrf_token('delete_produit_' ~ produit.id) }}">
-                        <button type="submit" style="padding:10px 12px;min-height:44px;background:#dc3545;color:#fff;border:none;border-radius:6px;">Supprimer</button>
-                    </form>
+    <main class="container py-4">
+        <section class="dmax-list-shell">
+            <div class="dmax-list-head">
+                <h1>Inventaire DMAX</h1>
+                <a class="btn btn-primary" href="{{ path('dmax_produit_new') }}">Nouveau produit</a>
+            </div>
+
+            <form method="get" class="dmax-filter-bar">
+                <div>
+                    <label class="form-label" for="f-etage">Étage</label>
+                    <select id="f-etage" name="etage" class="form-select">
+                        <option value="">Tous</option>
+                        {% for value in etageOptions %}
+                            <option value="{{ value }}" {{ etage == value ? 'selected' : '' }}>{{ value }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
-            </li>
-        {% else %}
-            <li>Aucun produit disponible.</li>
-        {% endfor %}
-    </ul>
-</div>
+                <div>
+                    <label class="form-label" for="f-bureau">Bureau</label>
+                    <select id="f-bureau" name="bureau" class="form-select">
+                        <option value="">Tous</option>
+                        {% for value in bureauOptions %}
+                            <option value="{{ value }}" {{ bureau == value ? 'selected' : '' }}>{{ value }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="dmax-filter-actions">
+                    <button class="btn btn-primary" type="submit">Filtrer</button>
+                    <a class="btn btn-outline-secondary" href="{{ path('dmax_dashboard') }}">Réinitialiser</a>
+                </div>
+            </form>
+
+            <div class="dmax-list-meta">
+                {{ total }} produit{{ total > 1 ? 's' : '' }}
+            </div>
+
+            <div class="dmax-table-wrap">
+                <table class="dmax-table">
+                    <thead>
+                        <tr>
+                            <th>Miniature</th>
+                            <th>Produit</th>
+                            <th>Numéro inventaire</th>
+                            <th>Télétravailleur</th>
+                            <th>Étage / Bureau</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for produit in items %}
+                            <tr>
+                                <td>
+                                    <img class="dmax-thumb" src="{{ asset(produit.photoProduitPublicPath) }}" alt="{{ produit.libelle }}">
+                                </td>
+                                <td>
+                                    <strong>{{ produit.libelle }}</strong><br>
+                                    <span class="small text-body-secondary">{{ produit.statut.value }}</span>
+                                </td>
+                                <td>{{ produit.numeroInventaire ?: '—' }}</td>
+                                <td>
+                                    <span class="badge {{ produit.tagTeletravailleur ? 'text-bg-success' : 'text-bg-danger' }}">
+                                        {{ produit.tagTeletravailleur ? 'Oui' : 'Non' }}
+                                    </span>
+                                </td>
+                                <td>Étage {{ produit.etage }}<br>Bureau {{ produit.porte }}</td>
+                                <td>
+                                    <div class="dmax-actions">
+                                        <a class="btn btn-sm btn-outline-primary" href="{{ path('dmax_produit_edit', {id: produit.id}) }}">Éditer</a>
+                                        <form method="post"
+                                              action="{{ path('dmax_produit_delete', {id: produit.id}) }}"
+                                              onsubmit="return confirm('Confirmer la suppression du produit « {{ produit.libelle|e('js') }} » ?');">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('delete_produit_' ~ produit.id) }}">
+                                            <button class="btn btn-sm btn-outline-danger" type="submit">Supprimer</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="6">Aucun produit disponible pour ce filtre.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if totalPages > 1 %}
+                <nav class="dmax-pager" aria-label="Pagination inventaire">
+                    {% set prev = page - 1 %}
+                    {% set next = page + 1 %}
+                    <a class="btn btn-outline-secondary {{ page == 1 ? 'is-disabled' : '' }}"
+                       href="{{ page == 1 ? '#' : path('dmax_dashboard', {page: prev, etage: etage, bureau: bureau}) }}">Précédent</a>
+                    {% for p in 1..totalPages %}
+                        <a class="btn {{ p == page ? 'btn-primary' : 'btn-outline-secondary' }}"
+                           href="{{ path('dmax_dashboard', {page: p, etage: etage, bureau: bureau}) }}">{{ p }}</a>
+                    {% endfor %}
+                    <a class="btn btn-outline-secondary {{ page == totalPages ? 'is-disabled' : '' }}"
+                       href="{{ page == totalPages ? '#' : path('dmax_dashboard', {page: next, etage: etage, bureau: bureau}) }}">Suivant</a>
+                </nav>
+            {% endif %}
+        </section>
+    </main>
 {% endblock %}

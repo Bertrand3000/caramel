@@ -11,6 +11,9 @@ security:
     role_hierarchy:
         ROLE_ADMIN:
             - ROLE_DMAX
+            - ROLE_PARTENAIRE
+            - ROLE_AGENT
+            - ROLE_TELETRAVAILLEUR
             - ROLE_AGENT_RECUPERATION
 
     firewalls:
@@ -29,9 +32,9 @@ security:
         - { path: ^/admin, roles: ROLE_ADMIN }
         - { path: ^/dmax, roles: [ROLE_DMAX, ROLE_AGENT_RECUPERATION] }
         - { path: ^/logistique, roles: [ROLE_DMAX, ROLE_AGENT_RECUPERATION] }
-        - { path: ^/boutique, roles: [ROLE_AGENT, ROLE_TELETRAVAILLEUR, ROLE_PARTENAIRE] }
-        - { path: ^/panier, roles: [ROLE_AGENT, ROLE_TELETRAVAILLEUR, ROLE_PARTENAIRE] }
-        - { path: ^/commande, roles: [ROLE_AGENT, ROLE_TELETRAVAILLEUR, ROLE_PARTENAIRE] }
+        - { path: ^/boutique, roles: [ROLE_ADMIN, ROLE_AGENT, ROLE_TELETRAVAILLEUR, ROLE_PARTENAIRE] }
+        - { path: ^/panier, roles: [ROLE_ADMIN, ROLE_AGENT, ROLE_TELETRAVAILLEUR, ROLE_PARTENAIRE] }
+        - { path: ^/commande, roles: [ROLE_ADMIN, ROLE_AGENT, ROLE_TELETRAVAILLEUR, ROLE_PARTENAIRE] }
 
 when@test:
     security:

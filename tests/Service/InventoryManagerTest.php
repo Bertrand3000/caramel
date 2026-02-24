@@ -30,7 +30,7 @@ final class InventoryManagerTest extends TestCase
         $em->expects(self::once())->method('flush');
 
         $service = new InventoryManager($repo, $em, $img, $taggingRuleService);
-        $dto = new CreateProduitDTO('Chaise', ProduitEtatEnum::BON, '1', '12', false, 45.0, 80.0, 40.0);
+        $dto = new CreateProduitDTO('12345-67.89', 'Chaise', ProduitEtatEnum::BON, '1', '12', false, 45.0, 80.0, 40.0);
         $tmp = tempnam(sys_get_temp_dir(), 'img');
         file_put_contents($tmp, 'x');
         $file = new UploadedFile($tmp, 'a.png', null, null, true);
@@ -77,7 +77,7 @@ final class InventoryManagerTest extends TestCase
         $em->expects(self::once())->method('flush');
 
         $service = new InventoryManager($repo, $em, $img, $taggingRuleService);
-        $dto = new CreateProduitDTO('Caisson mobile', ProduitEtatEnum::BON, '1', '12', false, 45.0, 80.0, 40.0);
+        $dto = new CreateProduitDTO(null, 'Caisson mobile', ProduitEtatEnum::BON, '1', '12', false, 45.0, 80.0, 40.0);
         $tmp = tempnam(sys_get_temp_dir(), 'img');
         file_put_contents($tmp, 'x');
         $file = new UploadedFile($tmp, 'a.png', null, null, true);
