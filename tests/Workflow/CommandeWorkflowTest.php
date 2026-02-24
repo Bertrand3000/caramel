@@ -41,4 +41,27 @@ final class CommandeWorkflowTest extends KernelTestCase
         self::assertFalse($this->workflow->can($commandeRetiree, 'annuler_commande'));
         self::assertFalse($this->workflow->can($commandeAnnulee, 'annuler_commande'));
     }
+
+    public function testParcoursCompletJusquaRetiree(): void
+    {
+        $commande = new Commande();
+
+        $this->workflow->apply($commande, 'valider');
+        $this->workflow->apply($commande, 'planifier_preparation');
+        $this->workflow->apply($commande, 'demarrer_preparation');
+        $this->workflow->apply($commande, 'terminer_preparation');
+        $this->workflow->apply($commande, 'acter_retrait');
+
+        self::assertSame(CommandeStatutEnum::RETIREE, $commande->getStatut());
+    }
+
+    public function testRefusDepuisEnAttenteValidation(): void
+    {
+        $commande = new Commande();
+
+        self::assertTrue($this->workflow->can($commande, 'refuser'));
+        $this->workflow->apply($commande, 'refuser');
+
+        self::assertSame(CommandeStatutEnum::REFUSEE, $commande->getStatut());
+    }
 }

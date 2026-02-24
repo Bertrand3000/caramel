@@ -22,7 +22,7 @@ class Commande
 
     #[ORM\ManyToOne(inversedBy: 'commandes')]
     #[ORM\JoinColumn(nullable: false)]
-    private ?Utilisateur $utilisateur = null;
+    private Utilisateur $utilisateur;
 
     #[ORM\Column(length: 255)]
     private string $sessionId = '';
@@ -71,7 +71,7 @@ class Commande
         return $this->id;
     }
 
-    public function getUtilisateur(): ?Utilisateur
+    public function getUtilisateur(): Utilisateur
     {
         return $this->utilisateur;
     }

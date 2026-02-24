@@ -4,15 +4,113 @@ declare(strict_types=1);
 
 namespace App\Tests\Controller;
 
+use App\Entity\Produit;
+use App\Entity\ReservationTemporaire;
+use App\Enum\ProduitEtatEnum;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\BrowserKit\Cookie;
 
 final class CartControllerTest extends WebTestCase
 {
-    public function testAjoutPanierRedirigeVersPanier(): void
+    public function testAjoutProduitValideCreeReservationTemporaire(): void
+    {
+        $client = static::createClient();
+        $sessionId = $this->forceClientSession($client);
+        $produit = $this->createProduit('Chaise test', 5);
+
+        $client->request('POST', '/panier/ajouter', [
+            'produitId' => $produit->getId(),
+            'quantite' => 2,
+        ]);
+
+        self::assertResponseRedirects('/panier');
+        self::assertSame(1, $this->countReservationsForProduitAndSession($produit, $sessionId));
+    }
+
+    public function testAjoutPanierAvecProduitInexistantRedirigeVersPanier(): void
     {
         $client = static::createClient();
         $client->request('POST', '/panier/ajouter', ['produitId' => 9999, 'quantite' => 1]);
 
         self::assertResponseRedirects('/panier');
+    }
+
+    public function testRetirerProduitSupprimeLaReservation(): void
+    {
+        $client = static::createClient();
+        $sessionId = $this->forceClientSession($client);
+        $produit = $this->createProduit('Bureau test', 3);
+        $client->request('POST', '/panier/ajouter', [
+            'produitId' => $produit->getId(),
+            'quantite' => 1,
+        ]);
+        self::assertSame(1, $this->countReservationsForProduitAndSession($produit, $sessionId));
+
+        $client->request('POST', sprintf('/panier/retirer/%d', $produit->getId()));
+
+        self::assertResponseRedirects('/panier');
+        self::assertSame(0, $this->countReservationsForProduitAndSession($produit, $sessionId));
+    }
+
+    public function testViderPanierSupprimeToutesLesReservations(): void
+    {
+        $client = static::createClient();
+        $sessionId = $this->forceClientSession($client);
+        $produitA = $this->createProduit('Armoire test', 5);
+        $produitB = $this->createProduit('Table test', 5);
+        $client->request('POST', '/panier/ajouter', ['produitId' => $produitA->getId(), 'quantite' => 1]);
+        $client->request('POST', '/panier/ajouter', ['produitId' => $produitB->getId(), 'quantite' => 1]);
+        self::assertSame(1, $this->countReservationsForProduitAndSession($produitA, $sessionId));
+        self::assertSame(1, $this->countReservationsForProduitAndSession($produitB, $sessionId));
+
+        $client->request('POST', '/panier/vider');
+
+        self::assertResponseRedirects('/boutique');
+        self::assertSame(0, $this->countReservationsForProduitAndSession($produitA, $sessionId));
+        self::assertSame(0, $this->countReservationsForProduitAndSession($produitB, $sessionId));
+    }
+
+    private function createProduit(string $libelle, int $quantite): Produit
+    {
+        $entityManager = static::getContainer()->get(EntityManagerInterface::class);
+        $produit = (new Produit())
+            ->setLibelle($libelle)
+            ->setPhotoProduit('test.jpg')
+            ->setEtat(ProduitEtatEnum::BON)
+            ->setEtage('1')
+            ->setPorte('A')
+            ->setLargeur(60.0)
+            ->setHauteur(70.0)
+            ->setProfondeur(50.0)
+            ->setQuantite($quantite);
+
+        $entityManager->persist($produit);
+        $entityManager->flush();
+
+        return $produit;
+    }
+
+    private function forceClientSession(KernelBrowser $client): string
+    {
+        $client->request('GET', '/panier');
+        $session = $client->getRequest()->getSession();
+        $session->set('cart_test', true);
+        $session->save();
+
+        $client->getCookieJar()->set(new Cookie($session->getName(), $session->getId()));
+
+        return $session->getId();
+    }
+
+    private function countReservationsForProduitAndSession(Produit $produit, string $sessionId): int
+    {
+        $entityManager = static::getContainer()->get(EntityManagerInterface::class);
+
+        return count($entityManager->getRepository(ReservationTemporaire::class)->findBy([
+            'produit' => $produit,
+            'sessionId' => $sessionId,
+        ]));
     }
 }

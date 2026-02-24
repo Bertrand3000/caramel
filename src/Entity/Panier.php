@@ -34,7 +34,7 @@ class Panier
     public function __construct()
     {
         $this->lignesPanier = new ArrayCollection();
-        $this->dateExpiration = new \DateTimeImmutable('+30 minutes');
+        $this->dateExpiration = new \DateTime('+30 minutes');
     }
 
     public function getId(): ?int

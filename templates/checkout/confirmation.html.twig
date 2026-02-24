@@ -33,6 +33,10 @@
                             <li>Aucun article</li>
                         {% endfor %}
                     </ul>
+                    <form method="post" action="{{ path('checkout_annuler', {id: commande.id}) }}" class="mt-3">
+                        <input type="hidden" name="_token" value="{{ csrf_token('annuler_commande_' ~ commande.id) }}">
+                        <button class="btn btn-outline-danger" type="submit">Annuler la commande</button>
+                    </form>
                 </div>
             </div>
         {% else %}

@@ -93,13 +93,34 @@ final class CheckoutController extends AbstractController
         return $this->render('checkout/confirmation.html.twig', ['commande' => $commande]);
     }
 
-    #[Route('/annuler/{id}', name: 'checkout_annuler', methods: ['GET'])]
-    public function annulerCommande(int $id, CommandeRepository $commandeRepository): RedirectResponse
+    #[Route('/annuler/{id}', name: 'checkout_annuler', methods: ['POST'])]
+    public function annulerCommande(int $id, Request $request, CommandeRepository $commandeRepository): RedirectResponse
     {
+        $user = $this->getUser();
+        if (!$user instanceof Utilisateur) {
+            $this->addFlash('error', 'Connexion requise pour annuler la commande.');
+
+            return $this->redirectToRoute('login');
+        }
+
         $commande = $commandeRepository->find($id);
 
         if ($commande === null) {
             $this->addFlash('error', 'Commande introuvable.');
+
+            return $this->redirectToRoute('checkout_confirmation');
+        }
+
+        $commandeUser = $commande->getUtilisateur();
+        if (!$commandeUser instanceof Utilisateur || $commandeUser->getId() !== $user->getId()) {
+            throw $this->createAccessDeniedException();
+        }
+
+        if (!$this->isCsrfTokenValid(
+            sprintf('annuler_commande_%d', $commande->getId()),
+            $request->request->getString('_token'),
+        )) {
+            $this->addFlash('error', 'Jeton CSRF invalide.');
 
             return $this->redirectToRoute('checkout_confirmation');
         }
@@ -116,6 +137,10 @@ final class CheckoutController extends AbstractController
 
     private function resolveProfilUtilisateur(Utilisateur $user): ProfilUtilisateur
     {
+        if (in_array('ROLE_DMAX', $user->getRoles(), true)) {
+            return ProfilUtilisateur::DMAX;
+        }
+
         if (in_array('ROLE_PARTENAIRE', $user->getRoles(), true)) {
             return ProfilUtilisateur::PARTENAIRE;
         }

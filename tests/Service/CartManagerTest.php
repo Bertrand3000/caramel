@@ -87,6 +87,38 @@ final class CartManagerTest extends TestCase
         $service->validateCart('sess', (new Utilisateur())->setLogin('agent@test.local')->setPassword('dummy')->setRoles(['ROLE_AGENT']));
     }
 
+    public function testAddItemWithExistingReservationThrowsWhenNewTotalExceedsAvailableStock(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Stock insuffisant');
+
+        $produit = (new Produit())->setQuantite(3);
+        $reservationExistante = (new ReservationTemporaire())
+            ->setSessionId('sess')
+            ->setProduit($produit)
+            ->setQuantite(2)
+            ->setExpireAt(new \DateTimeImmutable('+30 minutes'));
+
+        $reservationRepo = $this->createMock(EntityRepository::class);
+        $reservationRepo->method('findOneBy')->willReturn($reservationExistante);
+        $panierRepo = $this->createMock(EntityRepository::class);
+        $ligneRepo = $this->createMock(EntityRepository::class);
+
+        $query = $this->createMock(Query::class);
+        $query->method('getSingleScalarResult')->willReturn(0);
+        $qb = $this->buildQb($em = $this->createMock(EntityManagerInterface::class), $query);
+
+        $em->method('getRepository')->willReturnMap([
+            [ReservationTemporaire::class, $reservationRepo],
+            ['App\\Entity\\Panier', $panierRepo],
+            ['App\\Entity\\LignePanier', $ligneRepo],
+        ]);
+        $em->method('createQueryBuilder')->willReturn($qb);
+
+        $service = new CartManager($em, $this->createMock(ParametreRepository::class));
+        $service->addItem('sess', $produit, 2);
+    }
+
     public function testReleaseExpiredDeletesOldReservations(): void
     {
         $query = $this->createMock(Query::class);

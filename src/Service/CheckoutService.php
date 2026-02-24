@@ -8,12 +8,13 @@ use App\Entity\Commande;
 use App\Entity\Creneau;
 use App\Entity\Utilisateur;
 use App\Enum\CommandeProfilEnum;
-use App\Enum\CommandeStatutEnum;
 use App\Enum\ProfilUtilisateur;
 use App\Interface\CartManagerInterface;
 use App\Interface\CheckoutServiceInterface;
 use App\Interface\SlotManagerInterface;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\Workflow\WorkflowInterface;
 
 class CheckoutService implements CheckoutServiceInterface
 {
@@ -22,6 +23,8 @@ class CheckoutService implements CheckoutServiceInterface
         private readonly CartManagerInterface $cartManager,
         private readonly QuotaCheckerService $quotaChecker,
         private readonly SlotManagerInterface $creneauManager,
+        #[Autowire(service: 'state_machine.commande_lifecycle')]
+        private readonly WorkflowInterface $commandeLifecycle,
     ) {
     }
 
@@ -45,7 +48,6 @@ class CheckoutService implements CheckoutServiceInterface
                 $commande->setNumeroAgent(trim($numeroAgent));
             }
             $commande->setProfilCommande($this->mapCommandeProfil($profil));
-            $commande->setStatut(CommandeStatutEnum::EN_ATTENTE_VALIDATION);
 
             return $commande;
         });
@@ -71,6 +73,10 @@ class CheckoutService implements CheckoutServiceInterface
     public function annulerCommande(Commande $commande): void
     {
         $this->em->wrapInTransaction(function () use ($commande): void {
+            if (!$this->commandeLifecycle->can($commande, 'annuler_commande')) {
+                throw new \RuntimeException('Transition annuler_commande impossible pour ce statut.');
+            }
+
             foreach ($commande->getLignesCommande() as $ligne) {
                 $produit = $ligne->getProduit();
                 $produit->setQuantite($produit->getQuantite() + $ligne->getQuantite());
@@ -78,7 +84,7 @@ class CheckoutService implements CheckoutServiceInterface
             if ($commande->getCreneau() !== null) {
                 $this->creneauManager->libererCreneau($commande->getCreneau(), $commande);
             }
-            $commande->setStatut(CommandeStatutEnum::ANNULEE);
+            $this->commandeLifecycle->apply($commande, 'annuler_commande');
             $this->em->flush();
         });
     }

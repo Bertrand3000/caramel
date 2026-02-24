@@ -26,12 +26,19 @@ class CartManager implements CartManagerInterface
 
     public function addItem(string $sessionId, Produit $produit, int $quantite): void
     {
-        if ($this->getAvailableStock($produit, null) < $quantite) {
+        /** @var ReservationTemporaire|null $reservation */
+        $reservation = $this->em->getRepository(ReservationTemporaire::class)->findOneBy([
+            'sessionId' => $sessionId,
+            'produit' => $produit,
+        ]);
+        $quantiteActuelle = $reservation?->getQuantite() ?? 0;
+        $stockDisponiblePourSession = $this->getAvailableStock($produit, $sessionId);
+        if (($quantiteActuelle + $quantite) > $stockDisponiblePourSession) {
             throw new \RuntimeException('Stock insuffisant');
         }
 
-        $reservation = $this->em->getRepository(ReservationTemporaire::class)->findOneBy(['sessionId' => $sessionId, 'produit' => $produit]) ?? new ReservationTemporaire();
-        $reservation->setSessionId($sessionId)->setProduit($produit)->setQuantite($reservation->getQuantite() + $quantite)->setExpireAt(new \DateTimeImmutable('+30 minutes'));
+        $reservation ??= new ReservationTemporaire();
+        $reservation->setSessionId($sessionId)->setProduit($produit)->setQuantite($quantiteActuelle + $quantite)->setExpireAt(new \DateTimeImmutable('+30 minutes'));
         $panier = $this->em->getRepository(Panier::class)->findOneBy(['sessionId' => $sessionId]) ?? (new Panier())->setSessionId($sessionId);
         $ligne = $this->em->getRepository(LignePanier::class)->findOneBy(['panier' => $panier, 'produit' => $produit]) ?? new LignePanier();
         $ligne->setPanier($panier)->setProduit($produit)->setQuantite($ligne->getQuantite() + $quantite);
