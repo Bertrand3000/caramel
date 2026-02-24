@@ -57,6 +57,7 @@ final class ExportServiceTest extends TestCase
         self::assertStringContainsString('commande_id;date_validation;numero_agent', $csv);
         self::assertStringContainsString('12345', $csv);
         self::assertStringContainsString('Bureau pliant', $csv);
+        self::assertStringContainsString(';agent;validee;', $csv);
         self::assertStringContainsString(';2', $csv);
     }
 
@@ -131,6 +132,6 @@ final class ExportServiceTest extends TestCase
 
         self::assertStringContainsString('commande_id;date_validation;numero_agent', $csv);
         self::assertStringContainsString('54321', $csv);
-        self::assertStringContainsString('2026-03-21;09:00;09:30;2;3', $csv);
+        self::assertStringContainsString(';agent;a_preparer;2026-03-21;09:00;09:30;2;3', $csv);
     }
 }

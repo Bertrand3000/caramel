@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Enum\CommandeProfilEnum;
 use App\Enum\CommandeStatutEnum;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -20,7 +21,7 @@ class Commande
     private ?int $id = null;
 
     #[ORM\ManyToOne(inversedBy: 'commandes')]
-    #[ORM\JoinColumn(nullable: true)]
+    #[ORM\JoinColumn(nullable: false)]
     private ?Utilisateur $utilisateur = null;
 
     #[ORM\Column(length: 255)]
@@ -45,6 +46,9 @@ class Commande
     #[ORM\Column(enumType: CommandeStatutEnum::class)]
     private CommandeStatutEnum $statut;
 
+    #[ORM\Column(enumType: CommandeProfilEnum::class)]
+    private CommandeProfilEnum $profilCommande;
+
     #[ORM\OneToMany(mappedBy: 'commande', targetEntity: LigneCommande::class)]
     private Collection $lignesCommande;
 
@@ -58,12 +62,25 @@ class Commande
     {
         $this->lignesCommande = new ArrayCollection();
         $this->statut = CommandeStatutEnum::EN_ATTENTE_VALIDATION;
+        $this->profilCommande = CommandeProfilEnum::AGENT;
         $this->dateValidation = new \DateTimeImmutable();
     }
 
     public function getId(): ?int
     {
         return $this->id;
+    }
+
+    public function getUtilisateur(): ?Utilisateur
+    {
+        return $this->utilisateur;
+    }
+
+    public function setUtilisateur(Utilisateur $utilisateur): self
+    {
+        $this->utilisateur = $utilisateur;
+
+        return $this;
     }
 
     public function getSessionId(): string
@@ -146,6 +163,18 @@ class Commande
     public function setStatutValue(string $statutValue): self
     {
         $this->statut = CommandeStatutEnum::from($statutValue);
+
+        return $this;
+    }
+
+    public function getProfilCommande(): CommandeProfilEnum
+    {
+        return $this->profilCommande;
+    }
+
+    public function setProfilCommande(CommandeProfilEnum $profilCommande): self
+    {
+        $this->profilCommande = $profilCommande;
 
         return $this;
     }

@@ -6,6 +6,8 @@ namespace App\Service;
 
 use App\Entity\Commande;
 use App\Entity\Creneau;
+use App\Entity\Utilisateur;
+use App\Enum\CommandeProfilEnum;
 use App\Enum\CommandeStatutEnum;
 use App\Enum\ProfilUtilisateur;
 use App\Interface\CartManagerInterface;
@@ -27,20 +29,22 @@ class CheckoutService implements CheckoutServiceInterface
         string $sessionId,
         Creneau $creneau,
         ProfilUtilisateur $profil,
+        Utilisateur $utilisateur,
         ?string $numeroAgent = null,
     ): Commande {
-        return $this->em->wrapInTransaction(function () use ($sessionId, $creneau, $profil, $numeroAgent): Commande {
+        return $this->em->wrapInTransaction(function () use ($sessionId, $creneau, $profil, $utilisateur, $numeroAgent): Commande {
             $panier = $this->cartManager->getContents($sessionId);
             $totalQuantite = array_sum(array_column($panier, 'quantite'));
             if (!$this->quotaChecker->check($sessionId, $profil, $totalQuantite, $numeroAgent)) {
                 throw new \RuntimeException('Quota d articles dépassé');
             }
 
-            $commande = $this->cartManager->validateCart($sessionId);
+            $commande = $this->cartManager->validateCart($sessionId, $utilisateur);
             $this->creneauManager->reserverCreneau($creneau, $commande);
             if ($numeroAgent !== null && trim($numeroAgent) !== '') {
                 $commande->setNumeroAgent(trim($numeroAgent));
             }
+            $commande->setProfilCommande($this->mapCommandeProfil($profil));
             $commande->setStatut(CommandeStatutEnum::EN_ATTENTE_VALIDATION);
 
             return $commande;
@@ -77,5 +81,14 @@ class CheckoutService implements CheckoutServiceInterface
             $commande->setStatut(CommandeStatutEnum::ANNULEE);
             $this->em->flush();
         });
+    }
+
+    private function mapCommandeProfil(ProfilUtilisateur $profil): CommandeProfilEnum
+    {
+        return match ($profil) {
+            ProfilUtilisateur::PARTENAIRE => CommandeProfilEnum::PARTENAIRE,
+            ProfilUtilisateur::TELETRAVAILLEUR => CommandeProfilEnum::TELETRAVAILLEUR,
+            default => CommandeProfilEnum::AGENT,
+        };
     }
 }

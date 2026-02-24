@@ -10,6 +10,7 @@ use App\Entity\LignePanier;
 use App\Entity\Panier;
 use App\Entity\Produit;
 use App\Entity\ReservationTemporaire;
+use App\Entity\Utilisateur;
 use App\Interface\CartManagerInterface;
 use App\Repository\ParametreRepository;
 use Doctrine\DBAL\LockMode;
@@ -74,9 +75,9 @@ class CartManager implements CartManagerInterface
         ], $rows);
     }
 
-    public function validateCart(string $sessionId): Commande
+    public function validateCart(string $sessionId, Utilisateur $utilisateur): Commande
     {
-        $action = fn (): Commande => $this->validateCartInternal($sessionId);
+        $action = fn (): Commande => $this->validateCartInternal($sessionId, $utilisateur);
 
         if ($this->em->getConnection()->isTransactionActive()) {
             return $action();
@@ -104,10 +105,12 @@ class CartManager implements CartManagerInterface
         return $this->getAvailableStock($produit, null);
     }
 
-    private function validateCartInternal(string $sessionId): Commande
+    private function validateCartInternal(string $sessionId, Utilisateur $utilisateur): Commande
     {
         $reservations = $this->em->getRepository(ReservationTemporaire::class)->findBy(['sessionId' => $sessionId]);
-        $commande = (new Commande())->setSessionId($sessionId);
+        $commande = (new Commande())
+            ->setSessionId($sessionId)
+            ->setUtilisateur($utilisateur);
         $this->em->persist($commande);
 
         foreach ($reservations as $reservation) {

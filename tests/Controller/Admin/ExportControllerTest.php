@@ -96,12 +96,20 @@ final class ExportControllerTest extends WebTestCase
             ->setStatut(CommandeStatutEnum::PRETE)
             ->setDateValidation(new \DateTime())
             ->setCreneau($creneau);
+        $beneficiaire = (new Utilisateur())
+            ->setLogin(sprintf('agent-export-%s@test.local', bin2hex(random_bytes(4))))
+            ->setPassword('dummy')
+            ->setRoles(['ROLE_AGENT'])
+            ->setProfil(ProfilUtilisateur::PUBLIC);
 
         $ligne = (new LigneCommande())
             ->setCommande($commande)
             ->setProduit($produitVendu)
             ->setQuantite(1);
 
+        $commande->setUtilisateur($beneficiaire);
+
+        $entityManager->persist($beneficiaire);
         $entityManager->persist($produitVendu);
         $entityManager->persist($produitStock);
         $entityManager->persist($creneau);

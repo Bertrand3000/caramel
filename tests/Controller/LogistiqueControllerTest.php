@@ -75,6 +75,10 @@ final class LogistiqueControllerTest extends WebTestCase
         $commande = (new Commande())
             ->setStatut(CommandeStatutEnum::PRETE)
             ->setDateValidation(new \DateTime());
+        $beneficiaire = (new Utilisateur())
+            ->setLogin(sprintf('agent-log-%s@test.local', bin2hex(random_bytes(4))))
+            ->setPassword('dummy')
+            ->setRoles(['ROLE_AGENT']);
 
         $ligneCommande = (new LigneCommande())
             ->setCommande($commande)
@@ -82,7 +86,9 @@ final class LogistiqueControllerTest extends WebTestCase
             ->setQuantite(1);
 
         $commande->setCreneau($creneau);
+        $commande->setUtilisateur($beneficiaire);
 
+        $entityManager->persist($beneficiaire);
         $entityManager->persist($produit);
         $entityManager->persist($creneau);
         $entityManager->persist($commande);

@@ -6,6 +6,7 @@ namespace App\Interface;
 
 use App\Entity\Commande;
 use App\Entity\Produit;
+use App\Entity\Utilisateur;
 
 interface CartManagerInterface
 {
@@ -15,7 +16,7 @@ interface CartManagerInterface
 
     public function getContents(string $sessionId): array;
 
-    public function validateCart(string $sessionId): Commande;
+    public function validateCart(string $sessionId, Utilisateur $utilisateur): Commande;
 
     public function releaseExpired(): int;
 

@@ -6,6 +6,7 @@ namespace App\Interface;
 
 use App\Entity\Commande;
 use App\Entity\Creneau;
+use App\Entity\Utilisateur;
 use App\Enum\ProfilUtilisateur;
 
 interface CheckoutServiceInterface
@@ -14,6 +15,7 @@ interface CheckoutServiceInterface
         string $sessionId,
         Creneau $creneau,
         ProfilUtilisateur $profil,
+        Utilisateur $utilisateur,
         ?string $numeroAgent = null,
     ): Commande;
 

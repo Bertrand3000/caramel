@@ -8,6 +8,8 @@ use App\Entity\Commande;
 use App\Entity\Creneau;
 use App\Entity\LigneCommande;
 use App\Entity\Produit;
+use App\Entity\Utilisateur;
+use App\Enum\CommandeProfilEnum;
 use App\Enum\ProfilUtilisateur;
 use App\Interface\CartManagerInterface;
 use App\Interface\SlotManagerInterface;
@@ -21,6 +23,7 @@ final class CheckoutServiceTest extends TestCase
     public function testConfirmCommandeCompleteParcours(): void
     {
         $commande = new Commande();
+        $utilisateur = (new Utilisateur())->setLogin('agent@test.local')->setPassword('dummy')->setRoles(['ROLE_AGENT']);
         $cart = $this->createMock(CartManagerInterface::class);
         $cart->method('getContents')->willReturn([['quantite' => 2]]);
         $cart->method('validateCart')->willReturn($commande);
@@ -35,9 +38,10 @@ final class CheckoutServiceTest extends TestCase
         $em->expects(self::once())->method('wrapInTransaction')->willReturnCallback(fn ($cb) => $cb());
 
         $result = (new CheckoutService($em, $cart, $quota, $slot))
-            ->confirmCommande('s', new Creneau(), ProfilUtilisateur::PUBLIC, '12345');
+            ->confirmCommande('s', new Creneau(), ProfilUtilisateur::PUBLIC, $utilisateur, '12345');
         self::assertSame($commande, $result);
         self::assertSame('12345', $commande->getNumeroAgent());
+        self::assertSame(CommandeProfilEnum::AGENT, $commande->getProfilCommande());
     }
 
     public function testConfirmCommandeEchoueQuotaDepasse(): void
@@ -52,8 +56,9 @@ final class CheckoutServiceTest extends TestCase
         $em = $this->createMock(EntityManagerInterface::class);
         $em->method('wrapInTransaction')->willReturnCallback(fn ($cb) => $cb());
 
+        $utilisateur = (new Utilisateur())->setLogin('agent@test.local')->setPassword('dummy')->setRoles(['ROLE_AGENT']);
         (new CheckoutService($em, $cart, $quota, $this->createMock(SlotManagerInterface::class)))
-            ->confirmCommande('s', new Creneau(), ProfilUtilisateur::PUBLIC, '12345');
+            ->confirmCommande('s', new Creneau(), ProfilUtilisateur::PUBLIC, $utilisateur, '12345');
     }
 
     public function testConfirmCommandeEchoueCreneauPlein(): void
@@ -70,8 +75,9 @@ final class CheckoutServiceTest extends TestCase
         $em = $this->createMock(EntityManagerInterface::class);
         $em->method('wrapInTransaction')->willReturnCallback(fn ($cb) => $cb());
 
+        $utilisateur = (new Utilisateur())->setLogin('agent@test.local')->setPassword('dummy')->setRoles(['ROLE_AGENT']);
         (new CheckoutService($em, $cart, $quota, $slot))
-            ->confirmCommande('s', new Creneau(), ProfilUtilisateur::PUBLIC, '12345');
+            ->confirmCommande('s', new Creneau(), ProfilUtilisateur::PUBLIC, $utilisateur, '12345');
     }
 
     public function testAnnulerCommandeRestitueStock(): void
@@ -89,5 +95,28 @@ final class CheckoutServiceTest extends TestCase
         $service->annulerCommande($commande);
 
         self::assertSame(3, $produit->getQuantite());
+    }
+
+    public function testConfirmCommandePartenaireAssigneProfilCommandePartenaire(): void
+    {
+        $commande = new Commande();
+        $utilisateur = (new Utilisateur())->setLogin('partenaire@test.local')->setPassword('dummy')->setRoles(['ROLE_PARTENAIRE']);
+        $cart = $this->createMock(CartManagerInterface::class);
+        $cart->method('getContents')->willReturn([['quantite' => 1]]);
+        $cart->method('validateCart')->willReturn($commande);
+
+        $quota = $this->createMock(QuotaCheckerService::class);
+        $quota->method('check')->willReturn(true);
+
+        $slot = $this->createMock(SlotManagerInterface::class);
+        $slot->method('reserverCreneau');
+
+        $em = $this->createMock(EntityManagerInterface::class);
+        $em->method('wrapInTransaction')->willReturnCallback(fn ($cb) => $cb());
+
+        (new CheckoutService($em, $cart, $quota, $slot))
+            ->confirmCommande('s', new Creneau(), ProfilUtilisateur::PARTENAIRE, $utilisateur, null);
+
+        self::assertSame(CommandeProfilEnum::PARTENAIRE, $commande->getProfilCommande());
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Entity\Utilisateur;
 use App\Enum\ProfilUtilisateur;
 use App\Interface\CheckoutServiceInterface;
 use App\Interface\SlotManagerInterface;
@@ -57,11 +58,19 @@ final class CheckoutController extends AbstractController
             return $this->redirectToRoute('checkout_creneaux');
         }
 
+        $user = $this->getUser();
+        if (!$user instanceof Utilisateur) {
+            $this->addFlash('error', 'Connexion requise pour valider la commande.');
+
+            return $this->redirectToRoute('login');
+        }
+
         try {
             $commande = $this->checkoutService->confirmCommande(
                 $sessionId,
                 $creneau,
-                ProfilUtilisateur::PUBLIC,
+                $this->resolveProfilUtilisateur($user),
+                $user,
                 $numeroAgent !== '' ? $numeroAgent : null,
             );
             $request->getSession()->set('checkout_last_commande_id', $commande->getId());
@@ -103,5 +112,18 @@ final class CheckoutController extends AbstractController
         }
 
         return $this->redirectToRoute('checkout_confirmation');
+    }
+
+    private function resolveProfilUtilisateur(Utilisateur $user): ProfilUtilisateur
+    {
+        if (in_array('ROLE_PARTENAIRE', $user->getRoles(), true)) {
+            return ProfilUtilisateur::PARTENAIRE;
+        }
+
+        if (in_array('ROLE_TELETRAVAILLEUR', $user->getRoles(), true)) {
+            return ProfilUtilisateur::TELETRAVAILLEUR;
+        }
+
+        return ProfilUtilisateur::PUBLIC;
     }
 }

@@ -6,6 +6,7 @@ namespace App\Tests\Service;
 
 use App\Entity\Produit;
 use App\Entity\ReservationTemporaire;
+use App\Entity\Utilisateur;
 use App\Repository\ParametreRepository;
 use App\Service\CartManager;
 use Doctrine\DBAL\Connection;
@@ -83,7 +84,7 @@ final class CartManagerTest extends TestCase
         $em->method('getRepository')->willReturn($repo);
 
         $service = new CartManager($em, $this->createMock(ParametreRepository::class));
-        $service->validateCart('sess');
+        $service->validateCart('sess', (new Utilisateur())->setLogin('agent@test.local')->setPassword('dummy')->setRoles(['ROLE_AGENT']));
     }
 
     public function testReleaseExpiredDeletesOldReservations(): void

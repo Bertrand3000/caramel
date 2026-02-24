@@ -29,6 +29,7 @@ final class ExportService implements ExportServiceInterface
                     (string) ($commande->getNumeroAgent() ?? ''),
                     (string) ($commande->getNom() ?? ''),
                     (string) ($commande->getPrenom() ?? ''),
+                    $commande->getProfilCommande()->value,
                     $commande->getStatut()->value,
                     (string) $produit->getId(),
                     (string) ($produit->getNumeroInventaire() ?? ''),
@@ -43,6 +44,7 @@ final class ExportService implements ExportServiceInterface
             'numero_agent',
             'nom',
             'prenom',
+            'profil_commande',
             'statut_commande',
             'produit_id',
             'numero_inventaire',
@@ -90,7 +92,6 @@ final class ExportService implements ExportServiceInterface
         foreach ($this->commandeRepository->findForVentesExport() as $commande) {
             $totalArticles = 0;
             $totalLignes = 0;
-
             foreach ($commande->getLignesCommande() as $ligneCommande) {
                 ++$totalLignes;
                 $totalArticles += $ligneCommande->getQuantite();
@@ -102,6 +103,7 @@ final class ExportService implements ExportServiceInterface
                 (string) ($commande->getNumeroAgent() ?? ''),
                 (string) ($commande->getNom() ?? ''),
                 (string) ($commande->getPrenom() ?? ''),
+                $commande->getProfilCommande()->value,
                 $commande->getStatut()->value,
                 $creneau?->getDateHeure()->format('Y-m-d') ?? '',
                 $creneau?->getHeureDebut()->format('H:i') ?? '',
@@ -116,6 +118,7 @@ final class ExportService implements ExportServiceInterface
             'numero_agent',
             'nom',
             'prenom',
+            'profil_commande',
             'statut_commande',
             'date_creneau',
             'heure_debut',
@@ -124,7 +127,6 @@ final class ExportService implements ExportServiceInterface
             'total_articles',
         ], $rows);
     }
-
     /** @param list<string> $header @param list<list<string>> $rows */
     private function toCsv(array $header, array $rows): string
     {
