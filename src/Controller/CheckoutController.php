@@ -6,6 +6,7 @@ namespace App\Controller;
 
 use App\Entity\Utilisateur;
 use App\Enum\ProfilUtilisateur;
+use App\Exception\CommandeDejaExistanteException;
 use App\Exception\JourLivraisonNonPleinException;
 use App\Interface\BoutiqueAccessCheckerInterface;
 use App\Interface\CheckoutServiceInterface;
@@ -47,7 +48,10 @@ final class CheckoutController extends AbstractController
     }
 
     #[Route('/confirmer', name: 'checkout_confirmer', methods: ['POST'])]
-    public function confirmCommande(Request $request, CreneauRepository $creneauRepository): RedirectResponse
+    public function confirmCommande(
+        Request $request,
+        CreneauRepository $creneauRepository,
+    ): RedirectResponse
     {
         $this->boutiqueAccessChecker->assertOpenForRoles($this->getUser()?->getRoles() ?? []);
         $sessionId = $request->getSession()->getId();
@@ -98,6 +102,10 @@ final class CheckoutController extends AbstractController
             return $this->redirectToRoute('checkout_confirmation');
         } catch (JourLivraisonNonPleinException $exception) {
             $this->addFlash('warning', $exception->getMessage());
+
+            return $this->redirectToRoute('checkout_creneaux');
+        } catch (CommandeDejaExistanteException $exception) {
+            $this->addFlash('error', $exception->getMessage());
 
             return $this->redirectToRoute('checkout_creneaux');
         } catch (\RuntimeException $exception) {

@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Tests\Controller;
 
 use App\Entity\Commande;
+use App\Entity\Creneau;
 use App\Entity\Parametre;
 use App\Entity\Produit;
 use App\Entity\Utilisateur;
+use App\Enum\CommandeProfilEnum;
 use App\Enum\CommandeStatutEnum;
 use App\Enum\ProduitEtatEnum;
 use Doctrine\ORM\EntityManagerInterface;
@@ -130,6 +132,59 @@ final class CheckoutControllerTest extends WebTestCase
         self::assertResponseStatusCodeSame(403);
     }
 
+    public function testAgentNePeutPasPasserDeuxCommandesActivesPourMemeNumeroEtProfil(): void
+    {
+        $client = static::createClient();
+        $user = $this->createUser('agent-one-order');
+        $client->loginUser($user);
+        $numeroAgent = (string) random_int(10000, 99999);
+
+        $produit1 = $this->createProduit('Produit unique 1');
+        $produit2 = $this->createProduit('Produit unique 2');
+        $creneau = $this->createCreneau();
+
+        $client->request('POST', '/panier/ajouter', ['produitId' => $produit1->getId()]);
+        self::assertResponseRedirects('/panier');
+        $client->followRedirect();
+
+        $client->request('POST', '/commande/confirmer', [
+            'creneauId' => $creneau->getId(),
+            'nom' => 'Durand',
+            'prenom' => 'Alice',
+            'numeroAgent' => $numeroAgent,
+        ]);
+        self::assertResponseRedirects('/commande/confirmation');
+        $client->followRedirect();
+
+        $client->request('POST', '/panier/ajouter', ['produitId' => $produit2->getId()]);
+        self::assertResponseRedirects('/panier');
+        $client->followRedirect();
+
+        $client->request('POST', '/commande/confirmer', [
+            'creneauId' => $creneau->getId(),
+            'nom' => 'Durand',
+            'prenom' => 'Alice',
+            'numeroAgent' => $numeroAgent,
+        ]);
+        self::assertResponseRedirects('/commande/creneaux');
+
+        $entityManager = static::getContainer()->get(EntityManagerInterface::class);
+        $entityManager->clear();
+        $count = (int) $entityManager->createQueryBuilder()
+            ->from(Commande::class, 'c')
+            ->select('COUNT(c.id)')
+            ->andWhere('c.numeroAgent = :numeroAgent')
+            ->andWhere('c.profilCommande = :profil')
+            ->andWhere('c.statut != :annulee')
+            ->setParameter('numeroAgent', $numeroAgent)
+            ->setParameter('profil', CommandeProfilEnum::AGENT)
+            ->setParameter('annulee', CommandeStatutEnum::ANNULEE)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        self::assertSame(1, $count);
+    }
+
     private function createUser(string $prefix): Utilisateur
     {
         $this->setBoutiqueOpenForAgents();
@@ -209,5 +264,21 @@ final class CheckoutControllerTest extends WebTestCase
         $entityManager->flush();
 
         return $produit;
+    }
+
+    private function createCreneau(): Creneau
+    {
+        $entityManager = static::getContainer()->get(EntityManagerInterface::class);
+        $creneau = (new Creneau())
+            ->setDateHeure(new \DateTimeImmutable('tomorrow 08:00:00'))
+            ->setHeureDebut(new \DateTime('08:00:00'))
+            ->setHeureFin(new \DateTime('08:30:00'))
+            ->setCapaciteMax(10)
+            ->setCapaciteUtilisee(0);
+
+        $entityManager->persist($creneau);
+        $entityManager->flush();
+
+        return $creneau;
     }
 }

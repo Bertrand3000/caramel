@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Entity\Commande;
+use App\Enum\CommandeProfilEnum;
 use App\Enum\CommandeStatutEnum;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -40,6 +41,53 @@ class CommandeRepository extends ServiceEntityRepository
             ->setParameter('annulee', CommandeStatutEnum::ANNULEE)
             ->getQuery()
             ->getSingleScalarResult();
+    }
+
+    public function hasCommandeActiveForNumeroAgentEtProfil(string $numeroAgent, CommandeProfilEnum $profil): bool
+    {
+        $count = (int) $this->createQueryBuilder('c')
+            ->select('COUNT(c.id)')
+            ->andWhere('c.numeroAgent = :numeroAgent')
+            ->andWhere('c.profilCommande = :profil')
+            ->andWhere('c.statut != :annulee')
+            ->setParameter('numeroAgent', $numeroAgent)
+            ->setParameter('profil', $profil)
+            ->setParameter('annulee', CommandeStatutEnum::ANNULEE)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return $count > 0;
+    }
+
+    public function countArticlesActifsForNumeroAgentEtProfil(string $numeroAgent, CommandeProfilEnum $profil): int
+    {
+        return (int) $this->createQueryBuilder('c')
+            ->select('COUNT(lc.id)')
+            ->leftJoin('c.lignesCommande', 'lc')
+            ->andWhere('c.numeroAgent = :numeroAgent')
+            ->andWhere('c.profilCommande = :profil')
+            ->andWhere('c.statut != :annulee')
+            ->setParameter('numeroAgent', $numeroAgent)
+            ->setParameter('profil', $profil)
+            ->setParameter('annulee', CommandeStatutEnum::ANNULEE)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    public function findDerniereCommandeActiveForNumeroAgentEtProfil(string $numeroAgent, CommandeProfilEnum $profil): ?Commande
+    {
+        return $this->createQueryBuilder('c')
+            ->andWhere('c.numeroAgent = :numeroAgent')
+            ->andWhere('c.profilCommande = :profil')
+            ->andWhere('c.statut != :annulee')
+            ->setParameter('numeroAgent', $numeroAgent)
+            ->setParameter('profil', $profil)
+            ->setParameter('annulee', CommandeStatutEnum::ANNULEE)
+            ->orderBy('c.dateValidation', 'DESC')
+            ->addOrderBy('c.id', 'DESC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
     }
 
     /** @return list<Commande> */

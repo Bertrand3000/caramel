@@ -174,16 +174,11 @@ CheckoutService ──────── [NOUVEAU] CommandeLimitCheckerService
 
 ## CONTRAINTES ET POINTS D'ATTENTION
 
-### ⚠️ Anomalie identifiée — `QuotaCheckerService` et télétravailleur
+### Décision actée — Quota par commande (doublé si 2 commandes possibles)
 
-`CommandeRepository::countArticlesActifsForNumeroAgent()` ne filtre **pas** par `profilCommande`. Pour un télétravailleur avec quota=3 :
-- Il passe une commande TELETRAVAILLEUR avec 2 articles → quota restant perçu par le système : 1
-- Lors de sa commande AGENT, il ne peut prendre qu'1 article (le quota checker additionne les 2 commandes)
-
-**Question métier à valider avant implémentation :**
-> Le quota de N articles s'applique-t-il **globalement** (cumulé sur les 2 commandes) ou **indépendamment par commande** (N articles autorisés par commande, quelle que soit l'autre) ?
-
-Cette décision est hors scope de la présente feature mais doit être prise si le comportement actuel n'est pas intentionnel.
+Le quota d'articles est calculé par commande, donc par couple (`numeroAgent`, `profilCommande`).
+Un télétravailleur a un quota effectif doublé (quota indépendant sur chaque commande).
+Implémentation : `countArticlesActifsForNumeroAgentEtProfil()` filtre par `profilCommande`.
 
 ### Compatibilité ascendante
 
@@ -216,6 +211,7 @@ Cette décision est hors scope de la présente feature mais doit être prise si 
 |---|---|---|
 | `src/Exception/CommandeDejaExistanteException.php` | CRÉER | P0 |
 | `src/Service/CommandeLimitCheckerService.php` | CRÉER | P0 |
-| `src/Repository/CommandeRepository.php` | MODIFIER (+1 méthode) | P0 |
+| `src/Repository/CommandeRepository.php` | MODIFIER (+2 méthodes) | P0 |
+| `src/Service/QuotaCheckerService.php` | MODIFIER | P0 |
 | `src/Service/CheckoutService.php` | MODIFIER (+1 injection, +1 appel) | P0 |
 | `src/Controller/CheckoutController.php` | MODIFIER (+1 catch ciblé) | P1 (UX) |

@@ -23,6 +23,7 @@ class CheckoutService implements CheckoutServiceInterface
     public function __construct(
         private readonly EntityManagerInterface $em,
         private readonly CartManagerInterface $cartManager,
+        private readonly CommandeLimitCheckerService $commandeLimitChecker,
         private readonly QuotaCheckerService $quotaChecker,
         private readonly SlotManagerInterface $creneauManager,
         #[Autowire(service: 'state_machine.commande_lifecycle')]
@@ -51,6 +52,8 @@ class CheckoutService implements CheckoutServiceInterface
             if ($totalQuantite < 1) {
                 throw new \RuntimeException('Panier vide');
             }
+
+            $this->commandeLimitChecker->assertPeutCommander(trim((string) $numeroAgent), $profil);
 
             if (!$this->quotaChecker->check($sessionId, $profil, $totalQuantite, $numeroAgent)) {
                 throw new \RuntimeException('Quota d articles dépassé');

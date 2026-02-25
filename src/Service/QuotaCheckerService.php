@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Enum\CommandeProfilEnum;
 use App\Enum\ProfilUtilisateur;
 use App\Repository\CommandeRepository;
 use App\Repository\ParametreRepository;
@@ -25,7 +26,7 @@ class QuotaCheckerService
         int $quantiteDemandee,
         ?string $numeroAgent = null,
     ): bool {
-        if ($profil === ProfilUtilisateur::PARTENAIRE) {
+        if ($profil === ProfilUtilisateur::PARTENAIRE || $profil === ProfilUtilisateur::DMAX) {
             return true;
         }
 
@@ -40,7 +41,7 @@ class QuotaCheckerService
         ProfilUtilisateur $profil,
         ?string $numeroAgent = null,
     ): int {
-        if ($profil === ProfilUtilisateur::PARTENAIRE) {
+        if ($profil === ProfilUtilisateur::PARTENAIRE || $profil === ProfilUtilisateur::DMAX) {
             return PHP_INT_MAX;
         }
 
@@ -91,7 +92,14 @@ class QuotaCheckerService
                 throw new \RuntimeException('Numero agent invalide (5 chiffres requis).');
             }
 
-            return $this->commandeRepository->countArticlesActifsForNumeroAgent($normalizedNumeroAgent);
+            $commandeProfil = $profil === ProfilUtilisateur::TELETRAVAILLEUR
+                ? CommandeProfilEnum::TELETRAVAILLEUR
+                : CommandeProfilEnum::AGENT;
+
+            return $this->commandeRepository->countArticlesActifsForNumeroAgentEtProfil(
+                $normalizedNumeroAgent,
+                $commandeProfil,
+            );
         }
 
         return $this->commandeRepository->countArticlesActifsForSession($sessionId);

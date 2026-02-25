@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Service;
 
 use App\Entity\Parametre;
+use App\Enum\CommandeProfilEnum;
 use App\Enum\ProfilUtilisateur;
 use App\Repository\CommandeRepository;
 use App\Repository\ParametreRepository;
@@ -24,13 +25,27 @@ final class QuotaCheckerServiceTest extends TestCase
         self::assertSame(PHP_INT_MAX, $service->getQuotaRestant('s', ProfilUtilisateur::PARTENAIRE));
     }
 
+    public function testDmaxEstExempte(): void
+    {
+        $service = new QuotaCheckerService(
+            $this->createMock(ParametreRepository::class),
+            $this->createMock(CommandeRepository::class),
+        );
+
+        self::assertTrue($service->check('s', ProfilUtilisateur::DMAX, 999));
+        self::assertSame(PHP_INT_MAX, $service->getQuotaRestant('s', ProfilUtilisateur::DMAX));
+    }
+
     public function testTeletravailleurRespecteLimiteParNumeroAgent(): void
     {
         $param = (new Parametre())->setCle('quota_articles_max')->setValeur('5');
         $paramRepo = $this->createMock(ParametreRepository::class);
         $paramRepo->method('findOneByKey')->willReturn($param);
         $commandeRepo = $this->createMock(CommandeRepository::class);
-        $commandeRepo->method('countArticlesActifsForNumeroAgent')->with('12345')->willReturn(2);
+        $commandeRepo
+            ->method('countArticlesActifsForNumeroAgentEtProfil')
+            ->with('12345', CommandeProfilEnum::TELETRAVAILLEUR)
+            ->willReturn(2);
 
         $service = new QuotaCheckerService($paramRepo, $commandeRepo);
 
@@ -43,7 +58,10 @@ final class QuotaCheckerServiceTest extends TestCase
         $paramRepo = $this->createMock(ParametreRepository::class);
         $paramRepo->method('findOneByKey')->willReturn(null);
         $commandeRepo = $this->createMock(CommandeRepository::class);
-        $commandeRepo->method('countArticlesActifsForNumeroAgent')->with('54321')->willReturn(1);
+        $commandeRepo
+            ->method('countArticlesActifsForNumeroAgentEtProfil')
+            ->with('54321', CommandeProfilEnum::AGENT)
+            ->willReturn(1);
 
         $service = new QuotaCheckerService($paramRepo, $commandeRepo);
 
@@ -57,7 +75,10 @@ final class QuotaCheckerServiceTest extends TestCase
         $paramRepo = $this->createMock(ParametreRepository::class);
         $paramRepo->method('findOneByKey')->willReturn($param);
         $commandeRepo = $this->createMock(CommandeRepository::class);
-        $commandeRepo->method('countArticlesActifsForNumeroAgent')->with('11111')->willReturn(4);
+        $commandeRepo
+            ->method('countArticlesActifsForNumeroAgentEtProfil')
+            ->with('11111', CommandeProfilEnum::AGENT)
+            ->willReturn(4);
 
         $service = new QuotaCheckerService($paramRepo, $commandeRepo);
 
@@ -75,6 +96,43 @@ final class QuotaCheckerServiceTest extends TestCase
         $this->expectExceptionMessage('Numero agent invalide');
 
         $service->check('s', ProfilUtilisateur::PUBLIC, 1, null);
+    }
+
+    public function testTeletravailleurQuotaIndependantDuProfilAgent(): void
+    {
+        $param = (new Parametre())->setCle('quota_articles_max')->setValeur('3');
+        $paramRepo = $this->createMock(ParametreRepository::class);
+        $paramRepo->method('findOneByKey')->willReturn($param);
+        $commandeRepo = $this->createMock(CommandeRepository::class);
+        $commandeRepo
+            ->expects(self::once())
+            ->method('countArticlesActifsForNumeroAgentEtProfil')
+            ->with('12345', CommandeProfilEnum::TELETRAVAILLEUR)
+            ->willReturn(2);
+
+        $service = new QuotaCheckerService($paramRepo, $commandeRepo);
+
+        self::assertTrue($service->check('session-ignored', ProfilUtilisateur::TELETRAVAILLEUR, 1, '12345'));
+    }
+
+    public function testTeletravailleurPeutEncorePrendreQuotaCompletEnCommandeAgent(): void
+    {
+        $param = (new Parametre())->setCle('quota_articles_max')->setValeur('3');
+        $paramRepo = $this->createMock(ParametreRepository::class);
+        $paramRepo->method('findOneByKey')->willReturn($param);
+
+        $commandeRepo = $this->createMock(CommandeRepository::class);
+        $commandeRepo
+            ->method('countArticlesActifsForNumeroAgentEtProfil')
+            ->willReturnMap([
+                ['12345', CommandeProfilEnum::TELETRAVAILLEUR, 2],
+                ['12345', CommandeProfilEnum::AGENT, 0],
+            ]);
+
+        $service = new QuotaCheckerService($paramRepo, $commandeRepo);
+
+        self::assertTrue($service->check('session-ignored', ProfilUtilisateur::TELETRAVAILLEUR, 1, '12345'));
+        self::assertTrue($service->check('session-ignored', ProfilUtilisateur::PUBLIC, 3, '12345'));
     }
 
     public function testCanAddMoreItemsRespecteQuotaPourAgent(): void
