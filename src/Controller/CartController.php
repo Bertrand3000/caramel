@@ -7,6 +7,7 @@ namespace App\Controller;
 use App\Interface\BoutiqueAccessCheckerInterface;
 use App\Repository\ProduitRepository;
 use App\Service\CartManager;
+use App\Service\QuotaCheckerService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -19,6 +20,7 @@ final class CartController extends AbstractController
     public function __construct(
         private readonly CartManager $cartManager,
         private readonly BoutiqueAccessCheckerInterface $boutiqueAccessChecker,
+        private readonly QuotaCheckerService $quotaChecker,
     )
     {
     }
@@ -29,9 +31,14 @@ final class CartController extends AbstractController
         $this->boutiqueAccessChecker->assertOpenForRoles($this->getUser()?->getRoles() ?? []);
         $sessionId = $request->getSession()->getId();
         $items = $this->cartManager->getContents($sessionId);
+        $hasItems = $items !== [];
+        $canContinueShopping = $this->quotaChecker->canAddMoreItems(
+            $this->getUser()?->getRoles() ?? [],
+            count($items),
+        );
 
         $expireAt = null;
-        if ($items !== []) {
+        if ($hasItems) {
             $expireAt = min(array_map(
                 static fn (array $item): int => $item['expireAt']->getTimestamp(),
                 $items,
@@ -41,6 +48,8 @@ final class CartController extends AbstractController
         return $this->render('cart/index.html.twig', [
             'items' => $items,
             'expireAt' => $expireAt,
+            'hasItems' => $hasItems,
+            'canContinueShopping' => $canContinueShopping,
         ]);
     }
 

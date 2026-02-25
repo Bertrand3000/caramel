@@ -34,7 +34,7 @@ class CartManager implements CartManagerInterface
         }
 
         if ($this->getAvailableStock($produit, $sessionId) < 1) {
-            throw new \RuntimeException('Stock insuffisant');
+            throw new \RuntimeException('Nous sommes désolés, mais quelqu\'un d\'autre vient de réserver cet article.');
         }
 
         $reservation = (new ReservationTemporaire())

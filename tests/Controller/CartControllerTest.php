@@ -89,6 +89,37 @@ final class CartControllerTest extends WebTestCase
         self::assertSame(0, $this->countReservationsForProduitAndSession($produitB, $sessionId));
     }
 
+    public function testPanierVideMasqueBoutonValiderEtAfficheContinuerAchats(): void
+    {
+        $client = static::createClient();
+        $client->loginUser($this->createAgentUser());
+
+        $crawler = $client->request('GET', '/panier');
+
+        self::assertResponseIsSuccessful();
+        self::assertSame(0, $crawler->filter('main a[href="/commande/creneaux"]')->count());
+        self::assertGreaterThan(0, $crawler->filter('main a[href="/boutique"]')->count());
+    }
+
+    public function testPanierPleinSelonQuotaMasqueContinuerAchats(): void
+    {
+        $client = static::createClient();
+        $client->loginUser($this->createAgentUser());
+        $this->setQuotaArticlesMax(1);
+        $produit = $this->createProduit('Chaise quota', 1);
+
+        $client->request('POST', '/panier/ajouter', [
+            'produitId' => $produit->getId(),
+        ]);
+        self::assertResponseRedirects('/panier');
+
+        $crawler = $client->request('GET', '/panier');
+
+        self::assertResponseIsSuccessful();
+        self::assertGreaterThan(0, $crawler->filter('main a[href="/commande/creneaux"]')->count());
+        self::assertSame(0, $crawler->filter('main a[href="/boutique"]')->count());
+    }
+
     private function createProduit(string $libelle, int $quantite): Produit
     {
         $entityManager = static::getContainer()->get(EntityManagerInterface::class);
@@ -128,6 +159,15 @@ final class CartControllerTest extends WebTestCase
         $entityManager = static::getContainer()->get(EntityManagerInterface::class);
         $param = $entityManager->getRepository(Parametre::class)->findOneBy(['cle' => 'boutique_ouverte_agents']) ?? (new Parametre())->setCle('boutique_ouverte_agents');
         $param->setValeur('1');
+        $entityManager->persist($param);
+        $entityManager->flush();
+    }
+
+    private function setQuotaArticlesMax(int $quota): void
+    {
+        $entityManager = static::getContainer()->get(EntityManagerInterface::class);
+        $param = $entityManager->getRepository(Parametre::class)->findOneBy(['cle' => 'quota_articles_max']) ?? (new Parametre())->setCle('quota_articles_max');
+        $param->setValeur((string) $quota);
         $entityManager->persist($param);
         $entityManager->flush();
     }

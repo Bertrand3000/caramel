@@ -59,7 +59,7 @@ final class CartManagerTest extends TestCase
     public function testAddItemThrowsWhenStockInsuffisant(): void
     {
         $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('Stock insuffisant');
+        $this->expectExceptionMessage('Nous sommes désolés, mais quelqu\'un d\'autre vient de réserver cet article.');
 
         $produit = (new Produit())->setQuantite(0);
         $em = $this->createMock(EntityManagerInterface::class);

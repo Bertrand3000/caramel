@@ -34,10 +34,15 @@
         </div>
 
         <div class="d-flex gap-2">
-            <a class="btn btn-primary" href="{{ path('checkout_creneaux') }}">Valider ma commande</a>
-            <form method="post" action="{{ path('cart_clear') }}">
-                <button class="btn btn-outline-secondary" type="submit">Vider le panier</button>
-            </form>
+            {% if hasItems %}
+                <a class="btn btn-primary" href="{{ path('checkout_creneaux') }}">Valider ma commande</a>
+                <form method="post" action="{{ path('cart_clear') }}">
+                    <button class="btn btn-outline-secondary" type="submit">Vider le panier</button>
+                </form>
+            {% endif %}
+            {% if canContinueShopping %}
+                <a class="btn btn-outline-primary" href="{{ path('shop_catalogue') }}">Continuer vos achats</a>
+            {% endif %}
         </div>
     </main>
 

@@ -76,4 +76,25 @@ final class QuotaCheckerServiceTest extends TestCase
 
         $service->check('s', ProfilUtilisateur::PUBLIC, 1, null);
     }
+
+    public function testCanAddMoreItemsRespecteQuotaPourAgent(): void
+    {
+        $param = (new Parametre())->setCle('quota_articles_max')->setValeur('2');
+        $paramRepo = $this->createMock(ParametreRepository::class);
+        $paramRepo->method('findOneByKey')->willReturn($param);
+        $service = new QuotaCheckerService($paramRepo, $this->createMock(CommandeRepository::class));
+
+        self::assertTrue($service->canAddMoreItems(['ROLE_AGENT'], 1));
+        self::assertFalse($service->canAddMoreItems(['ROLE_AGENT'], 2));
+    }
+
+    public function testCanAddMoreItemsToujoursVraiPourPartenaire(): void
+    {
+        $service = new QuotaCheckerService(
+            $this->createMock(ParametreRepository::class),
+            $this->createMock(CommandeRepository::class),
+        );
+
+        self::assertTrue($service->canAddMoreItems(['ROLE_PARTENAIRE'], 999));
+    }
 }
