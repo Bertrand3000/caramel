@@ -37,6 +37,9 @@ class Creneau
     #[ORM\Column(enumType: CreneauTypeEnum::class)]
     private CreneauTypeEnum $type = CreneauTypeEnum::GENERAL;
 
+    #[ORM\ManyToOne(inversedBy: 'creneaux')]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    private ?JourLivraison $jourLivraison = null;
 
     #[ORM\OneToMany(mappedBy: 'creneau', targetEntity: Commande::class)]
     private Collection $commandes;
@@ -129,6 +132,18 @@ class Creneau
     public function setType(CreneauTypeEnum $type): self
     {
         $this->type = $type;
+
+        return $this;
+    }
+
+    public function getJourLivraison(): ?JourLivraison
+    {
+        return $this->jourLivraison;
+    }
+
+    public function setJourLivraison(?JourLivraison $jourLivraison): self
+    {
+        $this->jourLivraison = $jourLivraison;
 
         return $this;
     }

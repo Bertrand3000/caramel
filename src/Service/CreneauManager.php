@@ -41,6 +41,7 @@ class CreneauManager implements SlotManagerInterface
         }
 
         $commande->setCreneau($creneau);
+        $creneau->setCapaciteUtilisee(min($creneau->getCapaciteMax(), $creneau->getCapaciteUtilisee() + 1));
         $this->cache->deleteItem($this->cacheKey($creneau));
     }
 
@@ -60,6 +61,7 @@ class CreneauManager implements SlotManagerInterface
     public function libererCreneau(Creneau $creneau, Commande $commande): void
     {
         $commande->setCreneau(null);
+        $creneau->setCapaciteUtilisee(max(0, $creneau->getCapaciteUtilisee() - 1));
         $this->cache->deleteItem($this->cacheKey($creneau));
     }
 

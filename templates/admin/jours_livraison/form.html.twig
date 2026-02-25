@@ -1,0 +1,106 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Admin - {{ isEdit ? 'Modifier la journée' : 'Nouvelle journée' }}{% endblock %}
+
+{% block body %}
+<main class="container py-4">
+    <section class="form-shell">
+        <header class="form-head">
+            <h1>{{ isEdit ? 'Modifier la journée de livraison' : 'Nouvelle journée de livraison' }}</h1>
+            <p>Renseigne la date et les horaires. Les créneaux seront générés ensuite depuis l’écran de détail.</p>
+        </header>
+
+        {{ form_start(form, {attr: {
+            'class': 'produit-form',
+            'data-controller': 'jour-livraison-form',
+            'data-jour-livraison-form-initial-checked-value': form.coupureMeridienne.vars.checked ? 'true' : 'false'
+        }}) }}
+            {{ form_errors(form) }}
+
+            <section class="form-section">
+                <h2>Paramètres généraux</h2>
+                <div class="form-grid-two form-grid-end">
+                    {{ form_row(form.date, {
+                        label: 'Date de livraison',
+                        attr: {'class': 'form-control'}
+                    }) }}
+
+                    <div class="form-end-checkbox">
+                        <div class="form-check">
+                            {{ form_widget(form.actif, {'attr': {'class': 'form-check-input'}}) }}
+                            {{ form_label(form.actif, null, {'label_attr': {'class': 'form-check-label'}}) }}
+                        </div>
+                        {{ form_errors(form.actif) }}
+                    </div>
+
+                    <div class="form-end-checkbox">
+                        <div class="form-check">
+                            {{ form_widget(form.exigerJourneePleine, {'attr': {'class': 'form-check-input'}}) }}
+                            {{ form_label(form.exigerJourneePleine, null, {'label_attr': {'class': 'form-check-label'}}) }}
+                        </div>
+                        {{ form_errors(form.exigerJourneePleine) }}
+                    </div>
+                </div>
+            </section>
+
+            <section class="form-section">
+                <h2>Horaires de la journée</h2>
+                <div class="form-grid-two">
+                    {{ form_row(form.heureOuverture, {
+                        label: 'Heure d’ouverture',
+                        attr: {'class': 'form-control'}
+                    }) }}
+                    {{ form_row(form.heureFermeture, {
+                        label: 'Heure de fermeture',
+                        attr: {'class': 'form-control'}
+                    }) }}
+                </div>
+            </section>
+
+            <section class="form-section">
+                <h2>Coupure méridienne</h2>
+                <div class="form-check mb-2">
+                    {{ form_widget(form.coupureMeridienne, {'attr': {
+                        'class': 'form-check-input',
+                        'data-action': 'change->jour-livraison-form#toggle',
+                        'data-jour-livraison-form-target': 'toggle'
+                    }}) }}
+                    {{ form_label(form.coupureMeridienne, null, {'label_attr': {'class': 'form-check-label'}}) }}
+                </div>
+                {{ form_errors(form.coupureMeridienne) }}
+
+                <div class="form-grid-two">
+                    <div data-jour-livraison-form-target="fields">
+                        {{ form_row(form.heureCoupureDebut, {
+                            label: 'Début de coupure',
+                            attr: {'class': 'form-control'}
+                        }) }}
+                    </div>
+                    <div data-jour-livraison-form-target="fields">
+                        {{ form_row(form.heureCoupureFin, {
+                            label: 'Fin de coupure',
+                            attr: {'class': 'form-control'}
+                        }) }}
+                    </div>
+                </div>
+            </section>
+
+            <div class="form-actions">
+                <a class="btn btn-outline-secondary" href="{{ path('admin_jours_livraison_index') }}">Retour</a>
+                <button class="btn btn-primary" type="submit">{{ isEdit ? 'Enregistrer' : 'Créer la journée' }}</button>
+            </div>
+        {{ form_end(form) }}
+
+        {% if isEdit %}
+            <section class="form-section mt-3">
+                <h2>Zone sensible</h2>
+                <p class="form-help mb-2">Supprime la journée et tous les créneaux associés.</p>
+                <form method="post" action="{{ path('admin_jours_livraison_delete', {id: jour.id}) }}" onsubmit="return confirm('Supprimer cette journée et les créneaux associés ?');">
+                    <input type="hidden" name="_token" value="{{ csrf_token('delete_jour_livraison_' ~ jour.id) }}">
+                    <button class="btn btn-outline-danger" type="submit">Supprimer la journée</button>
+                </form>
+            </section>
+        {% endif %}
+    </section>
+</main>
+{% endblock %}

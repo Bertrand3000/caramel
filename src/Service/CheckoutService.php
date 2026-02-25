@@ -9,9 +9,11 @@ use App\Entity\Creneau;
 use App\Entity\Utilisateur;
 use App\Enum\CommandeProfilEnum;
 use App\Enum\ProfilUtilisateur;
+use App\Exception\JourLivraisonNonPleinException;
 use App\Interface\CartManagerInterface;
 use App\Interface\CheckoutServiceInterface;
 use App\Interface\SlotManagerInterface;
+use App\Repository\JourLivraisonRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Workflow\WorkflowInterface;
@@ -25,6 +27,7 @@ class CheckoutService implements CheckoutServiceInterface
         private readonly SlotManagerInterface $creneauManager,
         #[Autowire(service: 'state_machine.commande_lifecycle')]
         private readonly WorkflowInterface $commandeLifecycle,
+        private readonly ?JourLivraisonRepository $jourLivraisonRepository = null,
     ) {
     }
 
@@ -51,6 +54,7 @@ class CheckoutService implements CheckoutServiceInterface
                 throw new \RuntimeException('Quota d articles dépassé');
             }
 
+            $this->assertJourneePleineRule($creneau);
             $commande = $this->cartManager->validateCart($sessionId, $utilisateur);
             $this->creneauManager->reserverCreneau($creneau, $commande);
             if ($numeroAgent !== null && trim($numeroAgent) !== '') {
@@ -106,5 +110,23 @@ class CheckoutService implements CheckoutServiceInterface
             ProfilUtilisateur::TELETRAVAILLEUR => CommandeProfilEnum::TELETRAVAILLEUR,
             default => CommandeProfilEnum::AGENT,
         };
+    }
+
+    private function assertJourneePleineRule(Creneau $creneau): void
+    {
+        $jour = $creneau->getJourLivraison();
+        if ($jour === null || $this->jourLivraisonRepository === null) {
+            return;
+        }
+
+        $blockingDay = $this->jourLivraisonRepository->findPremierJourNonPleinAvant($jour->getDate());
+        if ($blockingDay === null) {
+            return;
+        }
+
+        throw new JourLivraisonNonPleinException(sprintf(
+            'La journée du %s doit être complète avant de pouvoir choisir cette date.',
+            $blockingDay->getDate()->format('d/m/Y'),
+        ));
     }
 }

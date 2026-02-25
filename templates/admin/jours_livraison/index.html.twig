@@ -1,0 +1,119 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Admin - Journées de livraison{% endblock %}
+
+{% block body %}
+<main class="container py-4">
+    <section class="form-shell dmax-list-shell">
+        <header class="dmax-list-head">
+            <div>
+                <h1>Journées de livraison</h1>
+                <p class="dmax-list-meta mb-0">Gère les dates de retrait, leur capacité et la génération des créneaux.</p>
+            </div>
+            <a class="btn btn-primary" href="{{ path('admin_jours_livraison_new') }}">Nouvelle journée</a>
+        </header>
+
+        {% set totalDays = rows|length %}
+        {% set activeDays = 0 %}
+        {% set fullRuleDays = 0 %}
+        {% set totalSlots = 0 %}
+        {% for row in rows %}
+            {% if row.jour.actif %}
+                {% set activeDays = activeDays + 1 %}
+            {% endif %}
+            {% if row.jour.exigerJourneePleine %}
+                {% set fullRuleDays = fullRuleDays + 1 %}
+            {% endif %}
+            {% set totalSlots = totalSlots + row.nbCreneaux %}
+        {% endfor %}
+
+        <div class="row mb-2">
+            <div class="col-sm-6 col-lg-4">
+                <article class="card h-100">
+                    <div class="card-body">
+                        <p class="small text-body-secondary mb-1">Journées configurées</p>
+                        <p class="h3 mb-0">{{ totalDays }}</p>
+                    </div>
+                </article>
+            </div>
+            <div class="col-sm-6 col-lg-4">
+                <article class="card h-100">
+                    <div class="card-body">
+                        <p class="small text-body-secondary mb-1">Journées actives</p>
+                        <p class="h3 mb-0">{{ activeDays }}</p>
+                    </div>
+                </article>
+            </div>
+            <div class="col-sm-6 col-lg-4">
+                <article class="card h-100">
+                    <div class="card-body">
+                        <p class="small text-body-secondary mb-1">Créneaux total</p>
+                        <p class="h3 mb-0">{{ totalSlots }}</p>
+                    </div>
+                </article>
+            </div>
+        </div>
+
+        <div class="dmax-table-wrap">
+            <table class="dmax-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Paramètres</th>
+                        <th>Créneaux</th>
+                        <th>Remplissage global</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in rows %}
+                        <tr>
+                            <td>
+                                <p class="fw-semibold mb-0">{{ row.jour.date|date('d/m/Y') }}</p>
+                                {% if row.jour.date|date('U') < 'now'|date('U') %}
+                                    <span class="badge text-bg-danger" style="margin-top:.35rem;">Passée</span>
+                                {% else %}
+                                    <span class="badge text-bg-info" style="margin-top:.35rem;">À venir</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if row.jour.actif %}
+                                    <span class="badge text-bg-success">Active</span>
+                                {% else %}
+                                    <span class="badge text-bg-danger">Inactive</span>
+                                {% endif %}
+                                {% if row.jour.exigerJourneePleine %}
+                                    <span class="badge text-bg-info">Journée pleine requise</span>
+                                {% else %}
+                                    <span class="badge text-bg-info">Journée normale</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ row.nbCreneaux }}</td>
+                            <td>
+                                <p class="mb-1">{{ row.stats.used }}/{{ row.stats.capacity }} ({{ row.stats.percent }}%)</p>
+                                <div class="progress" role="progressbar" aria-valuenow="{{ row.stats.percent }}" aria-valuemin="0" aria-valuemax="100">
+                                    <div class="progress-bar" style="width: {{ row.stats.percent }}%"></div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="dmax-actions">
+                                    <a class="btn btn-sm btn-outline-primary" href="{{ path('admin_jours_livraison_creneaux', {id: row.jour.id}) }}">Voir créneaux</a>
+                                    <a class="btn btn-sm btn-outline-secondary" href="{{ path('admin_jours_livraison_edit', {id: row.jour.id}) }}">Éditer</a>
+                                    <form method="post" action="{{ path('admin_jours_livraison_generer', {id: row.jour.id}) }}" onsubmit="return confirm('Régénérer les créneaux de cette journée ?');">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('generer_jour_livraison_' ~ row.jour.id) }}">
+                                        <button class="btn btn-sm btn-primary" type="submit">Régénérer</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="5">Aucune journée configurée.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+{% endblock %}

@@ -6,6 +6,7 @@ namespace App\Controller;
 
 use App\Entity\Utilisateur;
 use App\Enum\ProfilUtilisateur;
+use App\Exception\JourLivraisonNonPleinException;
 use App\Interface\BoutiqueAccessCheckerInterface;
 use App\Interface\CheckoutServiceInterface;
 use App\Interface\SlotManagerInterface;
@@ -93,6 +94,10 @@ final class CheckoutController extends AbstractController
             $this->addFlash('success', 'Commande confirmée.');
 
             return $this->redirectToRoute('checkout_confirmation');
+        } catch (JourLivraisonNonPleinException $exception) {
+            $this->addFlash('warning', $exception->getMessage());
+
+            return $this->redirectToRoute('checkout_creneaux');
         } catch (\RuntimeException $exception) {
             $this->addFlash('error', $exception->getMessage());
 

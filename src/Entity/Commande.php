@@ -46,7 +46,7 @@ class Commande
     #[ORM\Column(enumType: CommandeStatutEnum::class)]
     private CommandeStatutEnum $statut;
 
-    #[ORM\Column(enumType: CommandeProfilEnum::class)]
+    #[ORM\Column(length: 20, enumType: CommandeProfilEnum::class)]
     private CommandeProfilEnum $profilCommande;
 
     #[ORM\OneToMany(mappedBy: 'commande', targetEntity: LigneCommande::class)]
