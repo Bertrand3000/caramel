@@ -8,6 +8,7 @@ use App\Enum\ProduitStatutEnum;
 use App\Interface\BoutiqueAccessCheckerInterface;
 use App\Repository\ProduitRepository;
 use App\Service\CartManager;
+use App\Service\QuotaCheckerService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -21,6 +22,7 @@ final class ShopController extends AbstractController
     public function __construct(
         private readonly CartManager $cartManager,
         private readonly BoutiqueAccessCheckerInterface $boutiqueAccessChecker,
+        private readonly QuotaCheckerService $quotaChecker,
     )
     {
     }
@@ -30,6 +32,14 @@ final class ShopController extends AbstractController
     {
         $this->boutiqueAccessChecker->assertOpenForRoles($this->getUser()?->getRoles() ?? []);
         $this->cartManager->releaseExpired();
+        $roles = $this->getUser()?->getRoles() ?? [];
+        $sessionId = $request->getSession()->getId();
+        $cartItemsCount = count($this->cartManager->getContents($sessionId));
+        $canAddMoreItems = $this->quotaChecker->canAddMoreItems($roles, $cartItemsCount);
+        $quotaLimit = $this->quotaChecker->getCartQuotaForRoles($roles);
+        $quotaReachedMessage = (!$canAddMoreItems && $quotaLimit !== null)
+            ? sprintf('Vous ne pouvez pas commander plus de %d articles.', $quotaLimit)
+            : null;
 
         $keyword = trim($request->query->getString('q'));
         $keywordNormalized = mb_strtolower($keyword);
@@ -63,6 +73,8 @@ final class ShopController extends AbstractController
             'filtres' => [
                 'q' => $keyword,
             ],
+            'canAddMoreItems' => $canAddMoreItems,
+            'quotaReachedMessage' => $quotaReachedMessage,
         ]);
     }
 }

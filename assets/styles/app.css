@@ -243,6 +243,14 @@ img {
     cursor: zoom-in;
 }
 
+.catalogue-add-btn:disabled {
+    opacity: 1;
+    background: #e5e7eb;
+    border-color: #9ca3af;
+    color: #6b7280;
+    cursor: not-allowed;
+}
+
 .catalogue-image-modal {
     position: fixed;
     inset: 0;

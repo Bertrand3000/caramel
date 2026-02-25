@@ -67,7 +67,11 @@ final class CartController extends AbstractController
         }
 
         try {
-            $this->cartManager->addItem($request->getSession()->getId(), $produit);
+            $this->cartManager->addItem(
+                $request->getSession()->getId(),
+                $produit,
+                $this->getUser()?->getRoles() ?? [],
+            );
             $this->addFlash('success', 'Produit ajouté au panier.');
         } catch (\RuntimeException $exception) {
             $this->addFlash('error', $exception->getMessage());

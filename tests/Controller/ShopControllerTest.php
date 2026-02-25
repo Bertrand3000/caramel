@@ -95,8 +95,33 @@ final class ShopControllerTest extends WebTestCase
         self::assertSelectorTextNotContains('main', $libelleReserve);
     }
 
+    public function testCatalogueDesactiveAjoutAuPanierQuandQuotaAtteint(): void
+    {
+        $client = static::createClient();
+        $client->loginUser($this->createAgentUser());
+        $this->setBoutiqueOpenForAgents(true);
+        $this->setQuotaArticlesMax(1);
+
+        $produitAjoute = $this->createProduit('Produit deja dans panier', ProduitStatutEnum::DISPONIBLE, 1);
+        $this->createProduit('Produit encore visible', ProduitStatutEnum::DISPONIBLE, 1);
+
+        $client->request('POST', '/panier/ajouter', [
+            'produitId' => $produitAjoute->getId(),
+        ]);
+        self::assertResponseRedirects('/panier');
+
+        $crawler = $client->request('GET', '/boutique');
+
+        self::assertResponseIsSuccessful();
+        self::assertGreaterThan(
+            0,
+            $crawler->filter('button[disabled][title="Vous ne pouvez pas commander plus de 1 articles."]')->count(),
+        );
+    }
+
     private function createAgentUser(): Utilisateur
     {
+        $this->setQuotaArticlesMax(3);
         $entityManager = static::getContainer()->get(EntityManagerInterface::class);
         $user = (new Utilisateur())
             ->setLogin(sprintf('agent-shop-%s@test.local', bin2hex(random_bytes(4))))
@@ -114,6 +139,15 @@ final class ShopControllerTest extends WebTestCase
         $entityManager = static::getContainer()->get(EntityManagerInterface::class);
         $param = $entityManager->getRepository(Parametre::class)->findOneBy(['cle' => 'boutique_ouverte_agents']) ?? (new Parametre())->setCle('boutique_ouverte_agents');
         $param->setValeur($open ? '1' : '0');
+        $entityManager->persist($param);
+        $entityManager->flush();
+    }
+
+    private function setQuotaArticlesMax(int $quota): void
+    {
+        $entityManager = static::getContainer()->get(EntityManagerInterface::class);
+        $param = $entityManager->getRepository(Parametre::class)->findOneBy(['cle' => 'quota_articles_max']) ?? (new Parametre())->setCle('quota_articles_max');
+        $param->setValeur((string) $quota);
         $entityManager->persist($param);
         $entityManager->flush();
     }

@@ -97,4 +97,24 @@ final class QuotaCheckerServiceTest extends TestCase
 
         self::assertTrue($service->canAddMoreItems(['ROLE_PARTENAIRE'], 999));
     }
+
+    public function testGetCartQuotaForRolesRetourneQuotaPourAgent(): void
+    {
+        $param = (new Parametre())->setCle('quota_articles_max')->setValeur('4');
+        $paramRepo = $this->createMock(ParametreRepository::class);
+        $paramRepo->method('findOneByKey')->willReturn($param);
+        $service = new QuotaCheckerService($paramRepo, $this->createMock(CommandeRepository::class));
+
+        self::assertSame(4, $service->getCartQuotaForRoles(['ROLE_AGENT']));
+    }
+
+    public function testGetCartQuotaForRolesRetourneNullPourPartenaire(): void
+    {
+        $service = new QuotaCheckerService(
+            $this->createMock(ParametreRepository::class),
+            $this->createMock(CommandeRepository::class),
+        );
+
+        self::assertNull($service->getCartQuotaForRoles(['ROLE_PARTENAIRE']));
+    }
 }

@@ -143,6 +143,7 @@ final class CartControllerTest extends WebTestCase
     private function createAgentUser(): Utilisateur
     {
         $this->setBoutiqueOpenForAgents();
+        $this->setQuotaArticlesMax(3);
         $entityManager = static::getContainer()->get(EntityManagerInterface::class);
         $user = (new Utilisateur())
             ->setLogin(sprintf('agent-cart-%s@test.local', bin2hex(random_bytes(4))))

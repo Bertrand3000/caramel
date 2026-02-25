@@ -47,7 +47,12 @@
                             <h2 class="h6 card-title catalogue-product-title">{{ item.produit.libelle }}</h2>
                             <form method="post" action="{{ path('cart_add') }}" class="mt-auto">
                                 <input type="hidden" name="produitId" value="{{ item.produit.id }}">
-                                <button class="btn btn-outline-primary w-100" type="submit" {{ item.stockDisponible < 1 ? 'disabled' : '' }}>
+                                <button
+                                    class="btn btn-outline-primary w-100 catalogue-add-btn"
+                                    type="submit"
+                                    {% if item.stockDisponible < 1 or not canAddMoreItems %}disabled{% endif %}
+                                    {% if not canAddMoreItems and quotaReachedMessage is not null %}title="{{ quotaReachedMessage }}"{% endif %}
+                                >
                                     Ajouter au panier
                                 </button>
                             </form>

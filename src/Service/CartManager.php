@@ -19,11 +19,22 @@ class CartManager implements CartManagerInterface
 {
     public function __construct(
         private readonly EntityManagerInterface $em,
+        private readonly QuotaCheckerService $quotaChecker,
     ) {
     }
 
-    public function addItem(string $sessionId, Produit $produit): void
+    public function addItem(string $sessionId, Produit $produit, array $roles): void
     {
+        $cartItemsCount = $this->countActiveCartItems($sessionId);
+        if (!$this->quotaChecker->canAddMoreItems($roles, $cartItemsCount)) {
+            $quota = $this->quotaChecker->getCartQuotaForRoles($roles);
+            if ($quota !== null) {
+                throw new \RuntimeException(sprintf('Vous ne pouvez pas commander plus de %d articles.', $quota));
+            }
+
+            throw new \RuntimeException('Quota atteint pour votre panier.');
+        }
+
         /** @var ReservationTemporaire|null $reservation */
         $reservation = $this->em->getRepository(ReservationTemporaire::class)->findOneBy([
             'sessionId' => $sessionId,
@@ -163,5 +174,18 @@ class CartManager implements CartManagerInterface
         $reserved = $activeReservations > 0 ? 1 : 0;
 
         return max(0, $stock - $reserved);
+    }
+
+    private function countActiveCartItems(string $sessionId): int
+    {
+        return (int) $this->em->createQueryBuilder()
+            ->from(ReservationTemporaire::class, 'r')
+            ->select('COUNT(r.id)')
+            ->andWhere('r.sessionId = :sessionId')
+            ->andWhere('r.expireAt > :now')
+            ->setParameter('sessionId', $sessionId)
+            ->setParameter('now', new \DateTimeImmutable())
+            ->getQuery()
+            ->getSingleScalarResult();
     }
 }

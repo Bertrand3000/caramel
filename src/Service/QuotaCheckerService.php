@@ -61,6 +61,18 @@ class QuotaCheckerService
         return $cartItemsCount < $this->readQuota();
     }
 
+    /**
+     * @param list<string> $roles
+     */
+    public function getCartQuotaForRoles(array $roles): ?int
+    {
+        if (in_array('ROLE_ADMIN', $roles, true) || in_array('ROLE_PARTENAIRE', $roles, true)) {
+            return null;
+        }
+
+        return $this->readQuota();
+    }
+
     private function readQuota(): int
     {
         $param = $this->parametreRepository->findOneByKey('quota_articles_max');

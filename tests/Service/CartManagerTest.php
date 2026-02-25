@@ -8,6 +8,7 @@ use App\Entity\Produit;
 use App\Entity\ReservationTemporaire;
 use App\Entity\Utilisateur;
 use App\Service\CartManager;
+use App\Service\QuotaCheckerService;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
@@ -50,8 +51,10 @@ final class CartManagerTest extends TestCase
         $em->method('createQueryBuilder')->willReturn($qb);
         $em->expects(self::once())->method('flush');
 
-        $service = new CartManager($em);
-        $service->addItem('sess', $produit);
+        $quotaChecker = $this->createMock(QuotaCheckerService::class);
+        $quotaChecker->method('canAddMoreItems')->willReturn(true);
+        $service = new CartManager($em, $quotaChecker);
+        $service->addItem('sess', $produit, ['ROLE_AGENT']);
 
         self::assertSame(1, $produit->getQuantite());
     }
@@ -71,7 +74,9 @@ final class CartManagerTest extends TestCase
         $qb = $this->buildQb($em, $query);
         $em->method('createQueryBuilder')->willReturn($qb);
 
-        (new CartManager($em))->addItem('s', $produit);
+        $quotaChecker = $this->createMock(QuotaCheckerService::class);
+        $quotaChecker->method('canAddMoreItems')->willReturn(true);
+        (new CartManager($em, $quotaChecker))->addItem('s', $produit, ['ROLE_AGENT']);
     }
 
     public function testValidateCartUsesLockPessimisticWrite(): void
@@ -85,7 +90,7 @@ final class CartManagerTest extends TestCase
         $repo->method('findBy')->willReturn([]);
         $em->method('getRepository')->willReturn($repo);
 
-        $service = new CartManager($em);
+        $service = new CartManager($em, $this->createMock(QuotaCheckerService::class));
         $service->validateCart('sess', (new Utilisateur())->setLogin('agent@test.local')->setPassword('dummy')->setRoles(['ROLE_AGENT']));
     }
 
@@ -105,9 +110,15 @@ final class CartManagerTest extends TestCase
         $reservationRepo->method('findOneBy')->willReturn($reservationExistante);
         $em = $this->createMock(EntityManagerInterface::class);
         $em->method('getRepository')->willReturn($reservationRepo);
+        $query = $this->createMock(Query::class);
+        $query->method('getSingleScalarResult')->willReturn(0);
+        $qb = $this->buildQb($em, $query);
+        $em->method('createQueryBuilder')->willReturn($qb);
 
-        $service = new CartManager($em);
-        $service->addItem('sess', $produit);
+        $quotaChecker = $this->createMock(QuotaCheckerService::class);
+        $quotaChecker->method('canAddMoreItems')->willReturn(true);
+        $service = new CartManager($em, $quotaChecker);
+        $service->addItem('sess', $produit, ['ROLE_AGENT']);
     }
 
     public function testReleaseExpiredDeletesOldReservations(): void
@@ -119,7 +130,26 @@ final class CartManagerTest extends TestCase
         $em = $this->createMock(EntityManagerInterface::class);
         $em->expects(self::once())->method('createQuery')->willReturn($query);
 
-        $service = new CartManager($em);
+        $service = new CartManager($em, $this->createMock(QuotaCheckerService::class));
         self::assertSame(4, $service->releaseExpired());
+    }
+
+    public function testAddItemThrowsWhenQuotaReached(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Vous ne pouvez pas commander plus de 3 articles.');
+
+        $produit = (new Produit())->setQuantite(1);
+        $em = $this->createMock(EntityManagerInterface::class);
+        $query = $this->createMock(Query::class);
+        $query->method('getSingleScalarResult')->willReturn(1);
+        $qb = $this->buildQb($em, $query);
+        $em->method('createQueryBuilder')->willReturn($qb);
+
+        $quotaChecker = $this->createMock(QuotaCheckerService::class);
+        $quotaChecker->method('canAddMoreItems')->willReturn(false);
+        $quotaChecker->method('getCartQuotaForRoles')->willReturn(3);
+
+        (new CartManager($em, $quotaChecker))->addItem('s', $produit, ['ROLE_AGENT']);
     }
 }
