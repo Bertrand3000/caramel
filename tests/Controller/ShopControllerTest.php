@@ -6,6 +6,7 @@ namespace App\Tests\Controller;
 
 use App\Entity\Parametre;
 use App\Entity\Produit;
+use App\Entity\ReservationTemporaire;
 use App\Entity\Utilisateur;
 use App\Enum\ProduitEtatEnum;
 use App\Enum\ProduitStatutEnum;
@@ -75,6 +76,25 @@ final class ShopControllerTest extends WebTestCase
         self::assertSelectorTextNotContains('main', 'Bureau compact');
     }
 
+    public function testCatalogueMasqueLesProduitsReservesTemporairement(): void
+    {
+        $client = static::createClient();
+        $client->loginUser($this->createAgentUser());
+        $this->setBoutiqueOpenForAgents(true);
+        $suffix = bin2hex(random_bytes(4));
+        $libelleVisible = sprintf('Chaise libre %s', $suffix);
+        $libelleReserve = sprintf('Chaise reservee %s', $suffix);
+        $this->createProduit($libelleVisible, ProduitStatutEnum::DISPONIBLE, 1);
+        $produitReserve = $this->createProduit($libelleReserve, ProduitStatutEnum::DISPONIBLE, 1);
+        $this->createReservationTemporaire($produitReserve, 'session-other');
+
+        $client->request('GET', '/boutique');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('main', $libelleVisible);
+        self::assertSelectorTextNotContains('main', $libelleReserve);
+    }
+
     private function createAgentUser(): Utilisateur
     {
         $entityManager = static::getContainer()->get(EntityManagerInterface::class);
@@ -98,7 +118,7 @@ final class ShopControllerTest extends WebTestCase
         $entityManager->flush();
     }
 
-    private function createProduit(string $libelle, ProduitStatutEnum $statut, int $quantite): void
+    private function createProduit(string $libelle, ProduitStatutEnum $statut, int $quantite): Produit
     {
         $entityManager = static::getContainer()->get(EntityManagerInterface::class);
         $produit = (new Produit())
@@ -114,6 +134,21 @@ final class ShopControllerTest extends WebTestCase
             ->setQuantite($quantite);
 
         $entityManager->persist($produit);
+        $entityManager->flush();
+
+        return $produit;
+    }
+
+    private function createReservationTemporaire(Produit $produit, string $sessionId): void
+    {
+        $entityManager = static::getContainer()->get(EntityManagerInterface::class);
+        $reservation = (new ReservationTemporaire())
+            ->setProduit($produit)
+            ->setSessionId($sessionId)
+            ->setQuantite(1)
+            ->setExpireAt(new \DateTimeImmutable('+20 minutes'));
+
+        $entityManager->persist($reservation);
         $entityManager->flush();
     }
 }

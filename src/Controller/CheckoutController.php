@@ -28,9 +28,15 @@ final class CheckoutController extends AbstractController
     }
 
     #[Route('/creneaux', name: 'checkout_creneaux', methods: ['GET'])]
-    public function creneaux(): Response
+    public function creneaux(Request $request): Response
     {
         $this->boutiqueAccessChecker->assertOpenForRoles($this->getUser()?->getRoles() ?? []);
+        if (!$this->checkoutService->hasItems($request->getSession()->getId())) {
+            $this->addFlash('error', 'Votre panier est vide.');
+
+            return $this->redirectToRoute('cart_index');
+        }
+
         $date = new \DateTimeImmutable('today');
         $creneaux = [];
 
@@ -52,6 +58,12 @@ final class CheckoutController extends AbstractController
     {
         $this->boutiqueAccessChecker->assertOpenForRoles($this->getUser()?->getRoles() ?? []);
         $sessionId = $request->getSession()->getId();
+        if (!$this->checkoutService->hasItems($sessionId)) {
+            $this->addFlash('error', 'Votre panier est vide.');
+
+            return $this->redirectToRoute('cart_index');
+        }
+
         $creneauId = $request->request->getInt('creneauId');
         $numeroAgent = trim($request->request->getString('numeroAgent'));
         $creneau = $creneauRepository->find($creneauId);

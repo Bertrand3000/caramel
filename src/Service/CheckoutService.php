@@ -28,6 +28,11 @@ class CheckoutService implements CheckoutServiceInterface
     ) {
     }
 
+    public function hasItems(string $sessionId): bool
+    {
+        return count($this->cartManager->getContents($sessionId)) > 0;
+    }
+
     public function confirmCommande(
         string $sessionId,
         Creneau $creneau,
@@ -38,6 +43,10 @@ class CheckoutService implements CheckoutServiceInterface
         return $this->em->wrapInTransaction(function () use ($sessionId, $creneau, $profil, $utilisateur, $numeroAgent): Commande {
             $panier = $this->cartManager->getContents($sessionId);
             $totalQuantite = count($panier);
+            if ($totalQuantite < 1) {
+                throw new \RuntimeException('Panier vide');
+            }
+
             if (!$this->quotaChecker->check($sessionId, $profil, $totalQuantite, $numeroAgent)) {
                 throw new \RuntimeException('Quota d articles dépassé');
             }

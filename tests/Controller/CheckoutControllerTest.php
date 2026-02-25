@@ -6,8 +6,10 @@ namespace App\Tests\Controller;
 
 use App\Entity\Commande;
 use App\Entity\Parametre;
+use App\Entity\Produit;
 use App\Entity\Utilisateur;
 use App\Enum\CommandeStatutEnum;
+use App\Enum\ProduitEtatEnum;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -79,14 +81,43 @@ final class CheckoutControllerTest extends WebTestCase
         self::assertSame(CommandeStatutEnum::ANNULEE, $reloaded->getStatut());
     }
 
-    public function testAgentPeutAccederAuxCreneaux(): void
+    public function testAgentPanierVideRedirigeVersPanierPourLesCreneaux(): void
     {
         $client = static::createClient();
         $client->loginUser($this->createUser('agent-creneaux'));
 
         $client->request('GET', '/commande/creneaux');
 
+        self::assertResponseRedirects('/panier');
+    }
+
+    public function testAgentPeutAccederAuxCreneauxAvecPanierNonVide(): void
+    {
+        $client = static::createClient();
+        $client->loginUser($this->createUser('agent-creneaux-ok'));
+        $produit = $this->createProduit('Produit checkout');
+
+        $client->request('POST', '/panier/ajouter', [
+            'produitId' => $produit->getId(),
+        ]);
+        self::assertResponseRedirects('/panier');
+
+        $client->request('GET', '/commande/creneaux');
+
         self::assertResponseIsSuccessful();
+    }
+
+    public function testConfirmationAvecPanierVideRedirigeVersPanier(): void
+    {
+        $client = static::createClient();
+        $client->loginUser($this->createUser('agent-confirm-empty'));
+
+        $client->request('POST', '/commande/confirmer', [
+            'creneauId' => 1,
+            'numeroAgent' => '12345',
+        ]);
+
+        self::assertResponseRedirects('/panier');
     }
 
     public function testDmaxNePeutPasAccederAuxCreneauxCommande(): void
@@ -158,5 +189,25 @@ final class CheckoutControllerTest extends WebTestCase
         $param->setValeur('1');
         $entityManager->persist($param);
         $entityManager->flush();
+    }
+
+    private function createProduit(string $libelle): Produit
+    {
+        $entityManager = static::getContainer()->get(EntityManagerInterface::class);
+        $produit = (new Produit())
+            ->setLibelle($libelle)
+            ->setPhotoProduit('test.jpg')
+            ->setEtat(ProduitEtatEnum::BON)
+            ->setEtage('1')
+            ->setPorte('A')
+            ->setLargeur(60.0)
+            ->setHauteur(70.0)
+            ->setProfondeur(50.0)
+            ->setQuantite(1);
+
+        $entityManager->persist($produit);
+        $entityManager->flush();
+
+        return $produit;
     }
 }

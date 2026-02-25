@@ -64,6 +64,29 @@ final class CheckoutServiceTest extends TestCase
             ->confirmCommande('s', new Creneau(), ProfilUtilisateur::PUBLIC, $utilisateur, '12345');
     }
 
+    public function testConfirmCommandeEchouePanierVide(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Panier vide');
+
+        $cart = $this->createMock(CartManagerInterface::class);
+        $cart->method('getContents')->willReturn([]);
+
+        $quota = $this->createMock(QuotaCheckerService::class);
+        $quota->expects(self::never())->method('check');
+
+        $slot = $this->createMock(SlotManagerInterface::class);
+        $slot->expects(self::never())->method('reserverCreneau');
+
+        $em = $this->createMock(EntityManagerInterface::class);
+        $em->method('wrapInTransaction')->willReturnCallback(fn ($cb) => $cb());
+        $workflow = $this->createMock(WorkflowInterface::class);
+
+        $utilisateur = (new Utilisateur())->setLogin('agent@test.local')->setPassword('dummy')->setRoles(['ROLE_AGENT']);
+        (new CheckoutService($em, $cart, $quota, $slot, $workflow))
+            ->confirmCommande('s', new Creneau(), ProfilUtilisateur::PUBLIC, $utilisateur, '12345');
+    }
+
     public function testConfirmCommandeEchoueCreneauPlein(): void
     {
         $this->expectException(\RuntimeException::class);

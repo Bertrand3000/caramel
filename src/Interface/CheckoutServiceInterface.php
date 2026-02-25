@@ -11,6 +11,8 @@ use App\Enum\ProfilUtilisateur;
 
 interface CheckoutServiceInterface
 {
+    public function hasItems(string $sessionId): bool;
+
     public function confirmCommande(
         string $sessionId,
         Creneau $creneau,

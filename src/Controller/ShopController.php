@@ -48,6 +48,9 @@ final class ShopController extends AbstractController
             }
 
             $stockDisponible = $this->cartManager->getAvailableStockForDisplay($produit);
+            if ($stockDisponible < 1) {
+                continue;
+            }
 
             $catalogue[] = [
                 'produit' => $produit,
