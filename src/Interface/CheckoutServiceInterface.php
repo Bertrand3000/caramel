@@ -19,6 +19,8 @@ interface CheckoutServiceInterface
         ProfilUtilisateur $profil,
         Utilisateur $utilisateur,
         ?string $numeroAgent = null,
+        ?string $nom = null,
+        ?string $prenom = null,
     ): Commande;
 
     public function checkQuota(

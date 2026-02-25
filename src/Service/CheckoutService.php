@@ -42,8 +42,10 @@ class CheckoutService implements CheckoutServiceInterface
         ProfilUtilisateur $profil,
         Utilisateur $utilisateur,
         ?string $numeroAgent = null,
+        ?string $nom = null,
+        ?string $prenom = null,
     ): Commande {
-        return $this->em->wrapInTransaction(function () use ($sessionId, $creneau, $profil, $utilisateur, $numeroAgent): Commande {
+        return $this->em->wrapInTransaction(function () use ($sessionId, $creneau, $profil, $utilisateur, $numeroAgent, $nom, $prenom): Commande {
             $panier = $this->cartManager->getContents($sessionId);
             $totalQuantite = count($panier);
             if ($totalQuantite < 1) {
@@ -59,6 +61,12 @@ class CheckoutService implements CheckoutServiceInterface
             $this->creneauManager->reserverCreneau($creneau, $commande);
             if ($numeroAgent !== null && trim($numeroAgent) !== '') {
                 $commande->setNumeroAgent(trim($numeroAgent));
+            }
+            if ($nom !== null && trim($nom) !== '') {
+                $commande->setNom(trim($nom));
+            }
+            if ($prenom !== null && trim($prenom) !== '') {
+                $commande->setPrenom(trim($prenom));
             }
             $commande->setProfilCommande($this->mapCommandeProfil($profil));
 

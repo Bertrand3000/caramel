@@ -11,6 +11,8 @@ interface SlotManagerInterface
 {
     public function getDisponibles(\DateTimeInterface $date): array;
 
+    public function getDisponiblesPourCheckout(\DateTimeInterface $fromDate): array;
+
     public function reserverCreneau(Creneau $creneau, Commande $commande): void;
 
     public function getJaugeDisponible(Creneau $creneau): int;

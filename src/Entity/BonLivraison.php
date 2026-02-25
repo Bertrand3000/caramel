@@ -28,7 +28,7 @@ class BonLivraison
 
     public function __construct()
     {
-        $this->dateImpression = new \DateTimeImmutable();
+        $this->dateImpression = new \DateTime();
     }
 
     public function getId(): ?int

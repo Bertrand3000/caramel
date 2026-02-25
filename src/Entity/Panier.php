@@ -61,7 +61,9 @@ class Panier
 
     public function setDateExpiration(\DateTimeInterface $dateExpiration): self
     {
-        $this->dateExpiration = $dateExpiration;
+        $this->dateExpiration = $dateExpiration instanceof \DateTimeImmutable
+            ? \DateTime::createFromImmutable($dateExpiration)
+            : $dateExpiration;
 
         return $this;
     }

@@ -39,19 +39,11 @@ final class CheckoutController extends AbstractController
         }
 
         $date = new \DateTimeImmutable('today');
-        $creneaux = [];
+        $creneaux = $this->creneauManager->getDisponiblesPourCheckout($date);
 
-        foreach ($this->creneauManager->getDisponibles($date) as $creneau) {
-            $disponible = $this->creneauManager->getJaugeDisponible($creneau);
-            $used = max(0, $creneau->getCapaciteMax() - $disponible);
-            $creneaux[] = [
-                'entity' => $creneau,
-                'used' => $used,
-                'percent' => $creneau->getCapaciteMax() > 0 ? (int) round(($used / $creneau->getCapaciteMax()) * 100) : 0,
-            ];
-        }
-
-        return $this->render('checkout/creneaux.html.twig', ['creneaux' => $creneaux]);
+        return $this->render('checkout/creneaux.html.twig', [
+            'creneaux' => $creneaux,
+        ]);
     }
 
     #[Route('/confirmer', name: 'checkout_confirmer', methods: ['POST'])]
@@ -66,7 +58,15 @@ final class CheckoutController extends AbstractController
         }
 
         $creneauId = $request->request->getInt('creneauId');
+        $nom = trim($request->request->getString('nom'));
+        $prenom = trim($request->request->getString('prenom'));
         $numeroAgent = trim($request->request->getString('numeroAgent'));
+        if ($nom === '' || $prenom === '' || !preg_match('/^\d{5}$/', $numeroAgent)) {
+            $this->addFlash('error', 'Nom, prenom et numero d\'agent (5 chiffres) sont obligatoires.');
+
+            return $this->redirectToRoute('checkout_creneaux');
+        }
+
         $creneau = $creneauRepository->find($creneauId);
 
         if ($creneau === null) {
@@ -89,6 +89,8 @@ final class CheckoutController extends AbstractController
                 $this->resolveProfilUtilisateur($user),
                 $user,
                 $numeroAgent !== '' ? $numeroAgent : null,
+                $nom,
+                $prenom,
             );
             $request->getSession()->set('checkout_last_commande_id', $commande->getId());
             $this->addFlash('success', 'Commande confirmée.');

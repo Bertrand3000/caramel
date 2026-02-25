@@ -11,7 +11,6 @@ use App\Entity\Utilisateur;
 use App\Enum\CommandeStatutEnum;
 use App\Enum\ProduitEtatEnum;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class CheckoutControllerTest extends WebTestCase
@@ -105,6 +104,7 @@ final class CheckoutControllerTest extends WebTestCase
         $client->request('GET', '/commande/creneaux');
 
         self::assertResponseIsSuccessful();
+        self::assertStringNotContainsString('places', (string) $client->getResponse()->getContent());
     }
 
     public function testConfirmationAvecPanierVideRedirigeVersPanier(): void
@@ -171,7 +171,7 @@ final class CheckoutControllerTest extends WebTestCase
         return $user;
     }
 
-    private function fetchCancelCsrfToken(KernelBrowser $client, int $commandeId): string
+    private function fetchCancelCsrfToken(\Symfony\Bundle\FrameworkBundle\KernelBrowser $client, int $commandeId): string
     {
         $client->request('GET', '/commande/confirmation');
         $session = $client->getRequest()->getSession();

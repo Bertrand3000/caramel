@@ -34,6 +34,27 @@ class CreneauManager implements SlotManagerInterface
         return array_values(array_filter($slots, fn (Creneau $creneau): bool => $this->getJaugeDisponible($creneau) > 0));
     }
 
+    public function getDisponiblesPourCheckout(\DateTimeInterface $fromDate): array
+    {
+        $slots = $this->findDisponiblesFromDate($fromDate);
+        if ($slots === []) {
+            return [];
+        }
+
+        $firstDate = $slots[0]->getDateHeure()->format('Y-m-d');
+        $firstDaySlots = array_values(array_filter(
+            $slots,
+            static fn (Creneau $creneau): bool => $creneau->getDateHeure()->format('Y-m-d') === $firstDate,
+        ));
+
+        $isStrictDay = $slots[0]->getJourLivraison()?->isExigerJourneePleine() ?? false;
+        if ($isStrictDay) {
+            return $firstDaySlots;
+        }
+
+        return $slots;
+    }
+
     public function reserverCreneau(Creneau $creneau, Commande $commande): void
     {
         if ($this->countActiveForSlot($creneau) >= $creneau->getCapaciteMax()) {
@@ -81,5 +102,25 @@ class CreneauManager implements SlotManagerInterface
     private function cacheKey(Creneau $creneau): string
     {
         return 'creneau_jauge_' . (string) $creneau->getId();
+    }
+
+    /** @return list<Creneau> */
+    private function findDisponiblesFromDate(\DateTimeInterface $fromDate): array
+    {
+        $start = (new \DateTimeImmutable($fromDate->format('Y-m-d')))->setTime(0, 0);
+        $slots = $this->em->createQueryBuilder()
+            ->from(Creneau::class, 'c')
+            ->select('c', 'j')
+            ->leftJoin('c.jourLivraison', 'j')
+            ->andWhere('c.dateHeure >= :start')
+            ->andWhere('j.id IS NULL OR j.actif = :actif')
+            ->setParameter('start', $start)
+            ->setParameter('actif', true)
+            ->orderBy('c.dateHeure', 'ASC')
+            ->addOrderBy('c.heureDebut', 'ASC')
+            ->getQuery()
+            ->getResult();
+
+        return array_values(array_filter($slots, fn (Creneau $creneau): bool => $this->getJaugeDisponible($creneau) > 0));
     }
 }

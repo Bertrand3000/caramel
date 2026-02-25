@@ -63,7 +63,7 @@ class Commande
         $this->lignesCommande = new ArrayCollection();
         $this->statut = CommandeStatutEnum::EN_ATTENTE_VALIDATION;
         $this->profilCommande = CommandeProfilEnum::AGENT;
-        $this->dateValidation = new \DateTimeImmutable();
+        $this->dateValidation = new \DateTime();
     }
 
     public function getId(): ?int
@@ -187,7 +187,9 @@ class Commande
 
     public function setDateValidation(\DateTimeInterface $dateValidation): self
     {
-        $this->dateValidation = $dateValidation;
+        $this->dateValidation = $dateValidation instanceof \DateTimeImmutable
+            ? \DateTime::createFromImmutable($dateValidation)
+            : $dateValidation;
 
         return $this;
     }

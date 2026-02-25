@@ -4,7 +4,7 @@
 
 {% block body %}
     <main class="container py-4">
-        <h1 class="h3 mb-3">Choisir un créneau</h1>
+        <h1 class="h3 mb-3">Finalisation de la commande</h1>
 
         {% for type, messages in app.flashes %}
             {% for message in messages %}
@@ -12,25 +12,46 @@
             {% endfor %}
         {% endfor %}
 
-        <div class="list-group">
-            {% for slot in creneaux %}
-                <form method="post" action="{{ path('checkout_confirmer') }}" class="list-group-item">
-                    <input type="hidden" name="creneauId" value="{{ slot.entity.id }}">
-                    <div class="mb-2">
-                        <label class="form-label" for="numeroAgent-{{ slot.entity.id }}">Numero agent</label>
-                        <input class="form-control" id="numeroAgent-{{ slot.entity.id }}" type="text" name="numeroAgent" inputmode="numeric" pattern="\d{5}" maxlength="5" required>
+        {% if creneaux is empty %}
+            <div class="alert alert-light border">Aucun créneau disponible.</div>
+        {% else %}
+            <form method="post" action="{{ path('checkout_confirmer') }}">
+                <section class="card mb-4">
+                    <div class="card-body">
+                        <h2 class="h5 mb-3">Vos informations</h2>
+                        <div class="row g-3">
+                            <div class="col-12 col-md-6">
+                                <label class="form-label" for="checkout-nom">Nom</label>
+                                <input class="form-control" id="checkout-nom" type="text" name="nom" maxlength="120" required>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label class="form-label" for="checkout-prenom">Prénom</label>
+                                <input class="form-control" id="checkout-prenom" type="text" name="prenom" maxlength="120" required>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label class="form-label" for="checkout-numero-agent">Numéro d'agent</label>
+                                <input class="form-control" id="checkout-numero-agent" type="text" name="numeroAgent" inputmode="numeric" pattern="\d{5}" maxlength="5" required>
+                            </div>
+                        </div>
                     </div>
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span>{{ slot.entity.heureDebut|date('H\\hi') }} — {{ slot.used }}/{{ slot.entity.capaciteMax }} places</span>
-                        <button class="btn btn-sm btn-primary" type="submit">Sélectionner</button>
-                    </div>
-                    <div class="progress" role="progressbar" aria-valuenow="{{ slot.percent }}" aria-valuemin="0" aria-valuemax="100">
-                        <div class="progress-bar" style="width: {{ slot.percent }}%"></div>
-                    </div>
-                </form>
-            {% else %}
-                <div class="alert alert-light border">Aucun créneau disponible.</div>
-            {% endfor %}
-        </div>
+                </section>
+
+                <h2 class="h5 mb-3">Choisissez un créneau</h2>
+                <p class="text-muted mb-3">Le clic sur un créneau valide immédiatement votre commande.</p>
+
+                <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-6 g-3">
+                    {% for slot in creneaux %}
+                        <div class="col">
+                            <button class="card w-100 h-100 border-0 shadow-sm text-start" style="cursor: pointer;" type="submit" name="creneauId" value="{{ slot.id }}">
+                                <div class="card-body">
+                                    <p class="small text-body-secondary mb-1">{{ slot.dateHeure|date('d/m/Y') }}</p>
+                                    <p class="mb-0 fw-semibold">{{ slot.heureDebut|date('H\\hi') }} - {{ slot.heureFin|date('H\\hi') }}</p>
+                                </div>
+                            </button>
+                        </div>
+                    {% endfor %}
+                </div>
+            </form>
+        {% endif %}
     </main>
 {% endblock %}

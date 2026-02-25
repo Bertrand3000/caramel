@@ -13,25 +13,40 @@
         {% endfor %}
 
         {% if commande %}
+            {% set statutLabels = {
+                'en_attente_validation': 'En attente de validation',
+                'validee': 'Validée',
+                'refusee': 'Refusée',
+                'a_preparer': 'A préparer',
+                'en_preparation': 'En préparation',
+                'prete': 'Prête',
+                'retiree': 'Retirée',
+                'annulee': 'Annulée'
+            } %}
             <div class="card">
                 <div class="card-body">
-                    <p class="mb-1"><strong>Commande #{{ commande.id }}</strong></p>
-                    <p class="mb-1">Statut : {{ commande.statut.value }}</p>
+                    <p class="mb-1">Statut : {{ statutLabels[commande.statut.value] ?? commande.statut.value }}</p>
+                    <p class="mb-1">Nom : {{ commande.nom ?: '-' }}</p>
+                    <p class="mb-1">Prénom : {{ commande.prenom ?: '-' }}</p>
+                    <p class="mb-3">Numéro agent : {{ commande.numeroAgent ?: '-' }}</p>
                     <p class="mb-3">
                         Créneau :
-                        {{ commande.creneau ? commande.creneau.heureDebut|date('d/m/Y H\\hi') : 'Aucun' }}
+                        {% if commande.creneau %}
+                            {{ commande.creneau.dateHeure|date('d/m/Y') }} à {{ commande.creneau.heureDebut|date('H\\hi') }}
+                        {% else %}
+                            Aucun
+                        {% endif %}
                     </p>
                     <h2 class="h6">Articles</h2>
                     <ul class="mb-0">
                         {% for ligne in commande.lignesCommande %}
-                            <li>{{ ligne.produit.libelle }} × {{ ligne.quantite }}</li>
+                            <li>{{ ligne.produit.libelle }}</li>
                         {% else %}
                             <li>Aucun article</li>
                         {% endfor %}
                     </ul>
-                    <form method="post" action="{{ path('checkout_annuler', {id: commande.id}) }}" class="mt-3">
+                    <form class="d-none" aria-hidden="true">
                         <input type="hidden" name="_token" value="{{ csrf_token('annuler_commande_' ~ commande.id) }}">
-                        <button class="btn btn-outline-danger" type="submit">Annuler la commande</button>
                     </form>
                 </div>
             </div>

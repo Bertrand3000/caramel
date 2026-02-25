@@ -43,9 +43,11 @@ final class CheckoutServiceTest extends TestCase
         $em->expects(self::once())->method('wrapInTransaction')->willReturnCallback(fn ($cb) => $cb());
 
         $result = (new CheckoutService($em, $cart, $quota, $slot, $workflow))
-            ->confirmCommande('s', new Creneau(), ProfilUtilisateur::PUBLIC, $utilisateur, '12345');
+            ->confirmCommande('s', new Creneau(), ProfilUtilisateur::PUBLIC, $utilisateur, '12345', 'Durand', 'Alice');
         self::assertSame($commande, $result);
         self::assertSame('12345', $commande->getNumeroAgent());
+        self::assertSame('Durand', $commande->getNom());
+        self::assertSame('Alice', $commande->getPrenom());
         self::assertSame(CommandeProfilEnum::AGENT, $commande->getProfilCommande());
     }
 
