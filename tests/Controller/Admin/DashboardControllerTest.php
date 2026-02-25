@@ -30,7 +30,8 @@ final class DashboardControllerTest extends WebTestCase
         $client->request('GET', '/admin/');
 
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('h1', 'Paramètres boutique');
+        self::assertSelectorTextContains('h1', 'Administration');
+        self::assertStringContainsString('Paramètres boutique', (string) $client->getResponse()->getContent());
         self::assertSelectorExists('a[href="/admin/exports/ventes.csv"]');
     }
 
@@ -78,7 +79,7 @@ final class DashboardControllerTest extends WebTestCase
         rename($tmpPath, $csvPath);
         file_put_contents($csvPath, "numero_agent\n12345\n");
 
-        $client->submit($crawler->selectButton('Importer CSV')->form([
+        $client->submit($crawler->selectButton('Importer le CSV')->form([
             'import_teletravailleurs[csvFile]' => new UploadedFile(
                 $csvPath,
                 'teletravailleurs.csv',
@@ -106,4 +107,3 @@ final class DashboardControllerTest extends WebTestCase
         return $user;
     }
 }
-
