@@ -45,6 +45,10 @@
                         </button>
                         <div class="card-body d-flex flex-column">
                             <h2 class="h6 card-title catalogue-product-title">{{ item.produit.libelle }}</h2>
+                            <div class="catalogue-product-meta">
+                                <span class="catalogue-etat catalogue-etat--{{ item.produit.etat.value }}">{{ item.produit.etat.label() }}</span>
+                                <span class="catalogue-dims">{{ item.produit.largeur|number_format(0) }} × {{ item.produit.hauteur|number_format(0) }} × {{ item.produit.profondeur|number_format(0) }} cm</span>
+                            </div>
                             <form method="post" action="{{ path('cart_add') }}" class="mt-auto">
                                 <input type="hidden" name="produitId" value="{{ item.produit.id }}">
                                 <button
