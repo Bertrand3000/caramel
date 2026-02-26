@@ -17,14 +17,26 @@
             <span id="countdown" class="fw-bold">--:--</span>
         </p>
 
-        <div class="list-group mb-3">
+        <div class="cart-items mb-3">
             {% for item in items %}
-                <div class="list-group-item d-flex justify-content-between align-items-center">
-                    <div>
-                        <strong>{{ item.produit.libelle }}</strong><br>
-                        <small>Quantité : {{ item.quantite }}</small>
+                <div class="cart-item">
+                    <button
+                        type="button"
+                        class="catalogue-photo-trigger cart-photo-btn"
+                        data-full-src="{{ asset(item.produit.photoProduitPublicPath) }}"
+                        data-alt="{{ item.produit.libelle }}"
+                        aria-label="Agrandir l'image de {{ item.produit.libelle }}"
+                    >
+                        <img src="{{ asset(item.produit.photoProduitPublicPath) }}" alt="{{ item.produit.libelle }}" class="cart-item-photo">
+                    </button>
+                    <div class="cart-item-info">
+                        <strong class="cart-item-libelle">{{ item.produit.libelle }}</strong>
+                        <div class="catalogue-product-meta">
+                            <span class="catalogue-etat catalogue-etat--{{ item.produit.etat.value }}">{{ item.produit.etat.label() }}</span>
+                            <span class="catalogue-dims">{{ item.produit.largeur|number_format(0) }} × {{ item.produit.hauteur|number_format(0) }} × {{ item.produit.profondeur|number_format(0) }} cm</span>
+                        </div>
                     </div>
-                    <form method="post" action="{{ path('cart_remove', {id: item.produit.id}) }}">
+                    <form method="post" action="{{ path('cart_remove', {id: item.produit.id}) }}" class="cart-item-action">
                         <button class="btn btn-sm btn-outline-danger" type="submit">Retirer</button>
                     </form>
                 </div>
@@ -33,20 +45,58 @@
             {% endfor %}
         </div>
 
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 w-100">
             {% if hasItems %}
                 <a class="btn btn-primary" href="{{ path('checkout_creneaux') }}">Valider ma commande</a>
-                <form method="post" action="{{ path('cart_clear') }}">
-                    <button class="btn btn-outline-secondary" type="submit">Vider le panier</button>
-                </form>
             {% endif %}
             {% if canContinueShopping %}
                 <a class="btn btn-outline-primary" href="{{ path('shop_catalogue') }}">Continuer vos achats</a>
             {% endif %}
+            {% if hasItems %}
+                <form method="post" action="{{ path('cart_clear') }}" class="ms-auto">
+                    <button class="btn btn-outline-danger h-100" type="submit" onclick="return confirm('Vider le panier ? Tous les articles seront retirés.')">Vider le panier</button>
+                </form>
+            {% endif %}
         </div>
     </main>
 
+    <div id="catalogue-image-modal" class="catalogue-image-modal" hidden>
+        <div class="catalogue-image-backdrop" data-close-modal></div>
+        <figure class="catalogue-image-dialog" role="dialog" aria-modal="true" aria-label="Image produit agrandie">
+            <button type="button" class="catalogue-image-close" data-close-modal aria-label="Fermer l'image agrandie">Fermer</button>
+            <img id="catalogue-image-full" class="catalogue-image-full" src="" alt="">
+            <figcaption id="catalogue-image-caption" class="catalogue-image-caption"></figcaption>
+        </figure>
+    </div>
+
     <script>
+        (() => {
+            const modal = document.getElementById('catalogue-image-modal');
+            const fullImage = document.getElementById('catalogue-image-full');
+            const caption = document.getElementById('catalogue-image-caption');
+            const triggers = document.querySelectorAll('.catalogue-photo-trigger');
+            const closeButtons = modal ? modal.querySelectorAll('[data-close-modal]') : [];
+
+            if (modal && fullImage && caption && triggers.length > 0) {
+                const openModal = (src, alt) => {
+                    fullImage.src = src;
+                    fullImage.alt = alt;
+                    caption.textContent = alt;
+                    modal.hidden = false;
+                    document.body.style.overflow = 'hidden';
+                };
+                const closeModal = () => {
+                    modal.hidden = true;
+                    fullImage.src = '';
+                    fullImage.alt = '';
+                    caption.textContent = '';
+                    document.body.style.overflow = '';
+                };
+                triggers.forEach(t => t.addEventListener('click', () => openModal(t.dataset.fullSrc || '', t.dataset.alt || '')));
+                closeButtons.forEach(b => b.addEventListener('click', closeModal));
+                document.addEventListener('keydown', e => { if (e.key === 'Escape' && !modal.hidden) closeModal(); });
+            }
+        })();
         (() => {
             const expireAt = {{ expireAt is not null ? expireAt : 'null' }};
             const node = document.getElementById('countdown');
