@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Entity\Commande;
+use App\Entity\JourLivraison;
 use App\Enum\CommandeProfilEnum;
 use App\Enum\CommandeStatutEnum;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -177,6 +178,57 @@ class CommandeRepository extends ServiceEntityRepository
     }
 
     /** @return list<Commande> */
+    public function findForPreparation(JourLivraison $jour): array
+    {
+        return $this->createQueryBuilder('c')
+            ->innerJoin('c.creneau', 'cr')
+            ->addSelect('cr')
+            ->innerJoin('cr.jourLivraison', 'j')
+            ->innerJoin('c.lignesCommande', 'lc')
+            ->addSelect('lc')
+            ->innerJoin('lc.produit', 'p')
+            ->addSelect('p')
+            ->andWhere('j.id = :jourId')
+            ->andWhere('c.statut IN (:statuts)')
+            ->setParameter('jourId', $jour->getId())
+            ->setParameter('statuts', [
+                CommandeStatutEnum::VALIDEE,
+                CommandeStatutEnum::EN_PREPARATION,
+            ])
+            ->orderBy('p.etage', 'ASC')
+            ->addOrderBy('p.porte', 'ASC')
+            ->addOrderBy('cr.heureDebut', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /** @return list<Commande> */
+    public function findAllForLogistique(JourLivraison $jour): array
+    {
+        return $this->createQueryBuilder('c')
+            ->innerJoin('c.creneau', 'cr')
+            ->addSelect('cr')
+            ->innerJoin('cr.jourLivraison', 'j')
+            ->innerJoin('c.lignesCommande', 'lc')
+            ->addSelect('lc')
+            ->innerJoin('lc.produit', 'p')
+            ->addSelect('p')
+            ->andWhere('j.id = :jourId')
+            ->andWhere('c.statut IN (:statuts)')
+            ->setParameter('jourId', $jour->getId())
+            ->setParameter('statuts', [
+                CommandeStatutEnum::VALIDEE,
+                CommandeStatutEnum::EN_PREPARATION,
+                CommandeStatutEnum::PRETE,
+                CommandeStatutEnum::RETIREE,
+            ])
+            ->orderBy('cr.heureDebut', 'ASC')
+            ->addOrderBy('c.id', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /** @return list<Commande> */
     public function findForVentesExport(): array
     {
         return $this->createQueryBuilder('c')
@@ -191,7 +243,6 @@ class CommandeRepository extends ServiceEntityRepository
             ->andWhere('c.statut IN (:statuts)')
             ->setParameter('statuts', [
                 CommandeStatutEnum::VALIDEE,
-                CommandeStatutEnum::A_PREPARER,
                 CommandeStatutEnum::EN_PREPARATION,
                 CommandeStatutEnum::PRETE,
                 CommandeStatutEnum::RETIREE,

@@ -25,7 +25,7 @@ final class CommandeDecisionService implements CommandeDecisionServiceInterface
         if ($status === CommandeStatutEnum::ANNULEE) {
             $this->checkoutService->annulerCommande($commande);
         } else {
-            $commande->setStatut($status);
+            $commande->setStatut(CommandeStatutEnum::VALIDEE);
             $this->entityManager->flush();
         }
 

@@ -1,0 +1,172 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Logistique{% endblock %}
+
+{% block body %}
+<main class="container py-4">
+    <section class="form-shell dmax-list-shell">
+
+        <div class="layout-flashes mb-3">
+            {% for label, messages in app.flashes %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ label == 'error' ? 'danger' : label }} alert-global" role="alert">{{ message }}</div>
+                {% endfor %}
+            {% endfor %}
+        </div>
+
+        <header class="dmax-list-head mb-4">
+            <div>
+                <h1>Logistique</h1>
+                {% if jour %}
+                    <p class="dmax-list-meta mb-0">
+                        Prochain jour de livraison : <strong>{{ jour.date|date('d/m/Y') }}</strong>
+                        — {{ commandes|length }} commande(s) au total.
+                    </p>
+                {% endif %}
+            </div>
+        </header>
+
+        {% if jour is null %}
+            <div class="alert alert-warning">
+                Aucun jour de livraison actif trouvé. Veuillez en créer un dans
+                <a href="{{ path('admin_jours_livraison_index') }}">l'administration des créneaux</a>.
+            </div>
+        {% elseif commandes is empty %}
+            <div class="alert alert-info">
+                Aucune commande pour le {{ jour.date|date('d/m/Y') }}.
+            </div>
+        {% else %}
+
+            {% set groups = [
+                { statut: 'validee',        label: 'À préparer',     badgeClass: 'text-bg-warning'   },
+                { statut: 'en_preparation', label: 'En préparation', badgeClass: 'text-bg-primary'   },
+                { statut: 'prete',          label: 'Prêtes',         badgeClass: 'text-bg-success'   },
+                { statut: 'retiree',        label: 'Livrées',        badgeClass: 'text-bg-secondary' },
+            ] %}
+
+            {% for group in groups %}
+                {% set groupe_commandes = commandes|filter(c => c.statut.value == group.statut) %}
+
+                <div class="mb-5">
+                    <h2 class="h5 mb-3">
+                        {{ group.label }}
+                        <span class="badge {{ group.badgeClass }} ms-1">{{ groupe_commandes|length }}</span>
+                    </h2>
+
+                    {% if groupe_commandes|length == 0 %}
+                        <p class="text-muted fst-italic">Aucune commande dans cet état.</p>
+                    {% else %}
+                        <div class="dmax-table-wrap">
+                            <table class="dmax-table">
+                                <thead>
+                                    <tr>
+                                        <th>Emplacement</th>
+                                        <th>Produit(s)</th>
+                                        <th>N° inventaire</th>
+                                        <th>Créneau</th>
+                                        <th>Agent</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for commande in groupe_commandes %}
+                                        <tr>
+                                            <td>
+                                                {% for ligne in commande.lignesCommande %}
+                                                    <div class="text-nowrap">
+                                                        Ét.&nbsp;{{ ligne.produit.etage }}&nbsp;/&nbsp;P.&nbsp;{{ ligne.produit.porte }}
+                                                    </div>
+                                                {% endfor %}
+                                            </td>
+                                            <td>
+                                                {% for ligne in commande.lignesCommande %}
+                                                    <div>{{ ligne.produit.libelle }}</div>
+                                                {% endfor %}
+                                            </td>
+                                            <td>
+                                                {% for ligne in commande.lignesCommande %}
+                                                    <div class="text-muted small">{{ ligne.produit.numeroInventaire ?: '—' }}</div>
+                                                {% endfor %}
+                                            </td>
+                                            <td class="text-nowrap">
+                                                {% if commande.creneau %}
+                                                    {{ commande.creneau.heureDebut|date('H:i') }} – {{ commande.creneau.heureFin|date('H:i') }}
+                                                {% else %}
+                                                    —
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-nowrap">
+                                                {{ commande.prenom ?: '—' }} {{ commande.nom ?: '' }}
+                                                {% if commande.numeroAgent %}
+                                                    <div class="text-muted small">#{{ commande.numeroAgent }}</div>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <div class="d-flex flex-column gap-1">
+
+                                                    {# → État suivant #}
+                                                    {% if commande.statut.value == 'validee' %}
+                                                        <form method="post" action="{{ path('logistique_commande_en_preparation', {id: commande.id}) }}">
+                                                            <input type="hidden" name="_token" value="{{ csrf_token('en_preparation_' ~ commande.id) }}">
+                                                            <button type="submit" class="btn btn-sm btn-outline-primary text-nowrap w-100">
+                                                                Démarrer →
+                                                            </button>
+                                                        </form>
+
+                                                    {% elseif commande.statut.value == 'en_preparation' %}
+                                                        <form method="post" action="{{ path('logistique_commande_prete', {id: commande.id}) }}">
+                                                            <input type="hidden" name="_token" value="{{ csrf_token('prete_' ~ commande.id) }}">
+                                                            <button type="submit" class="btn btn-sm btn-success text-nowrap w-100">
+                                                                Marquer prête →
+                                                            </button>
+                                                        </form>
+
+                                                    {% elseif commande.statut.value == 'prete' %}
+                                                        <form method="post" action="{{ path('logistique_commande_retrait', {id: commande.id}) }}">
+                                                            <input type="hidden" name="_token" value="{{ csrf_token('retrait_' ~ commande.id) }}">
+                                                            <button type="submit" class="btn btn-sm btn-success text-nowrap w-100">
+                                                                Valider retrait →
+                                                            </button>
+                                                        </form>
+
+                                                    {% elseif commande.statut.value == 'retiree' %}
+                                                        <a href="{{ path('logistique_bon_livraison', {id: commande.id}) }}"
+                                                           target="_blank" class="btn btn-sm btn-outline-secondary text-nowrap w-100">
+                                                            Bon de livraison
+                                                        </a>
+                                                    {% endif %}
+
+                                                    {# ← État précédent #}
+                                                    {% if commande.statut.value == 'en_preparation' %}
+                                                        <form method="post" action="{{ path('logistique_commande_retour_validee', {id: commande.id}) }}">
+                                                            <input type="hidden" name="_token" value="{{ csrf_token('retour_validee_' ~ commande.id) }}">
+                                                            <button type="submit" class="btn btn-sm btn-outline-secondary text-nowrap w-100">
+                                                                ← À préparer
+                                                            </button>
+                                                        </form>
+
+                                                    {% elseif commande.statut.value == 'prete' %}
+                                                        <form method="post" action="{{ path('logistique_commande_retour_en_preparation', {id: commande.id}) }}">
+                                                            <input type="hidden" name="_token" value="{{ csrf_token('retour_en_preparation_' ~ commande.id) }}">
+                                                            <button type="submit" class="btn btn-sm btn-outline-secondary text-nowrap w-100">
+                                                                ← En préparation
+                                                            </button>
+                                                        </form>
+                                                    {% endif %}
+
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+
+        {% endif %}
+
+    </section>
+</main>
+{% endblock %}

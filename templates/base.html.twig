@@ -34,7 +34,7 @@
                         {% endif %}
 
                         {% if is_granted('ROLE_DMAX') or is_granted('ROLE_AGENT_RECUPERATION') %}
-                            <a href="{{ path('logistique_dashboard') }}">Logistique</a>
+                            <a href="{{ path('logistique_index') }}">Logistique</a>
                         {% endif %}
 
                         {% if is_granted('ROLE_AGENT') or is_granted('ROLE_TELETRAVAILLEUR') or is_granted('ROLE_PARTENAIRE') %}

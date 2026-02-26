@@ -11,7 +11,6 @@ framework:
             places:
                 - en_attente_validation
                 - validee
-                - a_preparer
                 - en_preparation
                 - prete
                 - retiree
@@ -20,15 +19,18 @@ framework:
                 valider:
                     from: en_attente_validation
                     to: validee
-                planifier_preparation:
-                    from: validee
-                    to: a_preparer
                 demarrer_preparation:
-                    from: a_preparer
+                    from: validee
                     to: en_preparation
+                annuler_preparation:
+                    from: en_preparation
+                    to: validee
                 terminer_preparation:
                     from: en_preparation
                     to: prete
+                revenir_en_preparation:
+                    from: prete
+                    to: en_preparation
                 acter_retrait:
                     from: prete
                     to: retiree
@@ -36,7 +38,6 @@ framework:
                     from:
                         - en_attente_validation
                         - validee
-                        - a_preparer
                         - en_preparation
                         - prete
                     to: annulee

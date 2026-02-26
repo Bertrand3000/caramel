@@ -44,6 +44,19 @@ class JourLivraisonRepository extends ServiceEntityRepository
             ->getOneOrNullResult();
     }
 
+    public function findNextActiveDeliveryDay(): ?JourLivraison
+    {
+        return $this->createQueryBuilder('j')
+            ->andWhere('j.actif = :actif')
+            ->andWhere('j.date >= :today')
+            ->setParameter('actif', true)
+            ->setParameter('today', new \DateTimeImmutable('today'))
+            ->orderBy('j.date', 'ASC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
     /** @return list<JourLivraison> */
     public function findAllWithCreneauxOrderedByDate(): array
     {
