@@ -1,0 +1,82 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Suivi des commandes{% endblock %}
+
+{% block body %}
+<main class="container py-4">
+    <section class="form-shell dmax-list-shell">
+        <div class="layout-flashes mb-3">
+            {% for label, messages in app.flashes %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ label == 'error' ? 'danger' : label }} alert-global" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endfor %}
+        </div>
+        <header class="dmax-list-head">
+            <div>
+                <h1>Suivi des commandes</h1>
+                <p class="dmax-list-meta mb-0">Commandes en attente de validation et import GRH.</p>
+            </div>
+        </header>
+
+        <section class="form-section">
+            <h2>Import GRH</h2>
+            <p class="form-help mb-2">Importe un fichier XLSX pour enrichir nom/prénom/email/téléphone sur les commandes en attente.</p>
+            {{ form_start(importForm, {action: path('admin_suivi_commandes_import_grh'), attr: {'class': 'produit-form'}}) }}
+                {{ form_errors(importForm) }}
+                {{ form_row(importForm.xlsxFile, {label: 'Fichier GRH (.xlsx)', attr: {'class': 'form-control'}}) }}
+                <div class="form-actions">
+                    <button class="btn btn-primary" type="submit">Importer</button>
+                </div>
+            {{ form_end(importForm) }}
+        </section>
+
+        <div class="dmax-table-wrap">
+            <table class="dmax-table">
+                <thead>
+                    <tr>
+                        <th>N° Agent</th>
+                        <th>Nom</th>
+                        <th>Prénom</th>
+                        <th>Créneau</th>
+                        <th>Données GRH</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for commande in commandes %}
+                        <tr>
+                            <td>{{ commande.numeroAgent ?: '—' }}</td>
+                            <td>{{ commande.nom ?: '—' }}</td>
+                            <td>{{ commande.prenom ?: '—' }}</td>
+                            <td>
+                                {% if commande.creneau %}
+                                    {{ commande.creneau.dateHeure|date('d/m/Y') }} · {{ commande.creneau.heureDebut|date('H:i') }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if commande.commandeContactTmp %}
+                                    <span class="badge text-bg-success">Oui</span>
+                                {% else %}
+                                    <span class="badge text-bg-danger">Non</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a class="btn btn-sm btn-outline-primary" href="{{ path('admin_suivi_commandes_show', {id: commande.id}) }}">Examiner</a>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="6">Aucune commande en attente de validation.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+{% endblock %}

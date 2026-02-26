@@ -55,13 +55,13 @@ final class CommandeWorkflowTest extends KernelTestCase
         self::assertSame(CommandeStatutEnum::RETIREE, $commande->getStatut());
     }
 
-    public function testRefusDepuisEnAttenteValidation(): void
+    public function testAnnulationDepuisEnAttenteValidation(): void
     {
         $commande = new Commande();
 
-        self::assertTrue($this->workflow->can($commande, 'refuser'));
-        $this->workflow->apply($commande, 'refuser');
+        self::assertTrue($this->workflow->can($commande, 'annuler_commande'));
+        $this->workflow->apply($commande, 'annuler_commande');
 
-        self::assertSame(CommandeStatutEnum::REFUSEE, $commande->getStatut());
+        self::assertSame(CommandeStatutEnum::ANNULEE, $commande->getStatut());
     }
 }

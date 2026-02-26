@@ -1,0 +1,12 @@
+<p>Bonjour {{ commande.commandeContactTmp ? commande.commandeContactTmp.prenomGrh : '' }} {{ commande.commandeContactTmp ? commande.commandeContactTmp.nomGrh : '' }},</p>
+
+<p>Votre commande CARAMEL a été validée.</p>
+
+{% if commande.creneau %}
+    <p>
+        Rappel de votre créneau : {{ commande.creneau.dateHeure|date('l d F Y') }}
+        à {{ commande.creneau.heureDebut|date('H:i') }}.
+    </p>
+{% endif %}
+
+<p>L’équipe CARAMEL</p>

@@ -28,6 +28,7 @@
 
                         {% if is_granted('ROLE_ADMIN') %}
                             <a href="{{ path('admin_jours_livraison_index') }}">Créneaux</a>
+                            <a href="{{ path('admin_suivi_commandes_index') }}">Suivi des commandes</a>
                         {% endif %}
 
                         {% if is_granted('ROLE_DMAX') or is_granted('ROLE_AGENT_RECUPERATION') %}

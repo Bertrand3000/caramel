@@ -46,6 +46,7 @@ final class NavigationMenuTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertGreaterThan(0, $crawler->filter('a[href="/admin/"]')->count());
         self::assertGreaterThan(0, $crawler->filter('a[href="/dmax/"]')->count());
+        self::assertGreaterThan(0, $crawler->filter('a[href="/admin/suivi-commandes"]')->count());
         self::assertGreaterThan(0, $crawler->filter('a[href="/logistique/dashboard"]')->count());
         self::assertGreaterThan(0, $crawler->filter('a[href="/boutique"]')->count());
         self::assertGreaterThan(0, $crawler->filter('a[href="/panier"]')->count());

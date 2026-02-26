@@ -30,6 +30,53 @@ class CommandeRepository extends ServiceEntityRepository
             ->getSingleScalarResult();
     }
 
+    /** @return list<Commande> */
+    public function findEnAttenteValidationWithRelations(): array
+    {
+        return $this->createQueryBuilder('c')
+            ->leftJoin('c.creneau', 'creneau')
+            ->addSelect('creneau')
+            ->leftJoin('c.commandeContactTmp', 'contact')
+            ->addSelect('contact')
+            ->andWhere('c.statut = :statut')
+            ->setParameter('statut', CommandeStatutEnum::EN_ATTENTE_VALIDATION)
+            ->orderBy('c.dateValidation', 'ASC')
+            ->addOrderBy('c.id', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function findOneForSuiviCommandes(int $id): ?Commande
+    {
+        return $this->createQueryBuilder('c')
+            ->leftJoin('c.creneau', 'creneau')
+            ->addSelect('creneau')
+            ->leftJoin('c.commandeContactTmp', 'contact')
+            ->addSelect('contact')
+            ->leftJoin('c.lignesCommande', 'ligne')
+            ->addSelect('ligne')
+            ->leftJoin('ligne.produit', 'produit')
+            ->addSelect('produit')
+            ->andWhere('c.id = :id')
+            ->setParameter('id', $id)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
+    /** @return list<Commande> */
+    public function findEnAttenteValidationByNumeroAgent(string $numeroAgent): array
+    {
+        return $this->createQueryBuilder('c')
+            ->leftJoin('c.commandeContactTmp', 'contact')
+            ->addSelect('contact')
+            ->andWhere('c.numeroAgent = :numeroAgent')
+            ->andWhere('c.statut = :statut')
+            ->setParameter('numeroAgent', $numeroAgent)
+            ->setParameter('statut', CommandeStatutEnum::EN_ATTENTE_VALIDATION)
+            ->getQuery()
+            ->getResult();
+    }
+
     public function countArticlesActifsForNumeroAgent(string $numeroAgent): int
     {
         return (int) $this->createQueryBuilder('c')

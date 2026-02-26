@@ -21,7 +21,7 @@ final class MailerNotifierTest extends TestCase
         $mailer->expects(self::once())
             ->method('send')
             ->with(self::callback(static function (Email $email): bool {
-                return $email->getSubject() === 'Commande #0 validée'
+                return $email->getSubject() === 'Votre commande CARAMEL a été validée'
                     && $email->getTo()[0]->getAddress() === 'agent@example.test';
             }));
 

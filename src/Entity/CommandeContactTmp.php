@@ -20,14 +20,20 @@ class CommandeContactTmp
     #[ORM\JoinColumn(nullable: false)]
     private Commande $commande;
 
-    #[ORM\Column(length: 255)]
-    private string $email;
+    #[ORM\Column(length: 120, nullable: true)]
+    private ?string $nomGrh = null;
 
-    #[ORM\Column(length: 30)]
-    private string $telephone;
+    #[ORM\Column(length: 120, nullable: true)]
+    private ?string $prenomGrh = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $email = null;
+
+    #[ORM\Column(length: 30, nullable: true)]
+    private ?string $telephone = null;
 
     #[ORM\Column(length: 100)]
-    private string $importBatchId;
+    private string $importBatchId = '';
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     private \DateTimeImmutable $importedAt;
@@ -54,26 +60,74 @@ class CommandeContactTmp
         return $this;
     }
 
-    public function getEmail(): string
+    public function getNomGrh(): ?string
+    {
+        return $this->nomGrh;
+    }
+
+    public function setNomGrh(?string $nomGrh): self
+    {
+        $this->nomGrh = $nomGrh;
+
+        return $this;
+    }
+
+    public function getPrenomGrh(): ?string
+    {
+        return $this->prenomGrh;
+    }
+
+    public function setPrenomGrh(?string $prenomGrh): self
+    {
+        $this->prenomGrh = $prenomGrh;
+
+        return $this;
+    }
+
+    public function getEmail(): ?string
     {
         return $this->email;
     }
 
-    public function setEmail(string $email): self
+    public function setEmail(?string $email): self
     {
         $this->email = $email;
 
         return $this;
     }
 
-    public function getTelephone(): string
+    public function getTelephone(): ?string
     {
         return $this->telephone;
     }
 
-    public function setTelephone(string $telephone): self
+    public function setTelephone(?string $telephone): self
     {
         $this->telephone = $telephone;
+
+        return $this;
+    }
+
+    public function getImportBatchId(): string
+    {
+        return $this->importBatchId;
+    }
+
+    public function setImportBatchId(string $importBatchId): self
+    {
+        $this->importBatchId = $importBatchId;
+
+        return $this;
+    }
+
+    public function getImportedAt(): \DateTimeImmutable
+    {
+        return $this->importedAt;
+    }
+
+    public function setImportedAt(\DateTimeImmutable $importedAt): self
+    {
+        $this->importedAt = $importedAt;
 
         return $this;
     }

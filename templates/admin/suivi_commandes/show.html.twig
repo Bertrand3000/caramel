@@ -1,0 +1,83 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Suivi commande #{{ commande.id }}{% endblock %}
+
+{% block body %}
+<main class="container py-4">
+    <section class="form-shell dmax-list-shell">
+        <header class="dmax-list-head">
+            <div>
+                <h1>Validation de commande</h1>
+                <p class="dmax-list-meta mb-0">Compare la saisie commande avec les données GRH importées.</p>
+            </div>
+            <a class="btn btn-outline-secondary" href="{{ path('admin_suivi_commandes_index') }}">Retour à la liste</a>
+        </header>
+
+        <section class="form-section">
+            <h2>Comparaison identité</h2>
+            <div class="dmax-table-wrap">
+                <table class="dmax-table">
+                    <thead>
+                        <tr>
+                            <th>Champ</th>
+                            <th>Saisie commande</th>
+                            <th>Données GRH</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Nom</td>
+                            <td>{{ commande.nom ?: '—' }}</td>
+                            <td>{{ commande.commandeContactTmp ? commande.commandeContactTmp.nomGrh : '—' }}</td>
+                        </tr>
+                        <tr>
+                            <td>Prénom</td>
+                            <td>{{ commande.prenom ?: '—' }}</td>
+                            <td>{{ commande.commandeContactTmp ? commande.commandeContactTmp.prenomGrh : '—' }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="form-section">
+            <h2>Détails commande</h2>
+            <p class="mb-1"><strong>N° Agent :</strong> {{ commande.numeroAgent ?: '—' }}</p>
+            <p class="mb-1">
+                <strong>Créneau :</strong>
+                {% if commande.creneau %}
+                    {{ commande.creneau.dateHeure|date('d/m/Y') }} · {{ commande.creneau.heureDebut|date('H:i') }}-{{ commande.creneau.heureFin|date('H:i') }}
+                {% else %}
+                    —
+                {% endif %}
+            </p>
+            <p class="mb-1"><strong>Statut :</strong> {{ commande.statut.value|replace({'_':' '})|capitalize }}</p>
+            <p class="mb-1"><strong>Articles :</strong></p>
+            <ul class="mb-2">
+                {% for ligne in commande.lignesCommande %}
+                    <li>{{ ligne.produit.libelle }}</li>
+                {% else %}
+                    <li>Aucun article</li>
+                {% endfor %}
+            </ul>
+            {% if commande.commandeContactTmp is null or commande.commandeContactTmp.email is null %}
+                <span class="badge text-bg-danger">Email GRH manquant</span>
+            {% endif %}
+        </section>
+
+        <section class="form-section">
+            <h2>Décision</h2>
+            <div class="dmax-actions">
+                <form method="post" action="{{ path('admin_suivi_commandes_valider', {id: commande.id}) }}" onsubmit="return confirm('Confirmer la validation de cette commande ?');">
+                    <input type="hidden" name="_token" value="{{ csrf_token('valider_commande_' ~ commande.id) }}">
+                    <button class="btn btn-primary" type="submit">Valider</button>
+                </form>
+                <form method="post" action="{{ path('admin_suivi_commandes_refuser', {id: commande.id}) }}" onsubmit="return confirm('Confirmer le refus de cette commande ?');">
+                    <input type="hidden" name="_token" value="{{ csrf_token('refuser_commande_' ~ commande.id) }}">
+                    <button class="btn btn-outline-danger" type="submit">Refuser</button>
+                </form>
+            </div>
+        </section>
+    </section>
+</main>
+{% endblock %}

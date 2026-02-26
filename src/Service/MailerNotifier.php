@@ -6,8 +6,8 @@ namespace App\Service;
 
 use App\Entity\Commande;
 use App\Interface\MailerNotifierInterface;
+use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Component\Mailer\MailerInterface;
-use Symfony\Component\Mime\Email;
 
 final class MailerNotifier implements MailerNotifierInterface
 {
@@ -17,7 +17,7 @@ final class MailerNotifier implements MailerNotifierInterface
     ) {
     }
 
-    public function sendValidationEmail(Commande $commande): void
+    public function notifyCommandeValidee(Commande $commande): void
     {
         $recipient = $this->resolveRecipient($commande);
         if ($recipient === null) {
@@ -25,28 +25,40 @@ final class MailerNotifier implements MailerNotifierInterface
         }
 
         $this->mailer->send(
-            (new Email())
+            (new TemplatedEmail())
                 ->from($this->fromEmail)
                 ->to($recipient)
-                ->subject(sprintf('Commande #%d validée', (int) $commande->getId()))
-                ->text('Votre commande a été validée. Merci de vous présenter au créneau prévu.'),
+                ->subject('Votre commande CARAMEL a été validée')
+                ->htmlTemplate('emails/commande_validee.html.twig')
+                ->context(['commande' => $commande]),
         );
+    }
+
+    public function notifyCommandeRefusee(Commande $commande): void
+    {
+        $recipient = $this->resolveRecipient($commande);
+        if ($recipient === null) {
+            return;
+        }
+
+        $this->mailer->send(
+            (new TemplatedEmail())
+                ->from($this->fromEmail)
+                ->to($recipient)
+                ->subject('Votre commande CARAMEL n\'a pas pu être acceptée')
+                ->htmlTemplate('emails/commande_refusee.html.twig')
+                ->context(['commande' => $commande]),
+        );
+    }
+
+    public function sendValidationEmail(Commande $commande): void
+    {
+        $this->notifyCommandeValidee($commande);
     }
 
     public function sendRefusalOrCancellationEmail(Commande $commande): void
     {
-        $recipient = $this->resolveRecipient($commande);
-        if ($recipient === null) {
-            return;
-        }
-
-        $this->mailer->send(
-            (new Email())
-                ->from($this->fromEmail)
-                ->to($recipient)
-                ->subject(sprintf('Commande #%d refusée ou annulée', (int) $commande->getId()))
-                ->text('Votre commande a été refusée ou annulée. Les produits ont été remis à disposition.'),
-        );
+        $this->notifyCommandeRefusee($commande);
     }
 
     private function resolveRecipient(Commande $commande): ?string

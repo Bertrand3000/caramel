@@ -11,7 +11,6 @@ framework:
             places:
                 - en_attente_validation
                 - validee
-                - refusee
                 - a_preparer
                 - en_preparation
                 - prete
@@ -21,9 +20,6 @@ framework:
                 valider:
                     from: en_attente_validation
                     to: validee
-                refuser:
-                    from: en_attente_validation
-                    to: refusee
                 planifier_preparation:
                     from: validee
                     to: a_preparer
@@ -40,7 +36,6 @@ framework:
                     from:
                         - en_attente_validation
                         - validee
-                        - refusee
                         - a_preparer
                         - en_preparation
                         - prete

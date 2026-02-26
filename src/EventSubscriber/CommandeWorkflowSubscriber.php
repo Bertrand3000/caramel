@@ -25,7 +25,6 @@ final class CommandeWorkflowSubscriber implements EventSubscriberInterface
         return [
             'workflow.commande_lifecycle.transition.acter_retrait' => 'onActerRetrait',
             'workflow.commande_lifecycle.transition.valider' => 'onValiderCommande',
-            'workflow.commande_lifecycle.transition.refuser' => 'onRefuserCommande',
             'workflow.commande_lifecycle.transition.annuler_commande' => 'onAnnulerCommande',
         ];
     }
@@ -38,16 +37,6 @@ final class CommandeWorkflowSubscriber implements EventSubscriberInterface
         }
 
         $this->mailerNotifier->sendValidationEmail($commande);
-    }
-
-    public function onRefuserCommande(Event $event): void
-    {
-        $commande = $this->extractCommande($event);
-        if ($commande === null) {
-            return;
-        }
-
-        $this->mailerNotifier->sendRefusalOrCancellationEmail($commande);
     }
 
     public function onActerRetrait(Event $event): void
