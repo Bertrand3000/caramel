@@ -1,0 +1,64 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ isEdit ? 'Modifier ' ~ utilisateur.login : 'Nouvel utilisateur' }}{% endblock %}
+
+{% block body %}
+<main class="container py-4">
+    <section class="form-shell">
+        <header class="form-head">
+            <h1>{{ isEdit ? 'Modifier « ' ~ utilisateur.login ~ ' »' : 'Nouvel utilisateur' }}</h1>
+        </header>
+
+        {{ form_start(form, {attr: {class: 'produit-form'}}) }}
+            {{ form_errors(form) }}
+
+            <section class="form-section">
+                <h2>Compte</h2>
+                <div class="form-grid-two">
+                    {{ form_row(form.login, {attr: {class: 'form-control'}}) }}
+                </div>
+                <div class="form-check mt-2">
+                    {{ form_widget(form.actif, {attr: {class: 'form-check-input'}}) }}
+                    {{ form_label(form.actif, null, {label_attr: {class: 'form-check-label'}}) }}
+                </div>
+                {{ form_errors(form.actif) }}
+            </section>
+
+            <section class="form-section">
+                <h2>Rôle(s)</h2>
+                <div class="utilisateur-roles">
+                    {% for child in form.roles %}
+                        <div class="form-check">
+                            {{ form_widget(child, {attr: {class: 'form-check-input'}}) }}
+                            {{ form_label(child, null, {label_attr: {class: 'form-check-label'}}) }}
+                        </div>
+                    {% endfor %}
+                </div>
+                {{ form_errors(form.roles) }}
+            </section>
+
+            <section class="form-section">
+                <h2>Mot de passe</h2>
+                {{ form_row(form.plainPassword, {attr: {class: 'form-control', autocomplete: 'new-password'}}) }}
+            </section>
+
+            <div class="form-actions">
+                <a class="btn btn-outline-secondary" href="{{ path('admin_utilisateurs_index') }}">Retour</a>
+                <button class="btn btn-primary" type="submit">{{ isEdit ? 'Enregistrer' : 'Créer' }}</button>
+            </div>
+        {{ form_end(form) }}
+
+        {% if isEdit and utilisateur.userIdentifier != app.user.userIdentifier %}
+            <section class="form-section mt-3">
+                <h2>Zone sensible</h2>
+                <p class="form-help mb-2">Supprime définitivement ce compte.</p>
+                <form method="post" action="{{ path('admin_utilisateurs_delete', {id: utilisateur.id}) }}"
+                      onsubmit="return confirm('Supprimer « {{ utilisateur.login }} » ?')">
+                    <input type="hidden" name="_token" value="{{ csrf_token('delete_utilisateur_' ~ utilisateur.id) }}">
+                    <button class="btn btn-outline-danger" type="submit">Supprimer l'utilisateur</button>
+                </form>
+            </section>
+        {% endif %}
+    </section>
+</main>
+{% endblock %}

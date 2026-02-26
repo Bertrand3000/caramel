@@ -1,0 +1,75 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Gestion des utilisateurs{% endblock %}
+
+{% set role_labels = {
+    'ROLE_ADMIN':             'Admin',
+    'ROLE_DMAX':              'DMAX',
+    'ROLE_AGENT':             'Agent',
+    'ROLE_TELETRAVAILLEUR':   'Télétravailleur',
+    'ROLE_PARTENAIRE':        'Partenaire',
+    'ROLE_AGENT_RECUPERATION':'Récupération'
+} %}
+
+{% block body %}
+<main class="container py-4">
+    <section class="form-shell dmax-list-shell">
+        <div class="layout-flashes mb-3">
+            {% for label, messages in app.flashes %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ label == 'error' ? 'danger' : label }} alert-global" role="alert">{{ message }}</div>
+                {% endfor %}
+            {% endfor %}
+        </div>
+
+        <header class="dmax-list-head">
+            <div>
+                <h1>Utilisateurs</h1>
+                <p class="dmax-list-meta mb-0">{{ utilisateurs|length }} compte(s) enregistré(s).</p>
+            </div>
+            <a class="btn btn-primary" href="{{ path('admin_utilisateurs_new') }}">Nouvel utilisateur</a>
+        </header>
+
+        <div class="dmax-table-wrap">
+            <table class="dmax-table">
+                <thead>
+                    <tr>
+                        <th>Identifiant</th>
+                        <th>Rôle(s)</th>
+                        <th>Actif</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for utilisateur in utilisateurs %}
+                        <tr>
+                            <td>{{ utilisateur.login }}</td>
+                            <td>
+                                {% for role in utilisateur.roles %}
+                                    <span class="badge text-bg-secondary">{{ role_labels[role] ?? role }}</span>
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endfor %}
+                            </td>
+                            <td>
+                                {% if utilisateur.actif %}
+                                    <span class="badge text-bg-success">Oui</span>
+                                {% else %}
+                                    <span class="badge text-bg-danger">Non</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a class="btn btn-sm btn-outline-primary" href="{{ path('admin_utilisateurs_edit', {id: utilisateur.id}) }}">Modifier</a>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="4">Aucun utilisateur.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+{% endblock %}
