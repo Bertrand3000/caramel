@@ -18,6 +18,7 @@ readonly class CreateProduitDTO
         public float $largeur,
         public float $hauteur,
         public float $profondeur,
+        public ?string $description = null,
     ) {
     }
 }

@@ -8,6 +8,7 @@ use App\Enum\ProduitEtatEnum;
 use App\Enum\ProduitStatutEnum;
 use App\Repository\ProduitRepository;
 use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: ProduitRepository::class)]
@@ -65,6 +66,9 @@ class Produit
     #[ORM\Column(options: ['default' => 1])]
     private int $quantite = 1;
 
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $description = null;
+
 
     #[ORM\OneToMany(mappedBy: 'produit', targetEntity: LigneCommande::class)]
     private iterable $lignesCommande;
@@ -118,4 +122,6 @@ class Produit
     public function setStatut(ProduitStatutEnum $statut): self { $this->statut = $statut; return $this; }
     public function getQuantite(): int { return $this->quantite; }
     public function setQuantite(int $quantite): self { $this->quantite = $quantite; return $this; }
+    public function getDescription(): ?string { return $this->description; }
+    public function setDescription(?string $description): self { $this->description = $description; return $this; }
 }

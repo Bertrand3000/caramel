@@ -50,11 +50,15 @@ final class ShopController extends AbstractController
         $catalogue = [];
 
         foreach ($produits as $produit) {
-            if (
-                $keywordNormalized !== ''
-                && !str_contains(mb_strtolower($produit->getLibelle()), $keywordNormalized)
-            ) {
-                continue;
+            if ($keywordNormalized !== '') {
+                $haystack = implode(' ', array_filter([
+                    mb_strtolower($produit->getLibelle()),
+                    mb_strtolower($produit->getDescription() ?? ''),
+                    mb_strtolower($produit->getNumeroInventaire() ?? ''),
+                ]));
+                if (!str_contains($haystack, $keywordNormalized)) {
+                    continue;
+                }
             }
 
             $stockDisponible = $this->cartManager->getAvailableStockForDisplay($produit);

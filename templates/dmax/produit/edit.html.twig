@@ -48,6 +48,14 @@
                 </section>
 
                 <section class="form-section">
+                    <h2>Description</h2>
+                    {{ form_row(form.description, {
+                        'label': 'Description (optionnelle)',
+                        'attr': {'class': 'form-control'}
+                    }) }}
+                </section>
+
+                <section class="form-section">
                     <h2>Dimensions (cm)</h2>
                     <div class="form-grid-three">
                         {{ form_row(form.largeur, {

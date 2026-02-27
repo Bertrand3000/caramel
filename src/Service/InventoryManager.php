@@ -115,6 +115,7 @@ class InventoryManager implements InventoryManagerInterface
             ->setTagTeletravailleur($tagTeletravailleur)
             ->setLargeur($dto->largeur)
             ->setHauteur($dto->hauteur)
-            ->setProfondeur($dto->profondeur);
+            ->setProfondeur($dto->profondeur)
+            ->setDescription($dto->description);
     }
 }

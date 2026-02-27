@@ -69,6 +69,7 @@ class DashboardController extends AbstractController
             'largeur' => $produit->getLargeur(),
             'hauteur' => $produit->getHauteur(),
             'profondeur' => $produit->getProfondeur(),
+            'description' => $produit->getDescription(),
         ], ['photo_required' => false]);
         $form->handleRequest($request);
 
@@ -101,6 +102,8 @@ class DashboardController extends AbstractController
     {
         $numeroInventaire = trim((string) ($data['numeroInventaire'] ?? ''));
 
+        $description = trim((string) ($data['description'] ?? ''));
+
         return new CreateProduitDTO(
             $numeroInventaire !== '' ? $numeroInventaire : null,
             (string) $data['libelle'],
@@ -111,6 +114,7 @@ class DashboardController extends AbstractController
             (float) $data['largeur'],
             (float) $data['hauteur'],
             (float) $data['profondeur'],
+            $description !== '' ? $description : null,
         );
     }
 }

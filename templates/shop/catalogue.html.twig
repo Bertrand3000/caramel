@@ -12,8 +12,8 @@
             {% endfor %}
         {% endfor %}
 
-        <form method="get" class="row g-2 mb-4">
-            <div class="col-12 col-md-4">
+        <form method="get" class="d-flex align-items-end gap-2 mb-4">
+            <div>
                 <label class="form-label" for="q">Recherche</label>
                 <input
                     class="form-control"
@@ -22,12 +22,11 @@
                     type="search"
                     autocomplete="off"
                     value="{{ filtres.q }}"
-                    placeholder="Ex: bure, chai, armo..."
+                    placeholder="Partie du nom, de la description, ou numéro d'inventaire"
+                    style="width: 750px;"
                 >
             </div>
-            <div class="col-12 col-md-2 d-flex align-items-end">
-                <button class="btn btn-primary w-100" type="submit">Rechercher</button>
-            </div>
+            <button class="btn btn-primary" type="submit">Rechercher</button>
         </form>
 
         <div class="row g-3">
@@ -45,9 +44,15 @@
                         </button>
                         <div class="card-body d-flex flex-column">
                             <h2 class="h6 card-title catalogue-product-title">{{ item.produit.libelle }}</h2>
-                            <div class="catalogue-product-meta">
-                                <span class="catalogue-etat catalogue-etat--{{ item.produit.etat.value }}">{{ item.produit.etat.label() }}</span>
+                            <div class="d-flex justify-content-between align-items-center">
                                 <span class="catalogue-dims">{{ item.produit.largeur|number_format(0) }} × {{ item.produit.hauteur|number_format(0) }} × {{ item.produit.profondeur|number_format(0) }} cm</span>
+                                <span class="catalogue-etat catalogue-etat--{{ item.produit.etat.value }}">{{ item.produit.etat.label() }}</span>
+                            </div>
+                            <div class="catalogue-product-description-wrap">
+                                <p class="catalogue-product-description">{{ item.produit.description }}</p>
+                                {% if item.produit.description %}
+                                    <button type="button" class="catalogue-description-toggle">Voir plus</button>
+                                {% endif %}
                             </div>
                             <form method="post" action="{{ path('cart_add') }}" class="mt-auto">
                                 <input type="hidden" name="produitId" value="{{ item.produit.id }}">
@@ -81,6 +86,23 @@
     </div>
 
     <script>
+        (() => {
+            // Boutons "Voir plus / Voir moins" sur les descriptions tronquées
+            document.querySelectorAll('.catalogue-product-description-wrap').forEach((wrap) => {
+                const toggle = wrap.querySelector('.catalogue-description-toggle');
+                const text = wrap.querySelector('.catalogue-product-description');
+                if (!toggle || !text) return;
+                // Afficher le bouton seulement si le texte déborde réellement
+                if (text.scrollHeight > wrap.clientHeight + 2) {
+                    toggle.classList.add('is-visible');
+                }
+                toggle.addEventListener('click', () => {
+                    const expanded = wrap.classList.toggle('is-expanded');
+                    toggle.textContent = expanded ? 'Voir moins' : 'Voir plus';
+                });
+            });
+        })();
+
         (() => {
             const modal = document.getElementById('catalogue-image-modal');
             const fullImage = document.getElementById('catalogue-image-full');

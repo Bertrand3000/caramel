@@ -60,6 +60,9 @@
                                 <td>
                                     <strong>{{ produit.libelle }}</strong><br>
                                     <span class="small text-body-secondary">{{ produit.statut.value }}</span>
+                                    {% if produit.description %}
+                                        <p class="small text-body-secondary fst-italic mt-1 mb-0">{{ produit.description }}</p>
+                                    {% endif %}
                                 </td>
                                 <td>{{ produit.numeroInventaire ?: '—' }}</td>
                                 <td>
