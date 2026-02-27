@@ -29,6 +29,7 @@ security:
 
     access_control:
         - { path: ^/login$, roles: PUBLIC_ACCESS }
+        - { path: ^/mentions-legales$, roles: PUBLIC_ACCESS }
         - { path: ^/admin, roles: ROLE_ADMIN }
         - { path: ^/dmax, roles: [ROLE_DMAX, ROLE_AGENT_RECUPERATION] }
         - { path: ^/logistique, roles: [ROLE_DMAX, ROLE_AGENT_RECUPERATION] }

@@ -1,0 +1,39 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mentions légales — CARAMEL{% endblock %}
+
+{% block body %}
+    <main class="container py-5">
+        <h1 class="mb-4">Mentions légales</h1>
+
+        <section class="mb-4">
+            <h2 class="h5">Éditeur du site</h2>
+            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+        </section>
+
+        <section class="mb-4">
+            <h2 class="h5">Hébergement</h2>
+            <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+        </section>
+
+        <section class="mb-4">
+            <h2 class="h5">Données personnelles</h2>
+            <p>Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante. Donec eu libero sit amet quam egestas semper.</p>
+            <p>Aenean ultricies mi vitae est. Mauris placerat eleifend leo. Quisque sit amet est et sapien ullamcorper pharetra. Vestibulum erat wisi, condimentum sed, commodo vitae, ornare sit amet, wisi.</p>
+        </section>
+
+        <section class="mb-4">
+            <h2 class="h5">Cookies</h2>
+            <p>Aenean fermentum, elit eget tincidunt condimentum, eros ipsum rutrum orci, sagittis tempus lacus enim ac dui. Donec non enim in turpis pulvinar facilisis. Ut felis.</p>
+        </section>
+
+        <section class="mb-4">
+            <h2 class="h5">Propriété intellectuelle</h2>
+            <p>Header Photo by <a href="#">Lorem Ipsum</a> on <a href="#">Unsplash</a>. Curabitur pretium tincidunt lacus. Nulla gravida orci a odio. Nullam varius, turpis molestie dictum semper, nunc augue, dignissim orci, nisi consequat nisi sem.</p>
+        </section>
+
+        <p class="mt-5">
+            <a href="{{ path('login') }}" class="btn btn-outline-secondary btn-sm">← Retour à la connexion</a>
+        </p>
+    </main>
+{% endblock %}

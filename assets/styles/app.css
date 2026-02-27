@@ -873,3 +873,20 @@ body.login-page {
 .login-submit {
     width: 100%;
 }
+
+.login-footer {
+    position: absolute;
+    bottom: 1.25rem;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+}
+.login-footer a {
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.65);
+    text-decoration: none;
+}
+.login-footer a:hover {
+    color: #fff;
+    text-decoration: underline;
+}
