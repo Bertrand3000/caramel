@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Bon de commande #{{ commande.id }}</title>
+<style>
+  body {
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: 11pt;
+    color: #1a1a1a;
+    margin: 0;
+    padding: 0;
+  }
+  .page {
+    padding: 20mm 18mm 20mm 18mm;
+  }
+  h1 {
+    font-size: 16pt;
+    margin: 0 0 4mm 0;
+    border-bottom: 2px solid #1a1a1a;
+    padding-bottom: 3mm;
+  }
+  .subtitle {
+    font-size: 9pt;
+    color: #555;
+    margin: 0 0 8mm 0;
+  }
+
+  /* Layout deux colonnes : infos à gauche, étiquettes à droite */
+  .two-col {
+    width: 100%;
+    margin-bottom: 6mm;
+  }
+  .two-col td {
+    vertical-align: top;
+    padding: 0;
+  }
+  .two-col td.left {
+    width: 55%;
+    padding-right: 8mm;
+  }
+  .two-col td.right {
+    width: 45%;
+  }
+
+  /* Blocs d'info */
+  .info-block {
+    margin-bottom: 5mm;
+  }
+  .info-block h2 {
+    font-size: 10pt;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #444;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 2mm;
+    margin: 0 0 3mm 0;
+  }
+  .info-row {
+    font-size: 10pt;
+    margin-bottom: 1.5mm;
+  }
+  .info-row strong {
+    display: inline-block;
+    width: 38mm;
+    color: #333;
+  }
+
+  /* Zone étiquettes */
+  .zone-etiquettes {
+    border: 2px dashed #aaa;
+    border-radius: 3px;
+    padding: 4mm;
+    height: 90mm;
+    background: #fafafa;
+    box-sizing: border-box;
+  }
+  .zone-etiquettes-title {
+    font-size: 8pt;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #888;
+    margin-bottom: 3mm;
+    text-align: center;
+  }
+  .zone-etiquettes-hint {
+    font-size: 8pt;
+    color: #aaa;
+    text-align: center;
+    font-style: italic;
+    margin-top: 18mm;
+  }
+
+  /* Tableau produits — pleine largeur sous les deux colonnes */
+  .produits-section h2 {
+    font-size: 10pt;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #444;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 2mm;
+    margin: 0 0 3mm 0;
+  }
+  .produits-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 2mm;
+    font-size: 10pt;
+  }
+  .produits-table th {
+    background: #f0f0f0;
+    border: 1px solid #aaa;
+    padding: 2mm 3mm;
+    text-align: left;
+    font-size: 9pt;
+  }
+  .produits-table td {
+    border: 1px solid #ccc;
+    padding: 2mm 3mm;
+  }
+  .produits-table tr:nth-child(even) td {
+    background: #fafafa;
+  }
+
+  /* Bas de page */
+  .footer {
+    margin-top: 8mm;
+    font-size: 8pt;
+    color: #999;
+    border-top: 1px solid #ddd;
+    padding-top: 3mm;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <h1>Bon de commande</h1>
+  <p class="subtitle">CPAM — Opération de don de mobilier — Document généré le {{ "now"|date("d/m/Y à H:i") }}</p>
+
+  <table class="two-col">
+    <tr>
+      <td class="left">
+
+        <div class="info-block">
+          <h2>Informations commande</h2>
+          <div class="info-row"><strong>N° commande :</strong> #{{ commande.id }}</div>
+          <div class="info-row"><strong>Date validation :</strong> {{ commande.dateValidation|date('d/m/Y') }}</div>
+          <div class="info-row"><strong>Profil :</strong> {{ commande.profilCommande.value|replace({'_': ' '})|capitalize }}</div>
+        </div>
+
+        <div class="info-block">
+          <h2>Bénéficiaire</h2>
+          {% if commande.prenom or commande.nom %}
+            <div class="info-row"><strong>Identité :</strong> {{ commande.prenom }} {{ commande.nom }}</div>
+          {% else %}
+            <div class="info-row"><strong>Identité :</strong> (Partenaire)</div>
+          {% endif %}
+          {% if commande.numeroAgent %}
+            <div class="info-row"><strong>N° agent :</strong> {{ commande.numeroAgent }}</div>
+          {% endif %}
+        </div>
+
+        <div class="info-block">
+          <h2>Créneau de retrait</h2>
+          {% if commande.creneau %}
+            <div class="info-row"><strong>Date :</strong> {{ commande.creneau.dateHeure|date('d/m/Y') }}</div>
+            <div class="info-row"><strong>Horaire :</strong> {{ commande.creneau.heureDebut|date('H:i') }} – {{ commande.creneau.heureFin|date('H:i') }}</div>
+          {% else %}
+            <div class="info-row">Aucun créneau (partenaire).</div>
+          {% endif %}
+        </div>
+
+      </td>
+      <td class="right">
+
+        <div class="zone-etiquettes">
+          <div class="zone-etiquettes-title">Zone étiquettes d'inventaire</div>
+          <div class="zone-etiquettes-hint">Coller ici les étiquettes<br>d'inventaire physique</div>
+        </div>
+
+      </td>
+    </tr>
+  </table>
+
+  <div class="produits-section">
+    <h2>Produits commandés ({{ commande.lignesCommande|length }})</h2>
+    {% if commande.lignesCommande|length > 0 %}
+      <table class="produits-table">
+        <thead>
+          <tr>
+            <th>Libellé</th>
+            <th>N° inventaire</th>
+            <th>Étage / Porte</th>
+            <th>État</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ligne in commande.lignesCommande %}
+            <tr>
+              <td>{{ ligne.produit.libelle }}</td>
+              <td>{{ ligne.produit.numeroInventaire ?: '—' }}</td>
+              <td>Ét. {{ ligne.produit.etage }} / P. {{ ligne.produit.porte }}</td>
+              <td>{{ ligne.produit.etat.label() }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p style="color:#888; font-style:italic;">Aucun produit dans cette commande.</p>
+    {% endif %}
+  </div>
+
+  <div class="footer">
+    Bon de commande CARAMEL · Commande #{{ commande.id }} · {{ "now"|date("d/m/Y") }}
+  </div>
+
+</div>
+</body>
+</html>

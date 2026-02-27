@@ -129,14 +129,12 @@
                                                             </button>
                                                         </form>
 
-                                                    {% elseif commande.statut.value == 'retiree' %}
-                                                        <a href="{{ path('logistique_bon_livraison', {id: commande.id}) }}"
-                                                           target="_blank" class="btn btn-sm btn-outline-secondary text-nowrap w-100">
-                                                            Bon de livraison
-                                                        </a>
                                                     {% endif %}
 
                                                     {# ← État précédent #}
+                                                    {% if commande.statut.value in ['retiree', 'en_preparation', 'prete'] %}
+                                                        <div style="height: 6px;"></div>
+                                                    {% endif %}
                                                     {% if commande.statut.value == 'retiree' %}
                                                         <form method="post" action="{{ path('logistique_commande_retour_prete', {id: commande.id}) }}">
                                                             <input type="hidden" name="_token" value="{{ csrf_token('retour_prete_' ~ commande.id) }}">
@@ -144,15 +142,13 @@
                                                                 ← Prête
                                                             </button>
                                                         </form>
-                                                    {% endif %}
-                                                    {% if commande.statut.value == 'en_preparation' %}
+                                                    {% elseif commande.statut.value == 'en_preparation' %}
                                                         <form method="post" action="{{ path('logistique_commande_retour_validee', {id: commande.id}) }}">
                                                             <input type="hidden" name="_token" value="{{ csrf_token('retour_validee_' ~ commande.id) }}">
                                                             <button type="submit" class="btn btn-sm btn-outline-secondary text-nowrap w-100">
                                                                 ← À préparer
                                                             </button>
                                                         </form>
-
                                                     {% elseif commande.statut.value == 'prete' %}
                                                         <form method="post" action="{{ path('logistique_commande_retour_en_preparation', {id: commande.id}) }}">
                                                             <input type="hidden" name="_token" value="{{ csrf_token('retour_en_preparation_' ~ commande.id) }}">
@@ -161,6 +157,23 @@
                                                             </button>
                                                         </form>
                                                     {% endif %}
+
+                                                    {# PDF — toujours disponibles #}
+                                                    <div style="border-top: 1px solid #dee2e6; margin: 4px 0;"></div>
+                                                    <a href="{{ path('logistique_bon_commande_pdf', {id: commande.id}) }}"
+                                                       target="_blank" class="btn btn-sm btn-outline-secondary text-nowrap w-100">
+                                                        Bon de commande
+                                                    </a>
+                                                    <div style="height: 3px;"></div>
+                                                    <a href="{{ path('logistique_bon_preparation_pdf', {id: commande.id}) }}"
+                                                       target="_blank" class="btn btn-sm btn-outline-secondary text-nowrap w-100">
+                                                        Bon de préparation
+                                                    </a>
+                                                    <div style="height: 3px;"></div>
+                                                    <a href="{{ path('logistique_bon_livraison_pdf', {id: commande.id}) }}"
+                                                       target="_blank" class="btn btn-sm btn-outline-secondary text-nowrap w-100">
+                                                        Bon de livraison
+                                                    </a>
 
                                                 </div>
                                             </td>

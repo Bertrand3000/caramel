@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Entity\Commande;
-use App\Interface\BonLivraisonGeneratorInterface;
+use App\Interface\DocumentPdfGeneratorInterface;
 use App\Interface\LogistiqueServiceInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -16,14 +16,19 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 final class LogistiqueController extends AbstractController
 {
-    #[Route('/logistique/dashboard', name: 'logistique_dashboard', methods: ['GET'])]
+    #[Route('/logistique', name: 'logistique_index', methods: ['GET'])]
     #[IsGranted('ROLE_DMAX')]
-    public function dashboard(LogistiqueServiceInterface $logistiqueService): Response
+    public function index(LogistiqueServiceInterface $logistiqueService): Response
     {
-        return $this->render('logistique/dashboard.html.twig', [
-            'commandes' => $logistiqueService->findTodayReadyOrders(),
+        $jour = $logistiqueService->findNextDeliveryDay();
+
+        return $this->render('logistique/index.html.twig', [
+            'jour'      => $jour,
+            'commandes' => $jour !== null ? $logistiqueService->findAllOrdersForLogistique($jour) : [],
         ]);
     }
+
+    // ── Actions de transition de statut ──────────────────────────────────────
 
     #[Route('/logistique/commande/{id}/retrait', name: 'logistique_commande_retrait', methods: ['POST'])]
     #[IsGranted('ROLE_DMAX')]
@@ -39,37 +44,6 @@ final class LogistiqueController extends AbstractController
         $this->addFlash('success', sprintf('Retrait de la commande #%d validé.', $commande->getId()));
 
         return $this->redirectToRoute('logistique_index');
-    }
-
-    #[Route('/logistique/commande/{id}/bon-livraison', name: 'logistique_bon_livraison', methods: ['GET'])]
-    #[IsGranted('ROLE_DMAX')]
-    public function bonLivraison(Commande $commande, BonLivraisonGeneratorInterface $generator): Response
-    {
-        return new Response($generator->generatePrintHtml($commande));
-    }
-
-    #[Route('/logistique', name: 'logistique_index', methods: ['GET'])]
-    #[IsGranted('ROLE_DMAX')]
-    public function index(LogistiqueServiceInterface $logistiqueService): Response
-    {
-        $jour = $logistiqueService->findNextDeliveryDay();
-
-        return $this->render('logistique/index.html.twig', [
-            'jour'      => $jour,
-            'commandes' => $jour !== null ? $logistiqueService->findAllOrdersForLogistique($jour) : [],
-        ]);
-    }
-
-    #[Route('/logistique/preparation', name: 'logistique_preparation', methods: ['GET'])]
-    #[IsGranted('ROLE_DMAX')]
-    public function preparation(LogistiqueServiceInterface $logistiqueService): Response
-    {
-        $jour = $logistiqueService->findNextDeliveryDay();
-
-        return $this->render('logistique/preparation.html.twig', [
-            'jour'      => $jour,
-            'commandes' => $jour !== null ? $logistiqueService->findOrdersForPreparation($jour) : [],
-        ]);
     }
 
     #[Route('/logistique/commande/{id}/en-preparation', name: 'logistique_commande_en_preparation', methods: ['POST'])]
@@ -170,5 +144,52 @@ final class LogistiqueController extends AbstractController
         }
 
         return $this->redirectToRoute('logistique_index');
+    }
+
+    // ── Génération PDF ────────────────────────────────────────────────────────
+
+    /**
+     * Bon de commande PDF — accessible quel que soit le statut de la commande.
+     */
+    #[Route('/logistique/commande/{id}/bon-commande.pdf', name: 'logistique_bon_commande_pdf', methods: ['GET'])]
+    #[IsGranted('ROLE_DMAX')]
+    public function bonCommandePdf(Commande $commande, DocumentPdfGeneratorInterface $generator): Response
+    {
+        $pdf = $generator->generateBonCommande($commande);
+
+        return new Response($pdf, Response::HTTP_OK, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => sprintf('inline; filename="bon-commande-%d.pdf"', $commande->getId()),
+        ]);
+    }
+
+    /**
+     * Bon de préparation PDF — étiquettes produits (3 sections par page).
+     */
+    #[Route('/logistique/commande/{id}/bon-preparation.pdf', name: 'logistique_bon_preparation_pdf', methods: ['GET'])]
+    #[IsGranted('ROLE_DMAX')]
+    public function bonPreparationPdf(Commande $commande, DocumentPdfGeneratorInterface $generator): Response
+    {
+        $pdf = $generator->generateBonPreparation($commande);
+
+        return new Response($pdf, Response::HTTP_OK, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => sprintf('inline; filename="bon-preparation-%d.pdf"', $commande->getId()),
+        ]);
+    }
+
+    /**
+     * Bon de livraison PDF — attestation de cession à titre gratuit.
+     */
+    #[Route('/logistique/commande/{id}/bon-livraison.pdf', name: 'logistique_bon_livraison_pdf', methods: ['GET'])]
+    #[IsGranted('ROLE_DMAX')]
+    public function bonLivraisonPdf(Commande $commande, DocumentPdfGeneratorInterface $generator): Response
+    {
+        $pdf = $generator->generateBonLivraison($commande);
+
+        return new Response($pdf, Response::HTTP_OK, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => sprintf('inline; filename="bon-livraison-%d.pdf"', $commande->getId()),
+        ]);
     }
 }

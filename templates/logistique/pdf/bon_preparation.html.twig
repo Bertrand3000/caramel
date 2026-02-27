@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Bon de préparation #{{ commande.id }}</title>
+<style>
+  body {
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: 10pt;
+    color: #1a1a1a;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* ===== ENTÊTE COMMANDE (petit, en haut de chaque page) ===== */
+  .header-commande {
+    padding: 4mm 10mm 3mm 10mm;
+    border-bottom: 2px solid #1a1a1a;
+    margin-bottom: 3mm;
+    font-size: 9pt;
+    color: #333;
+  }
+  .header-commande h1 {
+    font-size: 12pt;
+    margin: 0 0 1.5mm 0;
+  }
+  .header-commande .meta {
+    display: inline-block;
+    margin-right: 6mm;
+  }
+
+  /* Saut de page entre chaque groupe de 3 produits */
+  .page-break {
+    page-break-after: always;
+  }
+
+  /* ===== WRAPPER PAGE ===== */
+  .page-wrapper {
+    padding: 0 10mm 6mm 10mm;
+  }
+
+  /* ===== ÉTIQUETTES HORIZONTALES =====
+     3 étiquettes empilées, chacune sur toute la largeur.
+     Séparées par un trait de coupe en pointillés.
+  */
+  .etiquette {
+    border: 2px solid #1a1a1a;
+    padding: 3mm 6mm;
+    box-sizing: border-box;
+    /* Hauteur fixe : (page utile ~257mm - entête ~22mm - 2 marges 4mm) / 3 ≈ 75mm → réduit à 63mm */
+    height: 63mm;
+    margin-bottom: 4mm;
+    position: relative;
+    display: table;
+    width: 100%;
+  }
+  .etiquette.vide {
+    border-style: dashed;
+    border-color: #aaa;
+  }
+
+  /* Contenu centré verticalement dans l'étiquette */
+  .etiquette-inner {
+    display: table-cell;
+    vertical-align: middle;
+    width: 100%;
+  }
+
+  /* Numéro de section */
+  .num-section {
+    font-size: 8pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #777;
+    margin-bottom: 2mm;
+  }
+
+  /* Layout intérieur de l'étiquette : libellé à gauche (large), détails à droite */
+  .etiquette-layout {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .etiquette-layout td {
+    vertical-align: middle;
+    padding: 0;
+  }
+  .col-libelle {
+    width: 58%;
+    padding-right: 6mm;
+    border-right: 1px solid #ddd;
+  }
+  .col-details {
+    width: 42%;
+    padding-left: 6mm;
+  }
+
+  /* Libellé produit */
+  .libelle-produit {
+    font-size: 22pt;
+    font-weight: bold;
+    line-height: 1.15;
+    word-wrap: break-word;
+  }
+  .libelle-produit.vide {
+    font-size: 16pt;
+    color: #bbb;
+    font-style: italic;
+    font-weight: normal;
+  }
+
+  /* Champs détail */
+  .detail-row {
+    margin-bottom: 2.5mm;
+  }
+  .detail-row .label {
+    font-size: 7.5pt;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #777;
+    display: block;
+    margin-bottom: 0.3mm;
+  }
+  .detail-row .valeur {
+    font-size: 16pt;
+    font-weight: bold;
+    line-height: 1.1;
+  }
+  .detail-row .valeur.vide {
+    font-size: 11pt;
+    color: #ccc;
+    font-weight: normal;
+    font-style: italic;
+  }
+
+  /* Pied d'étiquette */
+  .etiquette-footer {
+    position: absolute;
+    bottom: 2mm;
+    right: 4mm;
+    font-size: 6.5pt;
+    color: #bbb;
+  }
+</style>
+</head>
+<body>
+
+{% for page_index, page_lignes in pages %}
+
+  {% if not loop.first %}
+    <div class="page-break"></div>
+  {% endif %}
+
+  {# Entête commande répétée sur chaque page #}
+  <div class="header-commande">
+    <h1>Bon de préparation — Commande #{{ commande.id }}</h1>
+    <span class="meta"><strong>Bénéficiaire :</strong>
+      {% if commande.prenom or commande.nom %}
+        {{ commande.prenom }} {{ commande.nom }}{% if commande.numeroAgent %} (#{{ commande.numeroAgent }}){% endif %}
+      {% else %}
+        (Partenaire)
+      {% endif %}
+    </span>
+    {% if commande.creneau %}
+      <span class="meta"><strong>Créneau :</strong> {{ commande.creneau.dateHeure|date('d/m/Y') }} {{ commande.creneau.heureDebut|date('H:i') }}–{{ commande.creneau.heureFin|date('H:i') }}</span>
+    {% endif %}
+    {% if pages|length > 1 %}
+      <span class="meta"><strong>Page :</strong> {{ loop.index }}/{{ pages|length }}</span>
+    {% endif %}
+  </div>
+
+  <div class="page-wrapper">
+
+    {% set produit_offset = page_index * 3 %}
+
+    {% for slot in 1..3 %}
+      {% set ligne_index = slot - 1 %}
+      {% set ligne = page_lignes[ligne_index] is defined ? page_lignes[ligne_index] : null %}
+      {% set num_global = produit_offset + slot %}
+
+      {% if ligne is not null %}
+        <div class="etiquette">
+          <div class="etiquette-inner">
+            <div class="num-section">Produit {{ num_global }}</div>
+            <table class="etiquette-layout">
+              <tr>
+                <td class="col-libelle">
+                  <div class="libelle-produit">{{ ligne.produit.libelle }}</div>
+                </td>
+                <td class="col-details">
+                  <div class="detail-row">
+                    <span class="label">N° inventaire</span>
+                    <span class="valeur{% if not ligne.produit.numeroInventaire %} vide{% endif %}">
+                      {{ ligne.produit.numeroInventaire ?: '—' }}
+                    </span>
+                  </div>
+                  <div class="detail-row">
+                    <span class="label">Porte / Bureau</span>
+                    <span class="valeur">{{ ligne.produit.porte }}</span>
+                  </div>
+                  <div class="detail-row">
+                    <span class="label">Étage</span>
+                    <span class="valeur">{{ ligne.produit.etage }}</span>
+                  </div>
+                </td>
+              </tr>
+            </table>
+          </div>
+          <div class="etiquette-footer">Cmd #{{ commande.id }} · {{ "now"|date("d/m/Y") }}</div>
+        </div>
+      {% else %}
+        <div class="etiquette vide">
+          <div class="etiquette-inner">
+            <div class="num-section">Produit {{ num_global }}</div>
+            <table class="etiquette-layout">
+              <tr>
+                <td class="col-libelle">
+                  <div class="libelle-produit vide">À compléter</div>
+                </td>
+                <td class="col-details">
+                  <div class="detail-row">
+                    <span class="label">N° inventaire</span>
+                    <span class="valeur vide">—</span>
+                  </div>
+                  <div class="detail-row">
+                    <span class="label">Porte / Bureau</span>
+                    <span class="valeur vide">—</span>
+                  </div>
+                  <div class="detail-row">
+                    <span class="label">Étage</span>
+                    <span class="valeur vide">—</span>
+                  </div>
+                </td>
+              </tr>
+            </table>
+          </div>
+          <div class="etiquette-footer">Cmd #{{ commande.id }} · {{ "now"|date("d/m/Y") }}</div>
+        </div>
+      {% endif %}
+
+    {% endfor %}
+
+  </div>
+
+{% endfor %}
+
+</body>
+</html>

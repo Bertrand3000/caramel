@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Attestation de cession — Commande #{{ commande.id }}</title>
+<style>
+  body {
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: 10pt;
+    color: #1a1a1a;
+    margin: 0;
+    padding: 0;
+  }
+  .page {
+    padding: 12mm 18mm 10mm 18mm;
+  }
+
+  /* Titre principal */
+  h1 {
+    font-size: 13pt;
+    font-weight: bold;
+    text-align: center;
+    margin: 0 0 6mm 0;
+    border-bottom: 2px solid #1a1a1a;
+    padding-bottom: 3mm;
+  }
+
+  /* Corps */
+  .body-text {
+    font-size: 10pt;
+    line-height: 1.5;
+    margin-bottom: 3mm;
+  }
+
+  /* Champ prérempli (valeur imprimée) */
+  .field-value {
+    display: inline-block;
+    border-bottom: 1px solid #1a1a1a;
+    min-width: 100mm;
+    margin-left: 2mm;
+    padding-bottom: 0.5mm;
+    font-weight: bold;
+    vertical-align: bottom;
+  }
+
+  /* Champ vide à remplir à la main */
+  .field-blank {
+    border-bottom: 1px solid #1a1a1a;
+    display: inline-block;
+    min-width: 100mm;
+    margin-left: 2mm;
+    height: 4.5mm;
+    vertical-align: bottom;
+  }
+
+  /* Liste des biens */
+  .biens-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 2mm 0 3mm 0;
+    font-size: 9.5pt;
+  }
+  .biens-table th {
+    background: #f0f0f0;
+    border: 1px solid #aaa;
+    padding: 1.5mm 2.5mm;
+    text-align: left;
+    font-size: 9pt;
+  }
+  .biens-table td {
+    border: 1px solid #ccc;
+    padding: 1.5mm 2.5mm;
+  }
+
+  /* Clauses */
+  .clauses {
+    margin: 2mm 0 2mm 0;
+  }
+  .clause-item {
+    font-size: 10pt;
+    line-height: 1.45;
+    margin-bottom: 1.5mm;
+    padding-left: 4mm;
+    position: relative;
+  }
+  .clause-item::before {
+    content: "–";
+    position: absolute;
+    left: 0;
+  }
+
+  /* Lieu, date et signatures sur une même ligne */
+  .lieu-date-signatures {
+    width: 100%;
+    margin-top: 5mm;
+  }
+  .lieu-date-signatures td {
+    vertical-align: top;
+    padding: 0;
+  }
+  .lieu-date-col {
+    width: 35%;
+    padding-right: 4mm;
+  }
+  .sig-col {
+    width: 32.5%;
+    padding: 0 2mm;
+    text-align: center;
+  }
+
+  .lieu-date-line {
+    font-size: 10pt;
+    line-height: 2;
+  }
+
+  .signature-label {
+    font-size: 9pt;
+    font-weight: bold;
+    margin-bottom: 1.5mm;
+    text-align: center;
+  }
+  .signature-box {
+    border: 1px solid #aaa;
+    height: 28mm;
+    margin-top: 1mm;
+  }
+
+  /* Pied de page */
+  .footer {
+    margin-top: 4mm;
+    font-size: 7pt;
+    color: #aaa;
+    border-top: 1px solid #ddd;
+    padding-top: 1.5mm;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <h1>Attestation de cession à titre gratuit de mobilier</h1>
+
+  <div class="body-text">
+    Je soussigné(e) :
+  </div>
+
+  <div class="body-text">
+    <strong>Nom / Prénom :</strong>
+    <span class="field-value">{% if commande.prenom or commande.nom %}{{ commande.prenom }} {{ commande.nom }}{% if commande.numeroAgent %} &nbsp;(agent n° {{ commande.numeroAgent }}){% endif %}{% else %}&nbsp;{% endif %}</span>
+  </div>
+
+  <div class="body-text">
+    <strong>Service :</strong><span class="field-blank">&nbsp;</span>
+  </div>
+
+  <div class="body-text" style="margin-top: 3mm;">
+    Déclare avoir reçu à titre gratuit le(s) bien(s) suivant(s) :
+  </div>
+
+  {# Liste des biens pré-remplie depuis la commande #}
+  {% if commande.lignesCommande|length > 0 %}
+    <table class="biens-table">
+      <thead>
+        <tr>
+          <th>Description précise</th>
+          <th>N° inventaire</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ligne in commande.lignesCommande %}
+          <tr>
+            <td>{{ ligne.produit.libelle }}</td>
+            <td>{{ ligne.produit.numeroInventaire ?: '—' }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div class="body-text" style="color:#888; font-style:italic; margin-left: 4mm;">
+      (Description précise – N° inventaire le cas échéant)
+    </div>
+  {% endif %}
+
+  <div class="body-text" style="margin-top: 3mm;">
+    <strong>Je reconnais que :</strong>
+  </div>
+
+  <div class="clauses">
+    <div class="clause-item">Le bien est cédé en l'état, sans garantie de fonctionnement ou de conformité.</div>
+    <div class="clause-item">La CPAM est dégagée de toute responsabilité liée à l'usage, au transport ou à la détention du bien à compter de sa remise.</div>
+    <div class="clause-item">Le transfert de propriété et de responsabilité est effectif à la date de signature du présent document.</div>
+    <div class="clause-item">Le bien est destiné à un usage personnel.</div>
+  </div>
+
+  {# Fait à / Le + signatures sur la même ligne #}
+  <table class="lieu-date-signatures">
+    <tr>
+      <td class="lieu-date-col">
+        <div class="lieu-date-line">
+          Fait à&nbsp;<span class="field-blank" style="min-width: 40mm;">&nbsp;</span>
+        </div>
+        <div class="lieu-date-line">
+          Le&nbsp;<span class="field-blank" style="min-width: 40mm;">&nbsp;</span>
+        </div>
+      </td>
+      <td class="sig-col">
+        <div class="signature-label">Signature du bénéficiaire</div>
+        <div class="signature-box"></div>
+      </td>
+      <td class="sig-col">
+        <div class="signature-label">Signature de l'administration</div>
+        <div class="signature-box"></div>
+      </td>
+    </tr>
+  </table>
+
+  <div class="footer">
+    Attestation de cession CARAMEL · Commande #{{ commande.id }} · Document généré le {{ "now"|date("d/m/Y") }}
+  </div>
+
+</div>
+</body>
+</html>
