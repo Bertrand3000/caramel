@@ -17,6 +17,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 final class LogistiqueController extends AbstractController
 {
     #[Route('/logistique/dashboard', name: 'logistique_dashboard', methods: ['GET'])]
+    #[IsGranted('ROLE_DMAX')]
     public function dashboard(LogistiqueServiceInterface $logistiqueService): Response
     {
         return $this->render('logistique/dashboard.html.twig', [
@@ -25,8 +26,15 @@ final class LogistiqueController extends AbstractController
     }
 
     #[Route('/logistique/commande/{id}/retrait', name: 'logistique_commande_retrait', methods: ['POST'])]
-    public function retrait(Commande $commande, LogistiqueServiceInterface $logistiqueService): RedirectResponse
+    #[IsGranted('ROLE_DMAX')]
+    public function retrait(Commande $commande, Request $request, LogistiqueServiceInterface $logistiqueService): RedirectResponse
     {
+        if (!$this->isCsrfTokenValid('retrait_' . $commande->getId(), $request->request->getString('_token'))) {
+            $this->addFlash('error', 'Jeton CSRF invalide.');
+
+            return $this->redirectToRoute('logistique_index');
+        }
+
         $logistiqueService->validateRetrait($commande);
         $this->addFlash('success', sprintf('Retrait de la commande #%d validé.', $commande->getId()));
 
@@ -34,6 +42,7 @@ final class LogistiqueController extends AbstractController
     }
 
     #[Route('/logistique/commande/{id}/bon-livraison', name: 'logistique_bon_livraison', methods: ['GET'])]
+    #[IsGranted('ROLE_DMAX')]
     public function bonLivraison(Commande $commande, BonLivraisonGeneratorInterface $generator): Response
     {
         return new Response($generator->generatePrintHtml($commande));
@@ -51,7 +60,7 @@ final class LogistiqueController extends AbstractController
         ]);
     }
 
-    #[Route('/logistique/preparation', name: 'logistique_index', methods: ['GET'])]
+    #[Route('/logistique/preparation', name: 'logistique_preparation', methods: ['GET'])]
     #[IsGranted('ROLE_DMAX')]
     public function preparation(LogistiqueServiceInterface $logistiqueService): Response
     {
@@ -116,6 +125,26 @@ final class LogistiqueController extends AbstractController
         try {
             $logistiqueService->markAsPrete($commande);
             $this->addFlash('success', sprintf('Commande #%d marquée prête.', $commande->getId()));
+        } catch (\LogicException $e) {
+            $this->addFlash('error', $e->getMessage());
+        }
+
+        return $this->redirectToRoute('logistique_index');
+    }
+
+    #[Route('/logistique/commande/{id}/retour-prete', name: 'logistique_commande_retour_prete', methods: ['POST'])]
+    #[IsGranted('ROLE_DMAX')]
+    public function retourPrete(Commande $commande, Request $request, LogistiqueServiceInterface $logistiqueService): RedirectResponse
+    {
+        if (!$this->isCsrfTokenValid('retour_prete_' . $commande->getId(), $request->request->getString('_token'))) {
+            $this->addFlash('error', 'Jeton CSRF invalide.');
+
+            return $this->redirectToRoute('logistique_index');
+        }
+
+        try {
+            $logistiqueService->markRevenirPrete($commande);
+            $this->addFlash('success', sprintf('Commande #%d remise à l\'état « Prête ».', $commande->getId()));
         } catch (\LogicException $e) {
             $this->addFlash('error', $e->getMessage());
         }

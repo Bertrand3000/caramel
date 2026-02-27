@@ -6,11 +6,11 @@ namespace App\Service;
 
 use App\Entity\Commande;
 use App\Entity\JourLivraison;
-use App\Enum\CommandeStatutEnum;
 use App\Interface\LogistiqueServiceInterface;
 use App\Repository\CommandeRepository;
 use App\Repository\JourLivraisonRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Workflow\Exception\NotEnabledTransitionException;
 use Symfony\Component\Workflow\Registry;
 
 final class LogistiqueService implements LogistiqueServiceInterface
@@ -59,61 +59,81 @@ final class LogistiqueService implements LogistiqueServiceInterface
 
     public function markEnPreparation(Commande $commande): void
     {
-        if ($commande->getStatut() !== CommandeStatutEnum::VALIDEE) {
+        $workflow = $this->workflowRegistry->get($commande, 'commande_lifecycle');
+
+        try {
+            $workflow->apply($commande, 'demarrer_preparation');
+            $this->entityManager->flush();
+        } catch (NotEnabledTransitionException $e) {
             throw new \LogicException(sprintf(
-                'Commande #%d : transition impossible depuis le statut « %s ».',
+                'Commande #%d : transition impossible (%s).',
                 $commande->getId(),
-                $commande->getStatut()->value,
+                $e->getTransitionName(),
             ));
         }
-
-        $workflow = $this->workflowRegistry->get($commande, 'commande_lifecycle');
-        $workflow->apply($commande, 'demarrer_preparation');
-        $this->entityManager->flush();
     }
 
     public function markAsPrete(Commande $commande): void
     {
-        if ($commande->getStatut() !== CommandeStatutEnum::EN_PREPARATION) {
+        $workflow = $this->workflowRegistry->get($commande, 'commande_lifecycle');
+
+        try {
+            $workflow->apply($commande, 'terminer_preparation');
+            $this->entityManager->flush();
+        } catch (NotEnabledTransitionException $e) {
             throw new \LogicException(sprintf(
-                'Commande #%d : transition impossible depuis le statut « %s ».',
+                'Commande #%d : transition impossible (%s).',
                 $commande->getId(),
-                $commande->getStatut()->value,
+                $e->getTransitionName(),
             ));
         }
-
-        $workflow = $this->workflowRegistry->get($commande, 'commande_lifecycle');
-        $workflow->apply($commande, 'terminer_preparation');
-        $this->entityManager->flush();
     }
 
     public function markAsValidee(Commande $commande): void
     {
-        if ($commande->getStatut() !== CommandeStatutEnum::EN_PREPARATION) {
+        $workflow = $this->workflowRegistry->get($commande, 'commande_lifecycle');
+
+        try {
+            $workflow->apply($commande, 'annuler_preparation');
+            $this->entityManager->flush();
+        } catch (NotEnabledTransitionException $e) {
             throw new \LogicException(sprintf(
-                'Commande #%d : transition impossible depuis le statut « %s ».',
+                'Commande #%d : transition impossible (%s).',
                 $commande->getId(),
-                $commande->getStatut()->value,
+                $e->getTransitionName(),
             ));
         }
-
-        $workflow = $this->workflowRegistry->get($commande, 'commande_lifecycle');
-        $workflow->apply($commande, 'annuler_preparation');
-        $this->entityManager->flush();
     }
 
     public function markRevenirEnPreparation(Commande $commande): void
     {
-        if ($commande->getStatut() !== CommandeStatutEnum::PRETE) {
+        $workflow = $this->workflowRegistry->get($commande, 'commande_lifecycle');
+
+        try {
+            $workflow->apply($commande, 'revenir_en_preparation');
+            $this->entityManager->flush();
+        } catch (NotEnabledTransitionException $e) {
             throw new \LogicException(sprintf(
-                'Commande #%d : transition impossible depuis le statut « %s ».',
+                'Commande #%d : transition impossible (%s).',
                 $commande->getId(),
-                $commande->getStatut()->value,
+                $e->getTransitionName(),
             ));
         }
+    }
 
+    public function markRevenirPrete(Commande $commande): void
+    {
         $workflow = $this->workflowRegistry->get($commande, 'commande_lifecycle');
-        $workflow->apply($commande, 'revenir_en_preparation');
-        $this->entityManager->flush();
+
+        try {
+            $workflow->apply($commande, 'annuler_retrait');
+            $this->entityManager->flush();
+        } catch (NotEnabledTransitionException $e) {
+            throw new \LogicException(sprintf(
+                'Commande #%d : transition impossible (%s).',
+                $commande->getId(),
+                $e->getTransitionName(),
+            ));
+        }
     }
 }

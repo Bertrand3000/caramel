@@ -34,6 +34,9 @@ framework:
                 acter_retrait:
                     from: prete
                     to: retiree
+                annuler_retrait:
+                    from: retiree
+                    to: prete
                 annuler_commande:
                     from:
                         - en_attente_validation

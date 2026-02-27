@@ -29,4 +29,6 @@ interface LogistiqueServiceInterface
     public function markAsValidee(Commande $commande): void;
 
     public function markRevenirEnPreparation(Commande $commande): void;
+
+    public function markRevenirPrete(Commande $commande): void;
 }
