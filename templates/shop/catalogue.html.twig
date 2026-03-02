@@ -29,6 +29,10 @@
             <button class="btn btn-primary" type="submit">Rechercher</button>
         </form>
 
+        <div class="mb-3 text-body-secondary">
+            {{ total }} produit{{ total > 1 ? 's' : '' }}
+        </div>
+
         <div class="row g-3">
             {% for item in catalogue %}
                 <div class="col-12 col-sm-6 col-lg-4">
@@ -74,6 +78,48 @@
                 </div>
             {% endfor %}
         </div>
+
+        {% if totalPages > 1 %}
+            <nav class="dmax-pager catalogue-pager" aria-label="Pagination catalogue boutique">
+                {% set prev = page - 1 %}
+                {% set next = page + 1 %}
+                <a class="btn btn-outline-secondary {{ page == 1 ? 'is-disabled' : '' }}"
+                   href="{{ page == 1 ? '#' : path('shop_catalogue', {page: prev, q: filtres.q}) }}">Précédent</a>
+
+                <a class="btn {{ page == 1 ? 'btn-primary' : 'btn-outline-secondary' }}"
+                   href="{{ path('shop_catalogue', {page: 1, q: filtres.q}) }}">1</a>
+
+                {% set middleStart = page - 2 %}
+                {% if middleStart < 2 %}
+                    {% set middleStart = 2 %}
+                {% endif %}
+                {% set middleEnd = page + 2 %}
+                {% if middleEnd > totalPages - 1 %}
+                    {% set middleEnd = totalPages - 1 %}
+                {% endif %}
+
+                {% if middleStart > 2 %}
+                    <span class="dmax-pager-ellipsis" aria-hidden="true">…</span>
+                {% endif %}
+
+                {% if middleStart <= middleEnd %}
+                    {% for p in middleStart..middleEnd %}
+                        <a class="btn {{ p == page ? 'btn-primary' : 'btn-outline-secondary' }}"
+                           href="{{ path('shop_catalogue', {page: p, q: filtres.q}) }}">{{ p }}</a>
+                    {% endfor %}
+                {% endif %}
+
+                {% if middleEnd < totalPages - 1 %}
+                    <span class="dmax-pager-ellipsis" aria-hidden="true">…</span>
+                {% endif %}
+
+                <a class="btn {{ page == totalPages ? 'btn-primary' : 'btn-outline-secondary' }}"
+                   href="{{ path('shop_catalogue', {page: totalPages, q: filtres.q}) }}">{{ totalPages }}</a>
+
+                <a class="btn btn-outline-secondary {{ page == totalPages ? 'is-disabled' : '' }}"
+                   href="{{ page == totalPages ? '#' : path('shop_catalogue', {page: next, q: filtres.q}) }}">Suivant</a>
+            </nav>
+        {% endif %}
     </main>
 
     <div id="catalogue-image-modal" class="catalogue-image-modal" hidden>

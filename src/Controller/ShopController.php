@@ -19,6 +19,8 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Cache(maxage: 0, public: false)]
 final class ShopController extends AbstractController
 {
+    private const PER_PAGE = 12;
+
     public function __construct(
         private readonly CartManager $cartManager,
         private readonly BoutiqueAccessCheckerInterface $boutiqueAccessChecker,
@@ -43,6 +45,7 @@ final class ShopController extends AbstractController
 
         $keyword = trim($request->query->getString('q'));
         $keywordNormalized = mb_strtolower($keyword);
+        $page = max(1, $request->query->getInt('page', 1));
 
         $produits = $produitRepository->findBy([
             'statut' => ProduitStatutEnum::DISPONIBLE,
@@ -72,11 +75,23 @@ final class ShopController extends AbstractController
             ];
         }
 
+        $total = count($catalogue);
+        $totalPages = max(1, (int) ceil($total / self::PER_PAGE));
+        if ($page > $totalPages) {
+            $page = $totalPages;
+        }
+
+        $catalogue = array_slice($catalogue, ($page - 1) * self::PER_PAGE, self::PER_PAGE);
+
         return $this->render('shop/catalogue.html.twig', [
             'catalogue' => $catalogue,
             'filtres' => [
                 'q' => $keyword,
             ],
+            'page' => $page,
+            'perPage' => self::PER_PAGE,
+            'total' => $total,
+            'totalPages' => $totalPages,
             'canAddMoreItems' => $canAddMoreItems,
             'quotaReachedMessage' => $quotaReachedMessage,
         ]);

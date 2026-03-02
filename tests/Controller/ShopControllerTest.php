@@ -119,6 +119,30 @@ final class ShopControllerTest extends WebTestCase
         );
     }
 
+    public function testCataloguePaginatesFilteredResults(): void
+    {
+        $client = static::createClient();
+        $client->loginUser($this->createAgentUser());
+        $this->setBoutiqueOpenForAgents(true);
+
+        $suffix = bin2hex(random_bytes(4));
+        for ($i = 1; $i <= 13; ++$i) {
+            $this->createProduit(sprintf('Produit pagination %s %02d', $suffix, $i), ProduitStatutEnum::DISPONIBLE, 1);
+        }
+
+        $client->request('GET', sprintf('/boutique?q=%s', $suffix));
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('main', sprintf('Produit pagination %s 13', $suffix));
+        self::assertSelectorTextNotContains('main', sprintf('Produit pagination %s 01', $suffix));
+
+        $client->request('GET', sprintf('/boutique?q=%s&page=2', $suffix));
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('main', sprintf('Produit pagination %s 01', $suffix));
+        self::assertSelectorTextNotContains('main', sprintf('Produit pagination %s 13', $suffix));
+    }
+
     private function createAgentUser(): Utilisateur
     {
         $this->setQuotaArticlesMax(3);
