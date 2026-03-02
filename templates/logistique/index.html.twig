@@ -24,6 +24,13 @@
                     </p>
                 {% endif %}
             </div>
+            {% if jour %}
+                <div class="ms-auto">
+                    <a href="{{ path('logistique_recap') }}" class="btn btn-primary">
+                        📦 Récap matériel à récupérer
+                    </a>
+                </div>
+            {% endif %}
         </header>
 
         {% if jour is null %}

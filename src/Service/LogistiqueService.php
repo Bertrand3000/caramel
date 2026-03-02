@@ -57,6 +57,69 @@ final class LogistiqueService implements LogistiqueServiceInterface
         return $this->commandeRepository->findAllForLogistique($jour);
     }
 
+    public function findRecapMateriel(JourLivraison $jour): array
+    {
+        $lignes = $this->commandeRepository->findLignesForRecapMateriel($jour);
+
+        // Groupement par étage puis par porte
+        $grouped = [];
+        foreach ($lignes as $item) {
+            $produit = $item['produit'];
+            $commande = $item['commande'];
+            $ligne = $item['ligne'];
+
+            $etage = $produit->getEtage();
+            $porte = $produit->getPorte();
+
+            $agent = trim(sprintf('%s %s', $commande->getPrenom() ?? '', $commande->getNom() ?? ''));
+            if ($commande->getNumeroAgent()) {
+                $agent .= sprintf(' (#%s)', $commande->getNumeroAgent());
+            }
+            if ($agent === '') {
+                $agent = sprintf('Commande #%d', $commande->getId());
+            }
+
+            $grouped[$etage][$porte][] = [
+                'produit' => $produit,
+                'quantite' => $ligne->getQuantite(),
+                'commandeId' => $commande->getId(),
+                'agent' => $agent,
+            ];
+        }
+
+        // Tri naturel des étages (1, 2, 10 au lieu de 1, 10, 2)
+        $this->natKsort($grouped);
+
+        // Tri naturel des portes dans chaque étage
+        foreach ($grouped as $etage => $portes) {
+            $this->natKsort($grouped[$etage]);
+        }
+
+        return $grouped;
+    }
+
+    /**
+     * Tri naturel des clés d'un tableau par référence.
+     * Utilise natsort pour un tri correct des valeurs numériques (1, 2, 10).
+     */
+    private function natKsort(array &$array): void
+    {
+        if (empty($array)) {
+            return;
+        }
+
+        $keys = array_keys($array);
+        natsort($keys);
+        $keys = array_flip(array_values($keys));
+
+        $sorted = [];
+        foreach ($keys as $key => $value) {
+            $sorted[$key] = $array[$key];
+        }
+
+        $array = $sorted;
+    }
+
     public function markEnPreparation(Commande $commande): void
     {
         $workflow = $this->workflowRegistry->get($commande, 'commande_lifecycle');

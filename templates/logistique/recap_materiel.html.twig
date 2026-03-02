@@ -1,0 +1,106 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Récapitulatif matériel à récupérer{% endblock %}
+
+{% block body %}
+<main class="container py-4">
+    <section class="dmax-list-shell">
+
+        <div class="layout-flashes mb-3">
+            {% for label, messages in app.flashes %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ label == 'error' ? 'danger' : label }} alert-global" role="alert">{{ message }}</div>
+                {% endfor %}
+            {% endfor %}
+        </div>
+
+        <header class="dmax-list-head mb-4">
+            <div>
+                <h1>Récapitulatif matériel à récupérer</h1>
+                {% if jour %}
+                    <p class="dmax-list-meta mb-0">
+                        Jour de livraison : <strong>{{ jour.date|date('d/m/Y') }}</strong>
+                    </p>
+                {% endif %}
+            </div>
+            <div class="ms-auto">
+                <a href="{{ path('logistique_index') }}" class="btn btn-outline-secondary">
+                    ← Retour logistique
+                </a>
+            </div>
+        </header>
+
+        {% if recapMateriel is empty %}
+            <div class="alert alert-info">
+                Aucun matériel à récupérer pour le {{ jour.date|date('d/m/Y') }}.
+            </div>
+        {% else %}
+            {% set totalItems = 0 %}
+            {% for etage, portes in recapMateriel %}
+                {% for porte, items in portes %}
+                    {% set totalItems = totalItems + items|length %}
+                {% endfor %}
+            {% endfor %}
+
+            <p class="text-muted mb-4">
+                <strong>{{ totalItems }}</strong> produit(s) à récupérer répartis en <strong>{{ recapMateriel|length }}</strong> étage(s).
+            </p>
+
+            {% for etage, portes in recapMateriel %}
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h2 class="h5 mb-0" style="padding-left: 1rem;">Étage {{ etage }}</h2>
+                    </div>
+                    <div class="card-body">
+                        {% for porte, items in portes %}
+                            <div class="mb-4">
+                                <h3 class="h6 text-primary mb-2">
+                                    <span class="badge bg-secondary me-2">Porte {{ porte }}</span>
+                                    {{ items|length }} produit(s)
+                                </h3>
+                                <div class="dmax-table-wrap">
+                                    <table class="dmax-table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Produit</th>
+                                                <th>N° inventaire</th>
+                                                <th>Quantité</th>
+                                                <th>Commande</th>
+                                                <th>Agent</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for item in items %}
+                                                <tr>
+                                                    <td>
+                                                        <strong>{{ item.produit.libelle }}</strong>
+                                                    </td>
+                                                    <td class="text-muted">
+                                                        {{ item.produit.numeroInventaire ?: '—' }}
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <span class="badge bg-light text-dark">{{ item.quantite }}</span>
+                                                    </td>
+                                                    <td>
+                                                        <a href="{{ path('logistique_bon_commande_pdf', {id: item.commandeId}) }}"
+                                                           target="_blank"
+                                                           class="text-decoration-none">
+                                                            #{{ item.commandeId }}
+                                                        </a>
+                                                    </td>
+                                                    <td>{{ item.agent }}</td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+    </section>
+</main>
+{% endblock %}

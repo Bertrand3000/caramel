@@ -202,6 +202,54 @@ class CommandeRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    /**
+     * Récupère les lignes de commandes pour le récapitulatif matériel.
+     * Retourne un tableau plat de lignes avec leurs relations préchargées.
+     *
+     * @return list<array{
+     *     ligne: \App\Entity\LigneCommande,
+     *     produit: \App\Entity\Produit,
+     *     commande: \App\Entity\Commande
+     * }>
+     */
+    public function findLignesForRecapMateriel(JourLivraison $jour): array
+    {
+        $rows = $this->createQueryBuilder('c')
+            ->innerJoin('c.creneau', 'cr')
+            ->addSelect('cr')
+            ->innerJoin('cr.jourLivraison', 'j')
+            ->innerJoin('c.lignesCommande', 'lc')
+            ->addSelect('lc')
+            ->innerJoin('lc.produit', 'p')
+            ->addSelect('p')
+            ->andWhere('j.id = :jourId')
+            ->andWhere('c.statut IN (:statuts)')
+            ->setParameter('jourId', $jour->getId())
+            ->setParameter('statuts', [
+                CommandeStatutEnum::VALIDEE,
+                CommandeStatutEnum::EN_PREPARATION,
+            ])
+            ->orderBy('p.etage', 'ASC')
+            ->addOrderBy('p.porte', 'ASC')
+            ->addOrderBy('p.libelle', 'ASC')
+            ->getQuery()
+            ->getResult();
+
+        // Transforme en tableau plat de lignes pour faciliter le groupement
+        $result = [];
+        foreach ($rows as $commande) {
+            foreach ($commande->getLignesCommande() as $ligne) {
+                $result[] = [
+                    'ligne' => $ligne,
+                    'produit' => $ligne->getProduit(),
+                    'commande' => $commande,
+                ];
+            }
+        }
+
+        return $result;
+    }
+
     /** @return list<Commande> */
     public function findAllForLogistique(JourLivraison $jour): array
     {

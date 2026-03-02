@@ -138,7 +138,7 @@
                                             {% for commande in creneau.commandes %}
                                                 <form method="post" action="{{ path('admin_jours_livraison_annuler_reservation', {id: jour.id, creneauId: creneau.id, commandeId: commande.id}) }}" onsubmit="return confirm('Annuler cette commande ?');">
                                                     <input type="hidden" name="_token" value="{{ csrf_token('admin_annuler_commande_' ~ commande.id) }}">
-                                                    <button class="btn btn-sm btn-outline-danger" type="submit">Annuler #{{ commande.id }}</button>
+                                                    <button class="btn btn-sm btn-outline-danger" type="submit">Annuler #{{ commande.numeroAgent ?: commande.id }}</button>
                                                 </form>
                                             {% endfor %}
                                         </div>

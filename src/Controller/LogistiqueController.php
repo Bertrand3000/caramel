@@ -28,6 +28,26 @@ final class LogistiqueController extends AbstractController
         ]);
     }
 
+    #[Route('/logistique/recap', name: 'logistique_recap', methods: ['GET'])]
+    #[IsGranted('ROLE_DMAX')]
+    public function recapMateriel(LogistiqueServiceInterface $logistiqueService): Response
+    {
+        $jour = $logistiqueService->findNextDeliveryDay();
+
+        if ($jour === null) {
+            $this->addFlash('warning', 'Aucun jour de livraison actif trouvé.');
+
+            return $this->redirectToRoute('logistique_index');
+        }
+
+        $recapMateriel = $logistiqueService->findRecapMateriel($jour);
+
+        return $this->render('logistique/recap_materiel.html.twig', [
+            'jour'          => $jour,
+            'recapMateriel' => $recapMateriel,
+        ]);
+    }
+
     // ── Actions de transition de statut ──────────────────────────────────────
 
     #[Route('/logistique/commande/{id}/retrait', name: 'logistique_commande_retrait', methods: ['POST'])]

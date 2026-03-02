@@ -22,6 +22,18 @@ interface LogistiqueServiceInterface
     /** @return list<Commande> */
     public function findAllOrdersForLogistique(JourLivraison $jour): array;
 
+    /**
+     * Récupère le matériel à récupérer groupé par étage puis par porte.
+     *
+     * @return array<string, array<string, list<array{
+     *     produit: \App\Entity\Produit,
+     *     quantite: int,
+     *     commandeId: int,
+     *     agent: string
+     * }>>>
+     */
+    public function findRecapMateriel(JourLivraison $jour): array;
+
     public function markEnPreparation(Commande $commande): void;
 
     public function markAsPrete(Commande $commande): void;
