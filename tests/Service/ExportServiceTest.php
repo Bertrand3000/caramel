@@ -90,7 +90,7 @@ final class ExportServiceTest extends TestCase
         self::assertStringContainsString(';3;disponible', $csv);
     }
 
-    public function testExportComptabiliteCsvCalculeLesTotaux(): void
+    public function testExportComptabiliteCsvCalculeLesTotauxPourUneCommandeValidee(): void
     {
         $produit = (new Produit())
             ->setLibelle('Chaise bureau')
@@ -108,7 +108,7 @@ final class ExportServiceTest extends TestCase
             ->setNumeroAgent('54321')
             ->setNom('Martin')
             ->setPrenom('Paul')
-            ->setStatut(CommandeStatutEnum::A_PREPARER);
+            ->setStatut(CommandeStatutEnum::VALIDEE);
 
         $creneau = (new Creneau())
             ->setDateHeure(new \DateTimeImmutable('2026-03-21 09:00:00'))
@@ -132,6 +132,6 @@ final class ExportServiceTest extends TestCase
 
         self::assertStringContainsString('commande_id;date_validation;numero_agent', $csv);
         self::assertStringContainsString('54321', $csv);
-        self::assertStringContainsString(';agent;a_preparer;2026-03-21;09:00;09:30;2;3', $csv);
+        self::assertStringContainsString(';agent;validee;2026-03-21;09:00;09:30;2;3', $csv);
     }
 }

@@ -47,7 +47,6 @@ final class CommandeWorkflowTest extends KernelTestCase
         $commande = new Commande();
 
         $this->workflow->apply($commande, 'valider');
-        $this->workflow->apply($commande, 'planifier_preparation');
         $this->workflow->apply($commande, 'demarrer_preparation');
         $this->workflow->apply($commande, 'terminer_preparation');
         $this->workflow->apply($commande, 'acter_retrait');
