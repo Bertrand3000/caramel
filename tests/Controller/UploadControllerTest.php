@@ -30,7 +30,9 @@ final class UploadControllerTest extends WebTestCase
         $client->request('GET', '/uploads/produits/test-upload-controller.jpg');
 
         self::assertResponseIsSuccessful();
-        self::assertSame('fake-jpeg-content', $client->getResponse()->getContent());
+        $response = $client->getResponse();
+        self::assertInstanceOf(BinaryFileResponse::class, $response);
+        self::assertStringEndsWith('/public/uploads/produits/test-upload-controller.jpg', $response->getFile()->getPathname());
 
         @unlink($file);
     }

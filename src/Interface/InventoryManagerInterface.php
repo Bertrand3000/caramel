@@ -35,5 +35,5 @@ interface InventoryManagerInterface
      *   bureauOptions: list<string>
      * }
      */
-    public function findDashboardPage(?string $etage, ?string $bureau, int $page, int $perPage = 8): array;
+    public function findDashboardPage(?string $etage, ?string $bureau, int $page, int $perPage = 10): array;
 }

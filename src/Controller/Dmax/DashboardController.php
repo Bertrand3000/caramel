@@ -15,17 +15,21 @@ use Symfony\Component\Routing\Attribute\Route;
 
 class DashboardController extends AbstractController
 {
+    private const DEFAULT_PER_PAGE = 10;
+
     #[Route('/dmax/', name: 'dmax_dashboard', methods: ['GET'])]
     public function index(Request $request, InventoryManagerInterface $inventoryManager): Response
     {
         $etage = trim($request->query->getString('etage'));
         $bureau = trim($request->query->getString('bureau'));
         $page = max(1, $request->query->getInt('page', 1));
+        $perPage = $this->resolvePerPage($request->query->getInt('perPage', self::DEFAULT_PER_PAGE));
 
         return $this->render('dmax/dashboard/index.html.twig', $inventoryManager->findDashboardPage(
             $etage !== '' ? $etage : null,
             $bureau !== '' ? $bureau : null,
             $page,
+            $perPage,
         ));
     }
 
@@ -116,5 +120,10 @@ class DashboardController extends AbstractController
             (float) $data['profondeur'],
             $description !== '' ? $description : null,
         );
+    }
+
+    private function resolvePerPage(int $perPage): int
+    {
+        return in_array($perPage, [10, 25, 100], true) ? $perPage : self::DEFAULT_PER_PAGE;
     }
 }

@@ -29,6 +29,14 @@
                         {% endfor %}
                     </select>
                 </div>
+                <div>
+                    <label class="form-label" for="f-per-page">Par page</label>
+                    <select id="f-per-page" name="perPage" class="form-select" onchange="this.form.submit()">
+                        {% for value in [10, 25, 100] %}
+                            <option value="{{ value }}" {{ perPage == value ? 'selected' : '' }}>{{ value }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
                 <div class="dmax-filter-actions">
                     <button class="btn btn-primary" type="submit">Filtrer</button>
                     <a class="btn btn-outline-secondary" href="{{ path('dmax_dashboard') }}">Réinitialiser</a>
@@ -97,13 +105,40 @@
                     {% set prev = page - 1 %}
                     {% set next = page + 1 %}
                     <a class="btn btn-outline-secondary {{ page == 1 ? 'is-disabled' : '' }}"
-                       href="{{ page == 1 ? '#' : path('dmax_dashboard', {page: prev, etage: etage, bureau: bureau}) }}">Précédent</a>
-                    {% for p in 1..totalPages %}
-                        <a class="btn {{ p == page ? 'btn-primary' : 'btn-outline-secondary' }}"
-                           href="{{ path('dmax_dashboard', {page: p, etage: etage, bureau: bureau}) }}">{{ p }}</a>
-                    {% endfor %}
+                       href="{{ page == 1 ? '#' : path('dmax_dashboard', {page: prev, etage: etage, bureau: bureau, perPage: perPage}) }}">Précédent</a>
+
+                    <a class="btn {{ page == 1 ? 'btn-primary' : 'btn-outline-secondary' }}"
+                       href="{{ path('dmax_dashboard', {page: 1, etage: etage, bureau: bureau, perPage: perPage}) }}">1</a>
+
+                    {% set middleStart = page - 2 %}
+                    {% if middleStart < 2 %}
+                        {% set middleStart = 2 %}
+                    {% endif %}
+                    {% set middleEnd = page + 2 %}
+                    {% if middleEnd > totalPages - 1 %}
+                        {% set middleEnd = totalPages - 1 %}
+                    {% endif %}
+
+                    {% if middleStart > 2 %}
+                        <span class="dmax-pager-ellipsis" aria-hidden="true">…</span>
+                    {% endif %}
+
+                    {% if middleStart <= middleEnd %}
+                        {% for p in middleStart..middleEnd %}
+                            <a class="btn {{ p == page ? 'btn-primary' : 'btn-outline-secondary' }}"
+                               href="{{ path('dmax_dashboard', {page: p, etage: etage, bureau: bureau, perPage: perPage}) }}">{{ p }}</a>
+                        {% endfor %}
+                    {% endif %}
+
+                    {% if middleEnd < totalPages - 1 %}
+                        <span class="dmax-pager-ellipsis" aria-hidden="true">…</span>
+                    {% endif %}
+
+                    <a class="btn {{ page == totalPages ? 'btn-primary' : 'btn-outline-secondary' }}"
+                       href="{{ path('dmax_dashboard', {page: totalPages, etage: etage, bureau: bureau, perPage: perPage}) }}">{{ totalPages }}</a>
+
                     <a class="btn btn-outline-secondary {{ page == totalPages ? 'is-disabled' : '' }}"
-                       href="{{ page == totalPages ? '#' : path('dmax_dashboard', {page: next, etage: etage, bureau: bureau}) }}">Suivant</a>
+                       href="{{ page == totalPages ? '#' : path('dmax_dashboard', {page: next, etage: etage, bureau: bureau, perPage: perPage}) }}">Suivant</a>
                 </nav>
             {% endif %}
         </section>

@@ -63,10 +63,10 @@ class InventoryManager implements InventoryManagerInterface
         return $this->produitRepository->findAvailableWithFilter($filter);
     }
 
-    public function findDashboardPage(?string $etage, ?string $bureau, int $page, int $perPage = 8): array
+    public function findDashboardPage(?string $etage, ?string $bureau, int $page, int $perPage = 10): array
     {
         $page = max(1, $page);
-        $perPage = max(1, min(24, $perPage));
+        $perPage = max(1, min(100, $perPage));
         $total = $this->produitRepository->countAvailableDashboard($etage, $bureau);
         $totalPages = max(1, (int) ceil($total / $perPage));
         if ($page > $totalPages) {

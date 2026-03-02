@@ -104,12 +104,12 @@ final class DashboardControllerTest extends WebTestCase
         $inventoryManager = $this->createMock(InventoryManagerInterface::class);
         $inventoryManager->expects(self::once())
             ->method('findDashboardPage')
-            ->with(null, null, 1)
+            ->with(null, null, 1, 10)
             ->willReturn([
                 'items' => [],
                 'total' => 0,
                 'page' => 1,
-                'perPage' => 8,
+                'perPage' => 10,
                 'totalPages' => 1,
                 'etage' => null,
                 'bureau' => null,
@@ -133,12 +133,12 @@ final class DashboardControllerTest extends WebTestCase
         $inventoryManager = $this->createMock(InventoryManagerInterface::class);
         $inventoryManager->expects(self::once())
             ->method('findDashboardPage')
-            ->with('2', 'B12', 3)
+            ->with('2', 'B12', 3, 25)
             ->willReturn([
                 'items' => [],
                 'total' => 0,
                 'page' => 3,
-                'perPage' => 8,
+                'perPage' => 25,
                 'totalPages' => 1,
                 'etage' => '2',
                 'bureau' => 'B12',
@@ -147,7 +147,7 @@ final class DashboardControllerTest extends WebTestCase
             ]);
         static::getContainer()->set(InventoryManagerInterface::class, $inventoryManager);
 
-        $client->request('GET', '/dmax/?etage=2&bureau=B12&page=3');
+        $client->request('GET', '/dmax/?etage=2&bureau=B12&page=3&perPage=25');
 
         self::assertResponseIsSuccessful();
     }
