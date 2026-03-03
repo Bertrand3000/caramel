@@ -143,6 +143,59 @@ final class ShopControllerTest extends WebTestCase
         self::assertSelectorTextNotContains('main', sprintf('Produit pagination %s 13', $suffix));
     }
 
+    public function testCatalogueTeletravailleurNafficheQueLesProduitsTagges(): void
+    {
+        $client = static::createClient();
+        $client->loginUser($this->createTeletravailleurUser());
+        $this->setBoutiqueOpenForTeletravailleurs(true);
+
+        $suffix = bin2hex(random_bytes(4));
+        $this->createProduit(
+            sprintf('Produit teletravail %s', $suffix),
+            ProduitStatutEnum::DISPONIBLE,
+            1,
+            true,
+        );
+        $this->createProduit(
+            sprintf('Produit general %s', $suffix),
+            ProduitStatutEnum::DISPONIBLE,
+            1,
+            false,
+        );
+
+        $client->request('GET', '/boutique');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('main', sprintf('Produit teletravail %s', $suffix));
+        self::assertSelectorTextNotContains('main', sprintf('Produit general %s', $suffix));
+    }
+
+    public function testCatalogueAdminVoitAussiLesProduitsNonTagges(): void
+    {
+        $client = static::createClient();
+        $client->loginUser($this->createAdminUser());
+
+        $suffix = bin2hex(random_bytes(4));
+        $this->createProduit(
+            sprintf('Produit admin teletravail %s', $suffix),
+            ProduitStatutEnum::DISPONIBLE,
+            1,
+            true,
+        );
+        $this->createProduit(
+            sprintf('Produit admin general %s', $suffix),
+            ProduitStatutEnum::DISPONIBLE,
+            1,
+            false,
+        );
+
+        $client->request('GET', '/boutique');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('main', sprintf('Produit admin teletravail %s', $suffix));
+        self::assertSelectorTextContains('main', sprintf('Produit admin general %s', $suffix));
+    }
+
     private function createAgentUser(): Utilisateur
     {
         $this->setQuotaArticlesMax(3);
@@ -151,6 +204,36 @@ final class ShopControllerTest extends WebTestCase
             ->setLogin(sprintf('agent-shop-%s@test.local', bin2hex(random_bytes(4))))
             ->setPassword('dummy')
             ->setRoles(['ROLE_AGENT']);
+
+        $entityManager->persist($user);
+        $entityManager->flush();
+
+        return $user;
+    }
+
+    private function createTeletravailleurUser(): Utilisateur
+    {
+        $this->setQuotaArticlesMax(3);
+        $entityManager = static::getContainer()->get(EntityManagerInterface::class);
+        $user = (new Utilisateur())
+            ->setLogin(sprintf('teletravailleur-shop-%s@test.local', bin2hex(random_bytes(4))))
+            ->setPassword('dummy')
+            ->setRoles(['ROLE_TELETRAVAILLEUR']);
+
+        $entityManager->persist($user);
+        $entityManager->flush();
+
+        return $user;
+    }
+
+    private function createAdminUser(): Utilisateur
+    {
+        $this->setQuotaArticlesMax(3);
+        $entityManager = static::getContainer()->get(EntityManagerInterface::class);
+        $user = (new Utilisateur())
+            ->setLogin(sprintf('admin-shop-%s@test.local', bin2hex(random_bytes(4))))
+            ->setPassword('dummy')
+            ->setRoles(['ROLE_ADMIN']);
 
         $entityManager->persist($user);
         $entityManager->flush();
@@ -167,6 +250,15 @@ final class ShopControllerTest extends WebTestCase
         $entityManager->flush();
     }
 
+    private function setBoutiqueOpenForTeletravailleurs(bool $open): void
+    {
+        $entityManager = static::getContainer()->get(EntityManagerInterface::class);
+        $param = $entityManager->getRepository(Parametre::class)->findOneBy(['cle' => 'boutique_ouverte_teletravailleurs']) ?? (new Parametre())->setCle('boutique_ouverte_teletravailleurs');
+        $param->setValeur($open ? '1' : '0');
+        $entityManager->persist($param);
+        $entityManager->flush();
+    }
+
     private function setQuotaArticlesMax(int $quota): void
     {
         $entityManager = static::getContainer()->get(EntityManagerInterface::class);
@@ -176,7 +268,12 @@ final class ShopControllerTest extends WebTestCase
         $entityManager->flush();
     }
 
-    private function createProduit(string $libelle, ProduitStatutEnum $statut, int $quantite): Produit
+    private function createProduit(
+        string $libelle,
+        ProduitStatutEnum $statut,
+        int $quantite,
+        bool $tagTeletravailleur = false,
+    ): Produit
     {
         $entityManager = static::getContainer()->get(EntityManagerInterface::class);
         $produit = (new Produit())
@@ -189,7 +286,8 @@ final class ShopControllerTest extends WebTestCase
             ->setHauteur(70)
             ->setProfondeur(50)
             ->setStatut($statut)
-            ->setQuantite($quantite);
+            ->setQuantite($quantite)
+            ->setTagTeletravailleur($tagTeletravailleur);
 
         $entityManager->persist($produit);
         $entityManager->flush();

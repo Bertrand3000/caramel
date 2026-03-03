@@ -152,4 +152,49 @@ final class CartManagerTest extends TestCase
 
         (new CartManager($em, $quotaChecker))->addItem('s', $produit, ['ROLE_AGENT']);
     }
+
+    public function testAddItemBloqueProduitNonTaggePourTeletravailleur(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Ce produit n\'est pas disponible pour votre profil télétravailleur.');
+
+        $produit = (new Produit())->setQuantite(1)->setTagTeletravailleur(false);
+        $quotaChecker = $this->createMock(QuotaCheckerService::class);
+        $quotaChecker->expects(self::never())->method('canAddMoreItems');
+
+        $em = $this->createMock(EntityManagerInterface::class);
+
+        (new CartManager($em, $quotaChecker))->addItem('s', $produit, ['ROLE_TELETRAVAILLEUR']);
+    }
+
+    public function testAddItemAdminNestPasBloqueParLeFiltreTeletravailleur(): void
+    {
+        $produit = (new Produit())->setQuantite(1)->setTagTeletravailleur(false);
+        $reservationRepo = $this->createMock(EntityRepository::class);
+        $reservationRepo->method('findOneBy')->willReturn(null);
+        $panierRepo = $this->createMock(EntityRepository::class);
+        $panierRepo->method('findOneBy')->willReturn(null);
+        $ligneRepo = $this->createMock(EntityRepository::class);
+        $ligneRepo->method('findOneBy')->willReturn(null);
+
+        $query = $this->createMock(Query::class);
+        $query->method('getSingleScalarResult')->willReturn(0);
+        $qb = $this->buildQb($em = $this->createMock(EntityManagerInterface::class), $query);
+
+        $em->method('getRepository')->willReturnMap([
+            [ReservationTemporaire::class, $reservationRepo],
+            ['App\\Entity\\Panier', $panierRepo],
+            ['App\\Entity\\LignePanier', $ligneRepo],
+        ]);
+        $em->method('createQueryBuilder')->willReturn($qb);
+        $em->expects(self::once())->method('flush');
+
+        $quotaChecker = $this->createMock(QuotaCheckerService::class);
+        $quotaChecker->expects(self::once())
+            ->method('canAddMoreItems')
+            ->with(['ROLE_ADMIN', 'ROLE_TELETRAVAILLEUR'], 0)
+            ->willReturn(true);
+
+        (new CartManager($em, $quotaChecker))->addItem('s', $produit, ['ROLE_ADMIN', 'ROLE_TELETRAVAILLEUR']);
+    }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Controller;
 
+use App\Entity\AgentEligible;
 use App\Entity\Commande;
 use App\Entity\Creneau;
 use App\Entity\Parametre;
@@ -138,6 +139,7 @@ final class CheckoutControllerTest extends WebTestCase
         $user = $this->createUser('agent-one-order');
         $client->loginUser($user);
         $numeroAgent = (string) random_int(10000, 99999);
+        $this->addAgentEligible($numeroAgent);
 
         $produit1 = $this->createProduit('Produit unique 1');
         $produit2 = $this->createProduit('Produit unique 2');
@@ -183,6 +185,13 @@ final class CheckoutControllerTest extends WebTestCase
             ->getSingleScalarResult();
 
         self::assertSame(1, $count);
+    }
+
+    private function addAgentEligible(string $numeroAgent): void
+    {
+        $entityManager = static::getContainer()->get(EntityManagerInterface::class);
+        $entityManager->persist((new AgentEligible())->setNumeroAgent($numeroAgent));
+        $entityManager->flush();
     }
 
     private function createUser(string $prefix): Utilisateur

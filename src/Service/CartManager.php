@@ -25,6 +25,14 @@ class CartManager implements CartManagerInterface
 
     public function addItem(string $sessionId, Produit $produit, array $roles): void
     {
+        if (
+            in_array('ROLE_TELETRAVAILLEUR', $roles, true)
+            && !in_array('ROLE_ADMIN', $roles, true)
+            && !$produit->isTagTeletravailleur()
+        ) {
+            throw new \RuntimeException('Ce produit n\'est pas disponible pour votre profil télétravailleur.');
+        }
+
         $cartItemsCount = $this->countActiveCartItems($sessionId);
         if (!$this->quotaChecker->canAddMoreItems($roles, $cartItemsCount)) {
             $quota = $this->quotaChecker->getCartQuotaForRoles($roles);

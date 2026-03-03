@@ -46,10 +46,12 @@ final class ShopController extends AbstractController
         $keyword = trim($request->query->getString('q'));
         $keywordNormalized = mb_strtolower($keyword);
         $page = max(1, $request->query->getInt('page', 1));
+        $filters = ['statut' => ProduitStatutEnum::DISPONIBLE];
+        if (in_array('ROLE_TELETRAVAILLEUR', $roles, true) && !in_array('ROLE_ADMIN', $roles, true)) {
+            $filters['tagTeletravailleur'] = true;
+        }
 
-        $produits = $produitRepository->findBy([
-            'statut' => ProduitStatutEnum::DISPONIBLE,
-        ], ['id' => 'DESC']);
+        $produits = $produitRepository->findBy($filters, ['id' => 'DESC']);
         $catalogue = [];
 
         foreach ($produits as $produit) {
