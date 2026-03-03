@@ -5,9 +5,13 @@ declare(strict_types=1);
 namespace App\Controller\Admin;
 
 use App\Form\ImportTeletravailleursType;
+use App\Form\ImportGrhCommandesType;
 use App\Form\ParametreType;
+use App\Interface\AgentEligibleImportServiceInterface;
 use App\Interface\GrhImportServiceInterface;
+use App\Repository\AgentEligibleRepository;
 use App\Repository\ParametreRepository;
+use App\Repository\TeletravailleurListeRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -17,8 +21,13 @@ use Symfony\Component\Routing\Attribute\Route;
 class DashboardController extends AbstractController
 {
     #[Route('/admin/', name: 'admin_dashboard', methods: ['GET', 'POST'])]
-    public function index(Request $request, ParametreRepository $parametreRepository, EntityManagerInterface $entityManager): Response
-    {
+    public function index(
+        Request $request,
+        ParametreRepository $parametreRepository,
+        TeletravailleurListeRepository $teletravailleurListeRepository,
+        AgentEligibleRepository $agentEligibleRepository,
+        EntityManagerInterface $entityManager,
+    ): Response {
         $values = [];
         foreach ($parametreRepository->findAll() as $parametre) {
             $values[$parametre->getCle()] = $parametre->getValeur();
@@ -39,7 +48,13 @@ class DashboardController extends AbstractController
             return $this->redirectToRoute('admin_dashboard');
         }
 
-        return $this->render('admin/dashboard/index.html.twig', ['form' => $form->createView(), 'importForm' => $this->createForm(ImportTeletravailleursType::class)->createView()]);
+        return $this->render('admin/dashboard/index.html.twig', [
+            'form' => $form->createView(),
+            'importForm' => $this->createForm(ImportTeletravailleursType::class)->createView(),
+            'agentEligibleImportForm' => $this->createForm(ImportGrhCommandesType::class)->createView(),
+            'teletravailleurCount' => $teletravailleurListeRepository->count([]),
+            'agentEligibleCount' => $agentEligibleRepository->count([]),
+        ]);
     }
 
     #[Route('/admin/import-teletravailleurs', name: 'admin_import_teletravailleurs', methods: ['POST'])]
@@ -52,6 +67,23 @@ class DashboardController extends AbstractController
             $file = $form->get('csvFile')->getData();
             $count = $grhImportService->replaceAll($file->getPathname());
             $this->addFlash('success', sprintf('%d télétravailleurs importés.', $count));
+        }
+
+        return $this->redirectToRoute('admin_dashboard');
+    }
+
+    #[Route('/admin/import-agents-eligibles', name: 'admin_import_agents_eligibles', methods: ['POST'])]
+    public function importAgentsEligibles(
+        Request $request,
+        AgentEligibleImportServiceInterface $agentEligibleImportService,
+    ): Response {
+        $form = $this->createForm(ImportGrhCommandesType::class);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $file = $form->get('xlsxFile')->getData();
+            $count = $agentEligibleImportService->replaceAllFromXlsx($file->getPathname());
+            $this->addFlash('success', sprintf('%d agents eligibles importes.', $count));
         }
 
         return $this->redirectToRoute('admin_dashboard');

@@ -14,6 +14,7 @@ use App\Enum\CommandeProfilEnum;
 use App\Enum\ProfilUtilisateur;
 use App\Exception\CommandeDejaExistanteException;
 use App\Exception\JourLivraisonNonPleinException;
+use App\Interface\AgentEligibilityCheckerInterface;
 use App\Interface\CartManagerInterface;
 use App\Interface\SlotManagerInterface;
 use App\Repository\JourLivraisonRepository;
@@ -116,6 +117,38 @@ final class CheckoutServiceTest extends TestCase
 
         $utilisateur = (new Utilisateur())->setLogin('agent@test.local')->setPassword('dummy')->setRoles(['ROLE_AGENT']);
         (new CheckoutService($em, $cart, $limitChecker, $quota, $slot, $workflow))
+            ->confirmCommande('s', new Creneau(), ProfilUtilisateur::PUBLIC, $utilisateur, '12345');
+    }
+
+    public function testConfirmCommandeBloqueeSiAgentIneligible(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('absent de la liste');
+
+        $cart = $this->createMock(CartManagerInterface::class);
+        $cart->method('getContents')->willReturn([['quantite' => 1]]);
+        $cart->expects(self::never())->method('validateCart');
+
+        $quota = $this->createMock(QuotaCheckerService::class);
+        $quota->expects(self::never())->method('check');
+
+        $slot = $this->createMock(SlotManagerInterface::class);
+        $slot->expects(self::never())->method('reserverCreneau');
+
+        $limitChecker = $this->createMock(CommandeLimitCheckerService::class);
+        $limitChecker->expects(self::never())->method('assertPeutCommander');
+
+        $checker = $this->createMock(AgentEligibilityCheckerInterface::class);
+        $checker->expects(self::once())
+            ->method('assertAllowed')
+            ->willThrowException(new \RuntimeException('Votre numero d agent est absent de la liste des agents autorises pour ce compte.'));
+
+        $em = $this->createMock(EntityManagerInterface::class);
+        $em->method('wrapInTransaction')->willReturnCallback(fn ($cb) => $cb());
+        $workflow = $this->createMock(WorkflowInterface::class);
+
+        $utilisateur = (new Utilisateur())->setLogin('agent@test.local')->setPassword('dummy')->setRoles(['ROLE_AGENT']);
+        (new CheckoutService($em, $cart, $limitChecker, $quota, $slot, $workflow, null, $checker))
             ->confirmCommande('s', new Creneau(), ProfilUtilisateur::PUBLIC, $utilisateur, '12345');
     }
 

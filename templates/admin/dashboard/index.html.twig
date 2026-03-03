@@ -2,33 +2,33 @@
 {% block title %}Administration{% endblock %}
 {% block body %}
 <main class="container py-4">
-    <section class="form-shell dmax-list-shell">
+    <section class="form-shell dmax-list-shell admin-dashboard-shell">
         <header class="form-head">
             <h1>Administration</h1>
             <p>Pilote l'ouverture de la boutique, les imports et les exports.</p>
         </header>
 
-        <div class="form-grid-two">
-            <section class="form-section">
+        <div class="admin-dashboard-grid">
+            <section class="form-section admin-dashboard-main">
                 <h2>Paramètres boutique</h2>
                 <p class="form-help mb-2">Active ou désactive l'ouverture par profil et ajuste le quota.</p>
                 {{ form_start(form, {attr: {'class': 'produit-form'}}) }}
                     {{ form_errors(form) }}
                     <div class="form-check">
                         {{ form_widget(form.boutique_ouverte_agents, {'attr': {'class': 'form-check-input'}}) }}
-                        {{ form_label(form.boutique_ouverte_agents, 'Boutique ouverte pour les agents', {'label_attr': {'class': 'form-check-label'}}) }}
+                        {{ form_label(form.boutique_ouverte_agents, 'Ouverte pour les agents', {'label_attr': {'class': 'form-check-label'}}) }}
                     </div>
                     {{ form_errors(form.boutique_ouverte_agents) }}
 
                     <div class="form-check">
                         {{ form_widget(form.boutique_ouverte_teletravailleurs, {'attr': {'class': 'form-check-input'}}) }}
-                        {{ form_label(form.boutique_ouverte_teletravailleurs, 'Boutique ouverte pour les télétravailleurs', {'label_attr': {'class': 'form-check-label'}}) }}
+                        {{ form_label(form.boutique_ouverte_teletravailleurs, 'Ouverte pour les télétravailleurs', {'label_attr': {'class': 'form-check-label'}}) }}
                     </div>
                     {{ form_errors(form.boutique_ouverte_teletravailleurs) }}
 
                     <div class="form-check">
                         {{ form_widget(form.boutique_ouverte_partenaires, {'attr': {'class': 'form-check-input'}}) }}
-                        {{ form_label(form.boutique_ouverte_partenaires, 'Boutique ouverte pour les partenaires', {'label_attr': {'class': 'form-check-label'}}) }}
+                        {{ form_label(form.boutique_ouverte_partenaires, 'Ouverte pour les partenaires', {'label_attr': {'class': 'form-check-label'}}) }}
                     </div>
                     {{ form_errors(form.boutique_ouverte_partenaires) }}
 
@@ -46,6 +46,7 @@
             <section class="form-section">
                 <h2>Import télétravailleurs</h2>
                 <p class="form-help mb-2">Remplace la liste actuelle des numéros d'agents télétravailleurs depuis un CSV.</p>
+                <p class="form-help mb-2">Base active : {{ teletravailleurCount }} agent(s).</p>
                 {{ form_start(importForm, {action: path('admin_import_teletravailleurs'), attr: {'class': 'produit-form'}}) }}
                     {{ form_errors(importForm) }}
                     {{ form_row(importForm.csvFile, {
@@ -56,6 +57,22 @@
                         <button class="btn btn-primary" type="submit">Importer le CSV</button>
                     </div>
                 {{ form_end(importForm) }}
+            </section>
+
+            <section class="form-section">
+                <h2>Import agents éligibles</h2>
+                <p class="form-help mb-2">Remplace la liste blanche actuelle des autres agents depuis un fichier XLSX.</p>
+                <p class="form-help mb-2">Base active : {{ agentEligibleCount }} agent(s).</p>
+                {{ form_start(agentEligibleImportForm, {action: path('admin_import_agents_eligibles'), attr: {'class': 'produit-form'}}) }}
+                    {{ form_errors(agentEligibleImportForm) }}
+                    {{ form_row(agentEligibleImportForm.xlsxFile, {
+                        label: 'Fichier XLSX',
+                        attr: {'class': 'form-control'}
+                    }) }}
+                    <div class="form-actions">
+                        <button class="btn btn-primary" type="submit">Importer le XLSX</button>
+                    </div>
+                {{ form_end(agentEligibleImportForm) }}
             </section>
         </div>
 

@@ -10,6 +10,7 @@ use App\Entity\Utilisateur;
 use App\Enum\CommandeProfilEnum;
 use App\Enum\ProfilUtilisateur;
 use App\Exception\JourLivraisonNonPleinException;
+use App\Interface\AgentEligibilityCheckerInterface;
 use App\Interface\CartManagerInterface;
 use App\Interface\CheckoutServiceInterface;
 use App\Interface\SlotManagerInterface;
@@ -29,6 +30,7 @@ class CheckoutService implements CheckoutServiceInterface
         #[Autowire(service: 'state_machine.commande_lifecycle')]
         private readonly WorkflowInterface $commandeLifecycle,
         private readonly ?JourLivraisonRepository $jourLivraisonRepository = null,
+        private readonly ?AgentEligibilityCheckerInterface $agentEligibilityChecker = null,
     ) {
     }
 
@@ -51,6 +53,10 @@ class CheckoutService implements CheckoutServiceInterface
             $totalQuantite = count($panier);
             if ($totalQuantite < 1) {
                 throw new \RuntimeException('Panier vide');
+            }
+
+            if ($numeroAgent !== null && trim($numeroAgent) !== '' && $this->agentEligibilityChecker !== null) {
+                $this->agentEligibilityChecker->assertAllowed($utilisateur, trim($numeroAgent));
             }
 
             $this->commandeLimitChecker->assertPeutCommander(trim((string) $numeroAgent), $profil);

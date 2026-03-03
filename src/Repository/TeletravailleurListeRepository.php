@@ -15,6 +15,19 @@ class TeletravailleurListeRepository extends ServiceEntityRepository
         parent::__construct($registry, TeletravailleurListe::class);
     }
 
+    public function existsByNumeroAgent(string $numeroAgent): bool
+    {
+        $result = $this->createQueryBuilder('t')
+            ->select('1')
+            ->andWhere('t.numeroAgent = :numeroAgent')
+            ->setParameter('numeroAgent', $numeroAgent)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        return $result !== null;
+    }
+
     public function existsByNumeroAgentAndNomOrPrenom(
         string $numeroAgent,
         string $nom,

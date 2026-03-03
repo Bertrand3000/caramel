@@ -546,6 +546,10 @@ img {
     margin: 0 auto;
 }
 
+.admin-dashboard-shell {
+    max-width: 1280px;
+}
+
 .form-head {
     margin-bottom: 1rem;
 }
@@ -590,6 +594,12 @@ img {
     grid-template-columns: 1fr;
 }
 
+.admin-dashboard-grid {
+    display: grid;
+    gap: 0.8rem;
+    grid-template-columns: 1fr;
+}
+
 @media (min-width: 720px) {
     .form-grid-two {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -597,6 +607,15 @@ img {
 
     .form-grid-three {
         grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .admin-dashboard-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        align-items: start;
+    }
+
+    .admin-dashboard-main {
+        grid-column: auto;
     }
 }
 
