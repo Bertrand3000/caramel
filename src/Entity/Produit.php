@@ -48,7 +48,7 @@ class Produit
     #[ORM\Column(length: 20)]
     private string $etage;
 
-    #[ORM\Column(length: 20)]
+    #[ORM\Column(length: 50)]
     private string $porte;
 
     #[ORM\Column]
