@@ -22,7 +22,7 @@ final class AgentEligibilityCheckerService implements AgentEligibilityCheckerInt
         if (in_array('ROLE_TELETRAVAILLEUR', $utilisateur->getRoles(), true)) {
             if (!$this->teletravailleurListeRepository->existsByNumeroAgent($numeroAgent)) {
                 throw new \RuntimeException(
-                    'Votre numero d agent est absent de la liste teletravailleurs autorisee pour ce compte.',
+                    "Vous n'êtes pas présent(e) dans la base des télétravailleurs.",
                 );
             }
 
@@ -31,7 +31,7 @@ final class AgentEligibilityCheckerService implements AgentEligibilityCheckerInt
 
         if (!$this->agentEligibleRepository->existsByNumeroAgent($numeroAgent)) {
             throw new \RuntimeException(
-                'Votre numero d agent est absent de la liste des agents autorises pour ce compte.',
+                'Votre numéro d\'agent n\'est pas reconnu.',
             );
         }
     }

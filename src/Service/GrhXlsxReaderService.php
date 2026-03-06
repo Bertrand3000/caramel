@@ -26,7 +26,7 @@ final class GrhXlsxReaderService implements GrhXlsxReaderInterface
                 $map['prenom'] = (string) $column;
             } elseif ($label === 'nom') {
                 $map['nom'] = (string) $column;
-            } elseif ($label === 'email') {
+            } elseif ($label === 'mail pro') {
                 $map['email'] = (string) $column;
             } elseif (in_array($label, ['tel', 'telephone'], true)) {
                 $map['telephone'] = (string) $column;

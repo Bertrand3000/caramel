@@ -29,7 +29,8 @@ final class CommandeDecisionService implements CommandeDecisionServiceInterface
             $this->entityManager->flush();
         }
 
-        $email = $commande->getCommandeContactTmp()?->getEmail();
+        $contact = $commande->getCommandeContactTmp();
+        $email = $contact?->getEmail();
         if ($email === null || $email === '') {
             return false;
         }
@@ -39,6 +40,9 @@ final class CommandeDecisionService implements CommandeDecisionServiceInterface
         } elseif ($status !== CommandeStatutEnum::ANNULEE) {
             $this->mailerNotifier->notifyCommandeRefusee($commande);
         }
+
+        $contact?->setEmail(null);
+        $this->entityManager->flush();
 
         return true;
     }

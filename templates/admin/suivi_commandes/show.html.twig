@@ -35,6 +35,11 @@
                             <td>{{ commande.prenom ?: '—' }}</td>
                             <td>{{ commande.commandeContactTmp ? commande.commandeContactTmp.prenomGrh : '—' }}</td>
                         </tr>
+                        <tr>
+                            <td>Email</td>
+                            <td>—</td>
+                            <td>{{ commande.commandeContactTmp ? commande.commandeContactTmp.email : '—' }}</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
