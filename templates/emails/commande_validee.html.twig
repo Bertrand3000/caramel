@@ -1,12 +1,34 @@
-<p>Bonjour {{ commande.commandeContactTmp ? commande.commandeContactTmp.prenomGrh : '' }} {{ commande.commandeContactTmp ? commande.commandeContactTmp.nomGrh : '' }},</p>
+<p>Bonjour {{ commande.prenom }} {{ commande.nom }},</p>
 
 <p>Votre commande CARAMEL a été validée.</p>
 
-{% if commande.creneau %}
-    <p>
-        Rappel de votre créneau : {{ commande.creneau.dateHeure|date('l d F Y') }}
-        à {{ commande.creneau.heureDebut|date('H:i') }}.
-    </p>
-{% endif %}
+<section style="margin: 20px 0; padding: 15px; background-color: #f5f5f5; border-radius: 5px;">
+    <h2 style="font-size: 18px; margin-bottom: 10px;">Vos informations</h2>
+    <ul style="list-style: none; padding: 0;">
+        <li><strong>Nom :</strong> {{ commande.nom }}</li>
+        <li><strong>Prénom :</strong> {{ commande.prenom }}</li>
+        <li><strong>Numéro d'agent :</strong> {{ commande.numeroAgent ?? '—' }}</li>
+    </ul>
+</section>
 
-<p>L’équipe CARAMEL</p>
+<section style="margin: 20px 0; padding: 15px; background-color: #f5f5f5; border-radius: 5px;">
+    <h2 style="font-size: 18px; margin-bottom: 10px;">Créneau de retrait</h2>
+    {% if commande.creneau %}
+        <p><strong>Date :</strong> {{ commande.creneau.dateHeure|date('d/m/Y') }}</p>
+        <p><strong>Heure :</strong> {{ commande.creneau.heureDebut|date('H:i') }} - {{ commande.creneau.heureFin|date('H:i') }}</p>
+        <p><strong>Lieu :</strong> Parking fermé du CAD</p>
+    {% endif %}
+</section>
+
+<section style="margin: 20px 0; padding: 15px; background-color: #f5f5f5; border-radius: 5px;">
+    <h2 style="font-size: 18px; margin-bottom: 10px;">Articles commandés</h2>
+    <ul style="margin: 0; padding-left: 20px;">
+        {% for ligne in commande.lignesCommande %}
+            <li>{{ ligne.produit.libelle }}</li>
+        {% else %}
+            <li>Aucun article</li>
+        {% endfor %}
+    </ul>
+</section>
+
+<p>L'équipe CARAMEL</p>
