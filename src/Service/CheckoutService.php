@@ -41,7 +41,7 @@ class CheckoutService implements CheckoutServiceInterface
 
     public function confirmCommande(
         string $sessionId,
-        Creneau $creneau,
+        ?Creneau $creneau,
         ProfilUtilisateur $profil,
         Utilisateur $utilisateur,
         ?string $numeroAgent = null,
@@ -67,7 +67,9 @@ class CheckoutService implements CheckoutServiceInterface
 
             $this->assertJourneePleineRule($creneau);
             $commande = $this->cartManager->validateCart($sessionId, $utilisateur);
-            $this->creneauManager->reserverCreneau($creneau, $commande);
+            if ($creneau !== null) {
+                $this->creneauManager->reserverCreneau($creneau, $commande);
+            }
             if ($numeroAgent !== null && trim($numeroAgent) !== '') {
                 $commande->setNumeroAgent(trim($numeroAgent));
             }
@@ -129,8 +131,12 @@ class CheckoutService implements CheckoutServiceInterface
         };
     }
 
-    private function assertJourneePleineRule(Creneau $creneau): void
+    private function assertJourneePleineRule(?Creneau $creneau): void
     {
+        if ($creneau === null) {
+            return;
+        }
+
         $jour = $creneau->getJourLivraison();
         if ($jour === null || $this->jourLivraisonRepository === null) {
             return;

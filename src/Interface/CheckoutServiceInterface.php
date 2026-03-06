@@ -15,7 +15,7 @@ interface CheckoutServiceInterface
 
     public function confirmCommande(
         string $sessionId,
-        Creneau $creneau,
+        ?Creneau $creneau,
         ProfilUtilisateur $profil,
         Utilisateur $utilisateur,
         ?string $numeroAgent = null,

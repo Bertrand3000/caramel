@@ -65,21 +65,38 @@ final class CheckoutController extends AbstractController
         $nom = trim($request->request->getString('nom'));
         $prenom = trim($request->request->getString('prenom'));
         $numeroAgent = trim($request->request->getString('numeroAgent'));
-        if ($nom === '' || $prenom === '' || !preg_match('/^\d{5}$/', $numeroAgent)) {
-            $this->addFlash('error', 'Nom, prenom et numero d\'agent (5 chiffres) sont obligatoires.');
-
-            return $this->redirectToRoute('checkout_creneaux');
-        }
-
-        $creneau = $creneauRepository->find($creneauId);
-
-        if ($creneau === null) {
-            $this->addFlash('error', 'Créneau obligatoire pour valider la commande.');
-
-            return $this->redirectToRoute('checkout_creneaux');
-        }
 
         $user = $this->getUser();
+        $requiresNumeroAgent = $user instanceof Utilisateur && $this->requiresNumeroAgentForUser($user);
+        $requiresCreneau = $user instanceof Utilisateur && $this->requiresCreneauForUser($user);
+
+        if ($nom === '' || $prenom === '') {
+            $this->addFlash('error', 'Nom et prénom sont obligatoires.');
+
+            return $this->redirectToRoute('checkout_creneaux');
+        }
+
+        if ($requiresNumeroAgent && ($numeroAgent === '' || !preg_match('/^\d{5}$/', $numeroAgent))) {
+            $this->addFlash('error', 'Le numéro d\'agent (5 chiffres) est obligatoire.');
+
+            return $this->redirectToRoute('checkout_creneaux');
+        }
+
+        $creneau = null;
+        if ($requiresCreneau) {
+            if ($creneauId <= 0) {
+                $this->addFlash('error', 'Veuillez choisir un créneau.');
+
+                return $this->redirectToRoute('checkout_creneaux');
+            }
+            $creneau = $creneauRepository->find($creneauId);
+            if ($creneau === null) {
+                $this->addFlash('error', 'Créneau introuvable.');
+
+                return $this->redirectToRoute('checkout_creneaux');
+            }
+        }
+
         if (!$user instanceof Utilisateur) {
             $this->addFlash('error', 'Connexion requise pour valider la commande.');
 
@@ -92,7 +109,7 @@ final class CheckoutController extends AbstractController
                 $creneau,
                 $this->resolveProfilUtilisateur($user),
                 $user,
-                $numeroAgent !== '' ? $numeroAgent : null,
+                $requiresNumeroAgent && $numeroAgent !== '' ? $numeroAgent : null,
                 $nom,
                 $prenom,
             );
@@ -113,6 +130,34 @@ final class CheckoutController extends AbstractController
 
             return $this->redirectToRoute('checkout_creneaux');
         }
+    }
+
+    private function requiresNumeroAgentForUser(Utilisateur $user): bool
+    {
+        $roles = $user->getRoles();
+        
+        // ROLE_ADMIN hérite de ROLE_AGENT et ROLE_TELETRAVAILLEUR via la hiérarchie
+        // On doit donc exclure explicitement ROLE_ADMIN
+        if (in_array('ROLE_ADMIN', $roles, true)) {
+            return false;
+        }
+        
+        return in_array('ROLE_AGENT', $roles, true)
+            || in_array('ROLE_TELETRAVAILLEUR', $roles, true);
+    }
+
+    private function requiresCreneauForUser(Utilisateur $user): bool
+    {
+        $roles = $user->getRoles();
+        
+        // ROLE_ADMIN hérite de ROLE_AGENT et ROLE_TELETRAVAILLEUR via la hiérarchie
+        // On doit donc exclure explicitement ROLE_ADMIN
+        if (in_array('ROLE_ADMIN', $roles, true)) {
+            return false;
+        }
+        
+        return in_array('ROLE_AGENT', $roles, true)
+            || in_array('ROLE_TELETRAVAILLEUR', $roles, true);
     }
 
     #[Route('/confirmation', name: 'checkout_confirmation', methods: ['GET'])]
