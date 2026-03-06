@@ -3,3 +3,4 @@ framework:
         dsn: '%env(MAILER_DSN)%'
         envelope:
             sender: 'noreply@caramel.redirectme.net'
+        message_bus: false

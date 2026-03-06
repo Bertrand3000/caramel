@@ -89,10 +89,17 @@ final class MailerTestCommand extends Command
 
     private function createTestCommande(string $email): Commande
     {
-        $utilisateur = (new Utilisateur())
-            ->setLogin('test-mailer@caramel.local')
-            ->setPassword('dummy')
-            ->setRoles(['ROLE_AGENT']);
+        $login = 'test-mailer@caramel.local';
+        
+        // Réutiliser l'utilisateur de test s'il existe déjà
+        $utilisateur = $this->entityManager->getRepository(Utilisateur::class)->findOneBy(['login' => $login]);
+        if ($utilisateur === null) {
+            $utilisateur = (new Utilisateur())
+                ->setLogin($login)
+                ->setPassword('dummy')
+                ->setRoles(['ROLE_AGENT']);
+            $this->entityManager->persist($utilisateur);
+        }
 
         $creneau = (new Creneau())
             ->setDateHeure(new \DateTimeImmutable('tomorrow 10:00:00'))
@@ -100,6 +107,7 @@ final class MailerTestCommand extends Command
             ->setHeureFin(new \DateTime('10:30:00'))
             ->setCapaciteMax(10)
             ->setCapaciteUtilisee(0);
+        $this->entityManager->persist($creneau);
 
         $contact = (new CommandeContactTmp())
             ->setNomGrh('TEST')
@@ -109,9 +117,10 @@ final class MailerTestCommand extends Command
             ->setImportBatchId('mailer_test_command')
             ->setImportedAt(new \DateTimeImmutable());
 
+        $sessionId = 'mailer_test_'.bin2hex(random_bytes(4));
         $commande = (new Commande())
             ->setUtilisateur($utilisateur)
-            ->setSessionId('mailer_test_'.bin2hex(random_bytes(4)))
+            ->setSessionId($sessionId)
             ->setNumeroAgent('99999')
             ->setNom('TEST')
             ->setPrenom('Mail')
@@ -123,8 +132,6 @@ final class MailerTestCommand extends Command
 
         $contact->setCommande($commande);
 
-        $this->entityManager->persist($utilisateur);
-        $this->entityManager->persist($creneau);
         $this->entityManager->persist($contact);
         $this->entityManager->persist($commande);
         $this->entityManager->flush();
