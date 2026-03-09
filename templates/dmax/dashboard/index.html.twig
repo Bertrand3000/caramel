@@ -130,7 +130,11 @@
                                 </td>
                                 <td>
                                     {% set vncRaw = produit.vnc|default('')|trim %}
-                                    {% if vncRaw == '??' %}
+                                    {% if vncRaw == '=0' %}
+                                        <span class="badge text-bg-success">{{ vncRaw }}</span>
+                                    {% elseif vncRaw == '>0' %}
+                                        <span class="badge text-bg-warning">{{ vncRaw }}</span>
+                                    {% elseif vncRaw == '??' %}
                                         <span class="badge text-bg-danger">{{ vncRaw }}</span>
                                     {% elseif vncRaw matches '/^-?\\d+(?:[.,]\\d+)?$/' %}
                                         {% set vncNumber = (vncRaw|replace({',':'.'})) + 0 %}
