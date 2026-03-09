@@ -25,6 +25,7 @@ class DashboardController extends AbstractController
         $vnc = trim($request->query->getString('vnc'));
         $q = trim($request->query->getString('q'));
         $teletravailleur = trim($request->query->getString('teletravailleur'));
+        $inventaireEtat = trim($request->query->getString('inventaireEtat'));
         $page = max(1, $request->query->getInt('page', 1));
         $perPage = $this->resolvePerPage($request->query->getInt('perPage', self::DEFAULT_PER_PAGE));
 
@@ -34,6 +35,7 @@ class DashboardController extends AbstractController
             $vnc !== '' ? $vnc : null,
             $q !== '' ? $q : null,
             $teletravailleur === '1' ? true : ($teletravailleur === '0' ? false : null),
+            $inventaireEtat !== '' ? $inventaireEtat : null,
             $page,
             $perPage,
         ));

@@ -34,10 +34,11 @@ interface InventoryManagerInterface
      *   vnc: ?string,
      *   q: ?string,
      *   teletravailleur: ?bool,
+     *   inventaireEtat: ?string,
      *   etageOptions: list<string>,
      *   bureauOptions: list<string>,
      *   vncOptions: list<string>
      * }
      */
-    public function findDashboardPage(?string $etage, ?string $bureau, ?string $vnc, ?string $q, ?bool $teletravailleur, int $page, int $perPage = 10): array;
+    public function findDashboardPage(?string $etage, ?string $bureau, ?string $vnc, ?string $q, ?bool $teletravailleur, ?string $inventaireEtat, int $page, int $perPage = 10): array;
 }

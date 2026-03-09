@@ -57,6 +57,15 @@
                     </select>
                 </div>
                 <div>
+                    <label class="form-label" for="f-inventaire-etat">Inventaire</label>
+                    <select id="f-inventaire-etat" name="inventaireEtat" class="form-select">
+                        <option value="" {{ inventaireEtat is null ? 'selected' : '' }}>Tous</option>
+                        <option value="sans_numero" {{ inventaireEtat == 'sans_numero' ? 'selected' : '' }}>Sans numéro d'inventaire</option>
+                        <option value="non_decompose" {{ inventaireEtat == 'non_decompose' ? 'selected' : '' }}>Inventaire non décomposé</option>
+                        <option value="ok" {{ inventaireEtat == 'ok' ? 'selected' : '' }}>Inventaire OK</option>
+                    </select>
+                </div>
+                <div>
                     <label class="form-label" for="f-per-page">Par page</label>
                     <select id="f-per-page" name="perPage" class="form-select" onchange="this.form.submit()">
                         {% for value in [10, 25, 100] %}
@@ -105,10 +114,10 @@
                                     {% if produit.gestion is not null or produit.annee is not null or produit.type is not null or produit.chrono is not null %}
                                         <br>
                                         <small class="text-body-secondary">
-                                            {% if produit.gestion is not null %}Gest. {{ produit.gestion }}{% endif %}
-                                            {% if produit.annee is not null %} • Ann. {{ produit.annee }}{% endif %}
-                                            {% if produit.type is not null %} • Typ. {{ produit.type }}{% endif %}
-                                            {% if produit.chrono is not null %} • Chr. {{ produit.chrono }}{% endif %}
+                                            {% if produit.gestion is not null %}{{ produit.gestion }}{% endif %}
+                                            {% if produit.annee is not null %} • {{ produit.annee }}{% endif %}
+                                            {% if produit.type is not null %} • {{ produit.type }}{% endif %}
+                                            {% if produit.chrono is not null %} • {{ produit.chrono }}{% endif %}
                                         </small>
                                     {% else %}
                                         <br>
@@ -167,11 +176,12 @@
                 <nav class="dmax-pager" aria-label="Pagination inventaire">
                     {% set prev = page - 1 %}
                     {% set next = page + 1 %}
+                    {% set teletravailleurParam = teletravailleur is same as(true) ? '1' : (teletravailleur is same as(false) ? '0' : '') %}
                     <a class="btn btn-outline-secondary {{ page == 1 ? 'is-disabled' : '' }}"
-                       href="{{ page == 1 ? '#' : path('dmax_dashboard', {page: prev, q: q, etage: etage, bureau: bureau, vnc: vnc, teletravailleur: teletravailleur is same as(true) ? '1' : (teletravailleur is same as(false) ? '0' : ''), perPage: perPage}) }}">Précédent</a>
+                       href="{{ page == 1 ? '#' : path('dmax_dashboard', {page: prev, q: q, etage: etage, bureau: bureau, vnc: vnc, teletravailleur: teletravailleurParam, inventaireEtat: inventaireEtat, perPage: perPage}) }}">Précédent</a>
 
                     <a class="btn {{ page == 1 ? 'btn-primary' : 'btn-outline-secondary' }}"
-                       href="{{ path('dmax_dashboard', {page: 1, q: q, etage: etage, bureau: bureau, vnc: vnc, teletravailleur: teletravailleur is same as(true) ? '1' : (teletravailleur is same as(false) ? '0' : ''), perPage: perPage}) }}">1</a>
+                       href="{{ path('dmax_dashboard', {page: 1, q: q, etage: etage, bureau: bureau, vnc: vnc, teletravailleur: teletravailleurParam, inventaireEtat: inventaireEtat, perPage: perPage}) }}">1</a>
 
                     {% set middleStart = page - 2 %}
                     {% if middleStart < 2 %}
@@ -189,7 +199,7 @@
                     {% if middleStart <= middleEnd %}
                         {% for p in middleStart..middleEnd %}
                             <a class="btn {{ p == page ? 'btn-primary' : 'btn-outline-secondary' }}"
-                               href="{{ path('dmax_dashboard', {page: p, q: q, etage: etage, bureau: bureau, vnc: vnc, teletravailleur: teletravailleur is same as(true) ? '1' : (teletravailleur is same as(false) ? '0' : ''), perPage: perPage}) }}">{{ p }}</a>
+                               href="{{ path('dmax_dashboard', {page: p, q: q, etage: etage, bureau: bureau, vnc: vnc, teletravailleur: teletravailleurParam, inventaireEtat: inventaireEtat, perPage: perPage}) }}">{{ p }}</a>
                         {% endfor %}
                     {% endif %}
 
@@ -198,10 +208,10 @@
                     {% endif %}
 
                     <a class="btn {{ page == totalPages ? 'btn-primary' : 'btn-outline-secondary' }}"
-                       href="{{ path('dmax_dashboard', {page: totalPages, q: q, etage: etage, bureau: bureau, vnc: vnc, teletravailleur: teletravailleur is same as(true) ? '1' : (teletravailleur is same as(false) ? '0' : ''), perPage: perPage}) }}">{{ totalPages }}</a>
+                       href="{{ path('dmax_dashboard', {page: totalPages, q: q, etage: etage, bureau: bureau, vnc: vnc, teletravailleur: teletravailleurParam, inventaireEtat: inventaireEtat, perPage: perPage}) }}">{{ totalPages }}</a>
 
                     <a class="btn btn-outline-secondary {{ page == totalPages ? 'is-disabled' : '' }}"
-                       href="{{ page == totalPages ? '#' : path('dmax_dashboard', {page: next, q: q, etage: etage, bureau: bureau, vnc: vnc, teletravailleur: teletravailleur is same as(true) ? '1' : (teletravailleur is same as(false) ? '0' : ''), perPage: perPage}) }}">Suivant</a>
+                       href="{{ page == totalPages ? '#' : path('dmax_dashboard', {page: next, q: q, etage: etage, bureau: bureau, vnc: vnc, teletravailleur: teletravailleurParam, inventaireEtat: inventaireEtat, perPage: perPage}) }}">Suivant</a>
                 </nav>
             {% endif %}
         </section>

@@ -47,18 +47,18 @@ class ProduitRepository extends ServiceEntityRepository
     /**
      * @return array<int, Produit>
      */
-    public function findAvailableDashboardPage(?string $etage, ?string $bureau, ?string $vnc, ?string $q, ?bool $teletravailleur, int $page, int $perPage): array
+    public function findAvailableDashboardPage(?string $etage, ?string $bureau, ?string $vnc, ?string $q, ?bool $teletravailleur, ?string $inventaireEtat, int $page, int $perPage): array
     {
-        return $this->createAvailableDashboardQb($etage, $bureau, $vnc, $q, $teletravailleur)
+        return $this->createAvailableDashboardQb($etage, $bureau, $vnc, $q, $teletravailleur, $inventaireEtat)
             ->setFirstResult(max(0, ($page - 1) * $perPage))
             ->setMaxResults(max(1, $perPage))
             ->getQuery()
             ->getResult();
     }
 
-    public function countAvailableDashboard(?string $etage, ?string $bureau, ?string $vnc, ?string $q, ?bool $teletravailleur): int
+    public function countAvailableDashboard(?string $etage, ?string $bureau, ?string $vnc, ?string $q, ?bool $teletravailleur, ?string $inventaireEtat): int
     {
-        return (int) $this->createAvailableDashboardQb($etage, $bureau, $vnc, $q, $teletravailleur)
+        return (int) $this->createAvailableDashboardQb($etage, $bureau, $vnc, $q, $teletravailleur, $inventaireEtat)
             ->select('COUNT(p.id)')
             ->resetDQLPart('orderBy')
             ->getQuery()
@@ -126,7 +126,7 @@ class ProduitRepository extends ServiceEntityRepository
         ));
     }
 
-    private function createAvailableDashboardQb(?string $etage, ?string $bureau, ?string $vnc, ?string $q, ?bool $teletravailleur): \Doctrine\ORM\QueryBuilder
+    private function createAvailableDashboardQb(?string $etage, ?string $bureau, ?string $vnc, ?string $q, ?bool $teletravailleur, ?string $inventaireEtat): \Doctrine\ORM\QueryBuilder
     {
         $qb = $this->createQueryBuilder('p')
             ->andWhere('p.statut = :statut')
@@ -144,6 +144,30 @@ class ProduitRepository extends ServiceEntityRepository
         }
         if ($teletravailleur !== null) {
             $qb->andWhere('p.tagTeletravailleur = :teletravailleur')->setParameter('teletravailleur', $teletravailleur);
+        }
+        if ($inventaireEtat !== null && $inventaireEtat !== '') {
+            if ($inventaireEtat === 'sans_numero') {
+                $qb->andWhere('p.numeroInventaire IS NULL OR p.numeroInventaire = :emptyNumero')
+                    ->setParameter('emptyNumero', '');
+            } elseif ($inventaireEtat === 'non_decompose') {
+                $qb
+                    ->andWhere('p.numeroInventaire IS NOT NULL')
+                    ->andWhere('p.numeroInventaire <> :emptyNumero')
+                    ->andWhere('p.gestion IS NULL')
+                    ->andWhere('p.annee IS NULL')
+                    ->andWhere('p.type IS NULL')
+                    ->andWhere('p.chrono IS NULL')
+                    ->setParameter('emptyNumero', '');
+            } elseif ($inventaireEtat === 'ok') {
+                $qb
+                    ->andWhere('p.numeroInventaire IS NOT NULL')
+                    ->andWhere('p.numeroInventaire <> :emptyNumero')
+                    ->andWhere('p.gestion IS NOT NULL')
+                    ->andWhere('p.annee IS NOT NULL')
+                    ->andWhere('p.type IS NOT NULL')
+                    ->andWhere('p.chrono IS NOT NULL')
+                    ->setParameter('emptyNumero', '');
+            }
         }
         if ($q !== null && $q !== '') {
             $keyword = mb_strtolower(trim($q));
