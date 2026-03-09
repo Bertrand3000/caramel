@@ -46,6 +46,8 @@ final class ShopController extends AbstractController
         $keyword = trim($request->query->getString('q'));
         $keywordNormalized = mb_strtolower($keyword);
         $page = max(1, $request->query->getInt('page', 1));
+        $mustRestrictByVnc = !in_array('ROLE_ADMIN', $roles, true)
+            && (in_array('ROLE_AGENT', $roles, true) || in_array('ROLE_TELETRAVAILLEUR', $roles, true));
         $filters = ['statut' => ProduitStatutEnum::DISPONIBLE];
         if (in_array('ROLE_TELETRAVAILLEUR', $roles, true) && !in_array('ROLE_ADMIN', $roles, true)) {
             $filters['tagTeletravailleur'] = true;
@@ -64,6 +66,9 @@ final class ShopController extends AbstractController
                 if (!str_contains($haystack, $keywordNormalized)) {
                     continue;
                 }
+            }
+            if ($mustRestrictByVnc && trim($produit->getVnc()) !== '=0') {
+                continue;
             }
 
             $stockDisponible = $this->cartManager->getAvailableStockForDisplay($produit);
