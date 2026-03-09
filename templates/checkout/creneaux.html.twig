@@ -15,6 +15,7 @@
         {% if creneaux is empty %}
             <div class="alert alert-light border">Aucun créneau disponible.</div>
         {% else %}
+            <p class="alert alert-info">Vous avez dix minutes pour finaliser la commande sur cet écran.</p>
             <form method="post" action="{{ path('checkout_confirmer') }}" id="checkout-form">
                 <section class="card mb-4">
                     <div class="card-body">

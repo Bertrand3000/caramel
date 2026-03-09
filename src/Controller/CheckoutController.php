@@ -9,6 +9,7 @@ use App\Enum\ProfilUtilisateur;
 use App\Exception\CommandeDejaExistanteException;
 use App\Exception\JourLivraisonNonPleinException;
 use App\Interface\BoutiqueAccessCheckerInterface;
+use App\Interface\CartManagerInterface;
 use App\Interface\CheckoutServiceInterface;
 use App\Interface\SlotManagerInterface;
 use App\Repository\CommandeRepository;
@@ -26,6 +27,7 @@ final class CheckoutController extends AbstractController
         private readonly SlotManagerInterface $creneauManager,
         private readonly CheckoutServiceInterface $checkoutService,
         private readonly BoutiqueAccessCheckerInterface $boutiqueAccessChecker,
+        private readonly CartManagerInterface $cartManager,
     ) {
     }
 
@@ -33,11 +35,13 @@ final class CheckoutController extends AbstractController
     public function creneaux(Request $request): Response
     {
         $this->boutiqueAccessChecker->assertOpenForRoles($this->getUser()?->getRoles() ?? []);
-        if (!$this->checkoutService->hasItems($request->getSession()->getId())) {
+        $sessionId = $request->getSession()->getId();
+        if (!$this->checkoutService->hasItems($sessionId)) {
             $this->addFlash('error', 'Votre panier est vide.');
 
             return $this->redirectToRoute('cart_index');
         }
+        $this->cartManager->extendActiveReservations($sessionId, 15);
 
         $date = new \DateTimeImmutable('today');
         $creneaux = $this->creneauManager->getDisponiblesPourCheckout($date);

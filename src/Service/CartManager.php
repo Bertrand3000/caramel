@@ -123,6 +123,35 @@ class CartManager implements CartManagerInterface
             ->execute();
     }
 
+    public function extendActiveReservations(string $sessionId, int $minutes): int
+    {
+        if ($minutes <= 0) {
+            return 0;
+        }
+
+        $now = new \DateTimeImmutable();
+        /** @var list<ReservationTemporaire> $reservations */
+        $reservations = $this->em->createQueryBuilder()
+            ->from(ReservationTemporaire::class, 'r')
+            ->select('r')
+            ->andWhere('r.sessionId = :sessionId')
+            ->andWhere('r.expireAt > :now')
+            ->setParameter('sessionId', $sessionId)
+            ->setParameter('now', $now)
+            ->getQuery()
+            ->getResult();
+
+        foreach ($reservations as $reservation) {
+            $reservation->setExpireAt($reservation->getExpireAt()->modify(sprintf('+%d minutes', $minutes)));
+        }
+
+        if ($reservations !== []) {
+            $this->em->flush();
+        }
+
+        return count($reservations);
+    }
+
     public function clear(string $sessionId): void
     {
         $this->em->createQuery('DELETE FROM App\\Entity\\ReservationTemporaire r WHERE r.sessionId = :sessionId')

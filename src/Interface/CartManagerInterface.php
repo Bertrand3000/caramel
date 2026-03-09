@@ -23,5 +23,7 @@ interface CartManagerInterface
 
     public function releaseExpired(): int;
 
+    public function extendActiveReservations(string $sessionId, int $minutes): int;
+
     public function clear(string $sessionId): void;
 }
