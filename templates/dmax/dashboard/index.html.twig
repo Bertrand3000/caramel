@@ -12,6 +12,16 @@
 
             <form method="get" class="dmax-filter-bar">
                 <div>
+                    <label class="form-label" for="f-q">Recherche</label>
+                    <input id="f-q"
+                           name="q"
+                           type="search"
+                           class="form-control"
+                           autocomplete="off"
+                           value="{{ q }}"
+                           placeholder="Titre ou description">
+                </div>
+                <div>
                     <label class="form-label" for="f-etage">Étage</label>
                     <select id="f-etage" name="etage" class="form-select">
                         <option value="">Tous</option>
@@ -27,6 +37,23 @@
                         {% for value in bureauOptions %}
                             <option value="{{ value }}" {{ bureau == value ? 'selected' : '' }}>{{ value }}</option>
                         {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label" for="f-vnc">VNC</label>
+                    <select id="f-vnc" name="vnc" class="form-select">
+                        <option value="">Toutes</option>
+                        {% for value in vncOptions %}
+                            <option value="{{ value }}" {{ vnc == value ? 'selected' : '' }}>{{ value }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label" for="f-teletravailleur">Télétravailleur</label>
+                    <select id="f-teletravailleur" name="teletravailleur" class="form-select">
+                        <option value="" {{ teletravailleur is null ? 'selected' : '' }}>Tous</option>
+                        <option value="1" {{ teletravailleur is same as(true) ? 'selected' : '' }}>Oui</option>
+                        <option value="0" {{ teletravailleur is same as(false) ? 'selected' : '' }}>Non</option>
                     </select>
                 </div>
                 <div>
@@ -54,6 +81,7 @@
                             <th>Miniature</th>
                             <th>Produit</th>
                             <th>Numéro inventaire</th>
+                            <th>VNC</th>
                             <th>Télétravailleur</th>
                             <th>Étage / Bureau</th>
                             <th>Actions</th>
@@ -82,6 +110,30 @@
                                             {% if produit.type is not null %} • Typ. {{ produit.type }}{% endif %}
                                             {% if produit.chrono is not null %} • Chr. {{ produit.chrono }}{% endif %}
                                         </small>
+                                    {% else %}
+                                        <br>
+                                        {% if produit.numeroInventaire %}
+                                            <small class="text-danger">Non décomposé</small>
+                                        {% else %}
+                                            <small class="text-danger">Sans numéro d'inventaire</small>
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% set vncRaw = produit.vnc|default('')|trim %}
+                                    {% if vncRaw == '??' %}
+                                        <span class="badge text-bg-danger">{{ vncRaw }}</span>
+                                    {% elseif vncRaw matches '/^-?\\d+(?:[.,]\\d+)?$/' %}
+                                        {% set vncNumber = (vncRaw|replace({',':'.'})) + 0 %}
+                                        {% if vncNumber == 0 %}
+                                            <span class="badge text-bg-success">{{ vncRaw }}</span>
+                                        {% elseif vncNumber > 0 %}
+                                            <span class="badge text-bg-warning">{{ vncRaw }}</span>
+                                        {% else %}
+                                            <span class="badge text-bg-danger-inverse">{{ vncRaw }}</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="badge text-bg-danger-inverse">{{ vncRaw != '' ? vncRaw : '—' }}</span>
                                     {% endif %}
                                 </td>
                                 <td>
@@ -91,7 +143,7 @@
                                 </td>
                                 <td>Étage {{ produit.etage }}<br>Bureau {{ produit.porte }}</td>
                                 <td>
-                                    <div class="dmax-actions">
+                                    <div class="dmax-actions dmax-actions-stack">
                                         <a class="btn btn-sm btn-outline-primary" href="{{ path('dmax_produit_edit', {id: produit.id}) }}">Éditer</a>
                                         <form method="post"
                                               action="{{ path('dmax_produit_delete', {id: produit.id}) }}"
@@ -104,7 +156,7 @@
                             </tr>
                         {% else %}
                             <tr>
-                                <td colspan="6">Aucun produit disponible pour ce filtre.</td>
+                                <td colspan="7">Aucun produit disponible pour ce filtre.</td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -116,10 +168,10 @@
                     {% set prev = page - 1 %}
                     {% set next = page + 1 %}
                     <a class="btn btn-outline-secondary {{ page == 1 ? 'is-disabled' : '' }}"
-                       href="{{ page == 1 ? '#' : path('dmax_dashboard', {page: prev, etage: etage, bureau: bureau, perPage: perPage}) }}">Précédent</a>
+                       href="{{ page == 1 ? '#' : path('dmax_dashboard', {page: prev, q: q, etage: etage, bureau: bureau, vnc: vnc, teletravailleur: teletravailleur is same as(true) ? '1' : (teletravailleur is same as(false) ? '0' : ''), perPage: perPage}) }}">Précédent</a>
 
                     <a class="btn {{ page == 1 ? 'btn-primary' : 'btn-outline-secondary' }}"
-                       href="{{ path('dmax_dashboard', {page: 1, etage: etage, bureau: bureau, perPage: perPage}) }}">1</a>
+                       href="{{ path('dmax_dashboard', {page: 1, q: q, etage: etage, bureau: bureau, vnc: vnc, teletravailleur: teletravailleur is same as(true) ? '1' : (teletravailleur is same as(false) ? '0' : ''), perPage: perPage}) }}">1</a>
 
                     {% set middleStart = page - 2 %}
                     {% if middleStart < 2 %}
@@ -137,7 +189,7 @@
                     {% if middleStart <= middleEnd %}
                         {% for p in middleStart..middleEnd %}
                             <a class="btn {{ p == page ? 'btn-primary' : 'btn-outline-secondary' }}"
-                               href="{{ path('dmax_dashboard', {page: p, etage: etage, bureau: bureau, perPage: perPage}) }}">{{ p }}</a>
+                               href="{{ path('dmax_dashboard', {page: p, q: q, etage: etage, bureau: bureau, vnc: vnc, teletravailleur: teletravailleur is same as(true) ? '1' : (teletravailleur is same as(false) ? '0' : ''), perPage: perPage}) }}">{{ p }}</a>
                         {% endfor %}
                     {% endif %}
 
@@ -146,10 +198,10 @@
                     {% endif %}
 
                     <a class="btn {{ page == totalPages ? 'btn-primary' : 'btn-outline-secondary' }}"
-                       href="{{ path('dmax_dashboard', {page: totalPages, etage: etage, bureau: bureau, perPage: perPage}) }}">{{ totalPages }}</a>
+                       href="{{ path('dmax_dashboard', {page: totalPages, q: q, etage: etage, bureau: bureau, vnc: vnc, teletravailleur: teletravailleur is same as(true) ? '1' : (teletravailleur is same as(false) ? '0' : ''), perPage: perPage}) }}">{{ totalPages }}</a>
 
                     <a class="btn btn-outline-secondary {{ page == totalPages ? 'is-disabled' : '' }}"
-                       href="{{ page == totalPages ? '#' : path('dmax_dashboard', {page: next, etage: etage, bureau: bureau, perPage: perPage}) }}">Suivant</a>
+                       href="{{ page == totalPages ? '#' : path('dmax_dashboard', {page: next, q: q, etage: etage, bureau: bureau, vnc: vnc, teletravailleur: teletravailleur is same as(true) ? '1' : (teletravailleur is same as(false) ? '0' : ''), perPage: perPage}) }}">Suivant</a>
                 </nav>
             {% endif %}
         </section>

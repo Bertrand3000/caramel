@@ -76,6 +76,10 @@ img {
     color: var(--muted);
 }
 
+.text-danger {
+    color: var(--danger);
+}
+
 .fw-bold,
 .fw-semibold {
     font-weight: 600;
@@ -457,6 +461,16 @@ img {
     color: #991b1b;
 }
 
+.text-bg-warning {
+    background: #ffedd5;
+    color: #9a3412;
+}
+
+.text-bg-danger-inverse {
+    background: #dc2626;
+    color: #111827;
+}
+
 .list-group {
     display: grid;
     gap: 0.5rem;
@@ -782,6 +796,16 @@ img {
     display: flex;
     gap: 0.4rem;
     flex-wrap: wrap;
+}
+
+.dmax-actions-stack {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.dmax-actions-stack form,
+.dmax-actions-stack .btn {
+    width: 100%;
 }
 
 .dmax-pager {

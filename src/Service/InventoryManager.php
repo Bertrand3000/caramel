@@ -63,26 +63,30 @@ class InventoryManager implements InventoryManagerInterface
         return $this->produitRepository->findAvailableWithFilter($filter);
     }
 
-    public function findDashboardPage(?string $etage, ?string $bureau, int $page, int $perPage = 10): array
+    public function findDashboardPage(?string $etage, ?string $bureau, ?string $vnc, ?string $q, ?bool $teletravailleur, int $page, int $perPage = 10): array
     {
         $page = max(1, $page);
         $perPage = max(1, min(100, $perPage));
-        $total = $this->produitRepository->countAvailableDashboard($etage, $bureau);
+        $total = $this->produitRepository->countAvailableDashboard($etage, $bureau, $vnc, $q, $teletravailleur);
         $totalPages = max(1, (int) ceil($total / $perPage));
         if ($page > $totalPages) {
             $page = $totalPages;
         }
 
         return [
-            'items' => $this->produitRepository->findAvailableDashboardPage($etage, $bureau, $page, $perPage),
+            'items' => $this->produitRepository->findAvailableDashboardPage($etage, $bureau, $vnc, $q, $teletravailleur, $page, $perPage),
             'total' => $total,
             'page' => $page,
             'perPage' => $perPage,
             'totalPages' => $totalPages,
             'etage' => $etage,
             'bureau' => $bureau,
+            'vnc' => $vnc,
+            'q' => $q,
+            'teletravailleur' => $teletravailleur,
             'etageOptions' => $this->produitRepository->findDistinctAvailableEtages(),
             'bureauOptions' => $this->produitRepository->findDistinctAvailablePortes(),
+            'vncOptions' => $this->produitRepository->findDistinctAvailableVncs(),
         ];
     }
 

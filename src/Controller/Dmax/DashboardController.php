@@ -22,12 +22,18 @@ class DashboardController extends AbstractController
     {
         $etage = trim($request->query->getString('etage'));
         $bureau = trim($request->query->getString('bureau'));
+        $vnc = trim($request->query->getString('vnc'));
+        $q = trim($request->query->getString('q'));
+        $teletravailleur = trim($request->query->getString('teletravailleur'));
         $page = max(1, $request->query->getInt('page', 1));
         $perPage = $this->resolvePerPage($request->query->getInt('perPage', self::DEFAULT_PER_PAGE));
 
         return $this->render('dmax/dashboard/index.html.twig', $inventoryManager->findDashboardPage(
             $etage !== '' ? $etage : null,
             $bureau !== '' ? $bureau : null,
+            $vnc !== '' ? $vnc : null,
+            $q !== '' ? $q : null,
+            $teletravailleur === '1' ? true : ($teletravailleur === '0' ? false : null),
             $page,
             $perPage,
         ));
