@@ -47,6 +47,27 @@ class CommandeRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    /** @return list<Commande> */
+    public function findValideesSansCreneau(): array
+    {
+        return $this->createQueryBuilder('c')
+            ->leftJoin('c.utilisateur', 'u')
+            ->addSelect('u')
+            ->leftJoin('c.commandeContactTmp', 'contact')
+            ->addSelect('contact')
+            ->leftJoin('c.lignesCommande', 'lignes')
+            ->addSelect('lignes')
+            ->leftJoin('lignes.produit', 'produit')
+            ->addSelect('produit')
+            ->andWhere('c.statut = :statut')
+            ->andWhere('c.creneau IS NULL')
+            ->setParameter('statut', CommandeStatutEnum::VALIDEE)
+            ->orderBy('c.dateValidation', 'DESC')
+            ->addOrderBy('c.id', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
     public function findOneForSuiviCommandes(int $id): ?Commande
     {
         return $this->createQueryBuilder('c')

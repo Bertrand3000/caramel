@@ -15,7 +15,7 @@
         {% if creneaux is empty %}
             <div class="alert alert-light border">Aucun créneau disponible.</div>
         {% else %}
-            <form method="post" action="{{ path('checkout_confirmer') }}">
+            <form method="post" action="{{ path('checkout_confirmer') }}" id="checkout-form">
                 <section class="card mb-4">
                     <div class="card-body">
                         <h2 class="h5 mb-3">Vos informations</h2>
@@ -29,7 +29,13 @@
                                 <input class="form-control" id="checkout-prenom" type="text" name="prenom" maxlength="120" required>
                             </div>
                             {% set user_roles = app.user ? app.user.roles : [] %}
-                            {% if 'ROLE_ADMIN' not in user_roles and ('ROLE_AGENT' in user_roles or 'ROLE_TELETRAVAILLEUR' in user_roles) %}
+                            {% set showNumeroAgent = false %}
+                            {% if 'ROLE_ADMIN' not in user_roles and 'ROLE_PARTENAIRE' not in user_roles %}
+                                {% if 'ROLE_AGENT' in user_roles or 'ROLE_TELETRAVAILLEUR' in user_roles %}
+                                    {% set showNumeroAgent = true %}
+                                {% endif %}
+                            {% endif %}
+                            {% if showNumeroAgent %}
                             <div class="col-12 col-md-6">
                                 <label class="form-label" for="checkout-numero-agent">Numéro d'agent</label>
                                 <input class="form-control" id="checkout-numero-agent" type="text" name="numeroAgent" inputmode="numeric" pattern="\d{5}" maxlength="5" required>
@@ -40,7 +46,13 @@
                 </section>
 
                 {% set user_roles = app.user ? app.user.roles : [] %}
-                {% if 'ROLE_ADMIN' not in user_roles and ('ROLE_AGENT' in user_roles or 'ROLE_TELETRAVAILLEUR' in user_roles) %}
+                {% set showCreneau = false %}
+                {% if 'ROLE_ADMIN' not in user_roles and 'ROLE_PARTENAIRE' not in user_roles %}
+                    {% if 'ROLE_AGENT' in user_roles or 'ROLE_TELETRAVAILLEUR' in user_roles %}
+                        {% set showCreneau = true %}
+                    {% endif %}
+                {% endif %}
+                {% if showCreneau %}
                 <h2 class="h5 mb-3">Choisissez un créneau</h2>
                 <p class="text-muted mb-3">Le clic sur un créneau valide immédiatement votre commande.</p>
 
@@ -66,4 +78,21 @@
             </form>
         {% endif %}
     </main>
+
+    <script>
+        // Empêcher la soumission du formulaire avec la touche Entrée
+        // pour éviter de sélectionner accidentellement le premier créneau
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('checkout-form');
+            if (!form) return;
+
+            form.addEventListener('keydown', function(event) {
+                if (event.key === 'Enter' && event.target.tagName !== 'BUTTON') {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    return false;
+                }
+            });
+        });
+    </script>
 {% endblock %}

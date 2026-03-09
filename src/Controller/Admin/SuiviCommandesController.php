@@ -9,6 +9,7 @@ use App\Enum\CommandeStatutEnum;
 use App\Form\ImportGrhCommandesType;
 use App\Interface\CommandeDecisionServiceInterface;
 use App\Interface\CommandeGrhImportServiceInterface;
+use App\Interface\DocumentPdfGeneratorInterface;
 use App\Repository\CommandeRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -34,6 +35,14 @@ final class SuiviCommandesController extends AbstractController
         return $this->render('admin/suivi_commandes/index.html.twig', [
             'commandes' => $this->commandeRepository->findEnAttenteValidationWithRelations(),
             'importForm' => $this->createForm(ImportGrhCommandesType::class)->createView(),
+        ]);
+    }
+
+    #[Route('/validees-sans-creneau', name: 'validees_sans_creneau', methods: ['GET'])]
+    public function valideesSansCreneau(): Response
+    {
+        return $this->render('admin/suivi_commandes/validees_sans_creneau.html.twig', [
+            'commandes' => $this->commandeRepository->findValideesSansCreneau(),
         ]);
     }
 
@@ -119,5 +128,47 @@ final class SuiviCommandesController extends AbstractController
         }
 
         return $this->redirectToRoute('admin_suivi_commandes_index');
+    }
+
+    /**
+     * Bon de commande PDF pour commandes sans créneau.
+     */
+    #[Route('/validees-sans-creneau/{id}/bon-commande.pdf', name: 'validees_sans_creneau_bon_commande_pdf', methods: ['GET'])]
+    public function bonCommandePdf(Commande $commande, DocumentPdfGeneratorInterface $generator): Response
+    {
+        $pdf = $generator->generateBonCommande($commande);
+
+        return new Response($pdf, Response::HTTP_OK, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => sprintf('inline; filename="bon-commande-%d.pdf"', $commande->getId()),
+        ]);
+    }
+
+    /**
+     * Bon de préparation PDF pour commandes sans créneau.
+     */
+    #[Route('/validees-sans-creneau/{id}/bon-preparation.pdf', name: 'validees_sans_creneau_bon_preparation_pdf', methods: ['GET'])]
+    public function bonPreparationPdf(Commande $commande, DocumentPdfGeneratorInterface $generator): Response
+    {
+        $pdf = $generator->generateBonPreparation($commande);
+
+        return new Response($pdf, Response::HTTP_OK, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => sprintf('inline; filename="bon-preparation-%d.pdf"', $commande->getId()),
+        ]);
+    }
+
+    /**
+     * Bon de livraison PDF pour commandes sans créneau.
+     */
+    #[Route('/validees-sans-creneau/{id}/bon-livraison.pdf', name: 'validees_sans_creneau_bon_livraison_pdf', methods: ['GET'])]
+    public function bonLivraisonPdf(Commande $commande, DocumentPdfGeneratorInterface $generator): Response
+    {
+        $pdf = $generator->generateBonLivraison($commande);
+
+        return new Response($pdf, Response::HTTP_OK, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => sprintf('inline; filename="bon-livraison-%d.pdf"', $commande->getId()),
+        ]);
     }
 }

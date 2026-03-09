@@ -135,13 +135,12 @@ final class CheckoutController extends AbstractController
     private function requiresNumeroAgentForUser(Utilisateur $user): bool
     {
         $roles = $user->getRoles();
-        
-        // ROLE_ADMIN hérite de ROLE_AGENT et ROLE_TELETRAVAILLEUR via la hiérarchie
-        // On doit donc exclure explicitement ROLE_ADMIN
-        if (in_array('ROLE_ADMIN', $roles, true)) {
+
+        // ROLE_ADMIN et ROLE_PARTENAIRE ne nécessitent pas de numéro d'agent
+        if (in_array('ROLE_ADMIN', $roles, true) || in_array('ROLE_PARTENAIRE', $roles, true)) {
             return false;
         }
-        
+
         return in_array('ROLE_AGENT', $roles, true)
             || in_array('ROLE_TELETRAVAILLEUR', $roles, true);
     }
@@ -149,13 +148,12 @@ final class CheckoutController extends AbstractController
     private function requiresCreneauForUser(Utilisateur $user): bool
     {
         $roles = $user->getRoles();
-        
-        // ROLE_ADMIN hérite de ROLE_AGENT et ROLE_TELETRAVAILLEUR via la hiérarchie
-        // On doit donc exclure explicitement ROLE_ADMIN
-        if (in_array('ROLE_ADMIN', $roles, true)) {
+
+        // ROLE_ADMIN et ROLE_PARTENAIRE ne nécessitent pas de créneau
+        if (in_array('ROLE_ADMIN', $roles, true) || in_array('ROLE_PARTENAIRE', $roles, true)) {
             return false;
         }
-        
+
         return in_array('ROLE_AGENT', $roles, true)
             || in_array('ROLE_TELETRAVAILLEUR', $roles, true);
     }

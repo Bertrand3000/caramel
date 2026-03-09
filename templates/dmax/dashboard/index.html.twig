@@ -72,7 +72,18 @@
                                         <p class="small text-body-secondary fst-italic mt-1 mb-0">{{ produit.description }}</p>
                                     {% endif %}
                                 </td>
-                                <td>{{ produit.numeroInventaire ?: '—' }}</td>
+                                <td>
+                                    {{ produit.numeroInventaire ?: '—' }}
+                                    {% if produit.gestion is not null or produit.annee is not null or produit.type is not null or produit.chrono is not null %}
+                                        <br>
+                                        <small class="text-body-secondary">
+                                            {% if produit.gestion is not null %}Gest. {{ produit.gestion }}{% endif %}
+                                            {% if produit.annee is not null %} • Ann. {{ produit.annee }}{% endif %}
+                                            {% if produit.type is not null %} • Typ. {{ produit.type }}{% endif %}
+                                            {% if produit.chrono is not null %} • Chr. {{ produit.chrono }}{% endif %}
+                                        </small>
+                                    {% endif %}
+                                </td>
                                 <td>
                                     <span class="badge {{ produit.tagTeletravailleur ? 'text-bg-success' : 'text-bg-danger' }}">
                                         {{ produit.tagTeletravailleur ? 'Oui' : 'Non' }}

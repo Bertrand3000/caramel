@@ -69,6 +69,20 @@ class Produit
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $description = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?int $gestion = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?int $annee = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?int $type = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?int $chrono = null;
+
+    #[ORM\Column(length: 2, options: ['default' => '??'])]
+    private string $vnc = '??';
 
     #[ORM\OneToMany(mappedBy: 'produit', targetEntity: LigneCommande::class)]
     private iterable $lignesCommande;
@@ -124,4 +138,14 @@ class Produit
     public function setQuantite(int $quantite): self { $this->quantite = $quantite; return $this; }
     public function getDescription(): ?string { return $this->description; }
     public function setDescription(?string $description): self { $this->description = $description; return $this; }
+    public function getGestion(): ?int { return $this->gestion; }
+    public function setGestion(?int $gestion): self { $this->gestion = $gestion; return $this; }
+    public function getAnnee(): ?int { return $this->annee; }
+    public function setAnnee(?int $annee): self { $this->annee = $annee; return $this; }
+    public function getType(): ?int { return $this->type; }
+    public function setType(?int $type): self { $this->type = $type; return $this; }
+    public function getChrono(): ?int { return $this->chrono; }
+    public function setChrono(?int $chrono): self { $this->chrono = $chrono; return $this; }
+    public function getVnc(): string { return $this->vnc; }
+    public function setVnc(string $vnc): self { $this->vnc = $vnc; return $this; }
 }

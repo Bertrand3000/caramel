@@ -26,7 +26,7 @@ class QuotaCheckerService
         int $quantiteDemandee,
         ?string $numeroAgent = null,
     ): bool {
-        if ($profil === ProfilUtilisateur::PARTENAIRE || $profil === ProfilUtilisateur::DMAX) {
+        if ($profil === ProfilUtilisateur::PARTENAIRE || $profil === ProfilUtilisateur::DMAX || $profil === ProfilUtilisateur::PUBLIC) {
             return true;
         }
 
@@ -41,7 +41,7 @@ class QuotaCheckerService
         ProfilUtilisateur $profil,
         ?string $numeroAgent = null,
     ): int {
-        if ($profil === ProfilUtilisateur::PARTENAIRE || $profil === ProfilUtilisateur::DMAX) {
+        if ($profil === ProfilUtilisateur::PARTENAIRE || $profil === ProfilUtilisateur::DMAX || $profil === ProfilUtilisateur::PUBLIC) {
             return PHP_INT_MAX;
         }
 
@@ -86,22 +86,24 @@ class QuotaCheckerService
         ProfilUtilisateur $profil,
         ?string $numeroAgent,
     ): int {
-        if ($profil === ProfilUtilisateur::TELETRAVAILLEUR || $profil === ProfilUtilisateur::PUBLIC) {
+        if ($profil === ProfilUtilisateur::TELETRAVAILLEUR) {
             $normalizedNumeroAgent = trim((string) $numeroAgent);
             if (!preg_match(self::AGENT_NUMBER_PATTERN, $normalizedNumeroAgent)) {
                 throw new \RuntimeException('Numero agent invalide (5 chiffres requis).');
             }
 
-            $commandeProfil = $profil === ProfilUtilisateur::TELETRAVAILLEUR
-                ? CommandeProfilEnum::TELETRAVAILLEUR
-                : CommandeProfilEnum::AGENT;
-
             return $this->commandeRepository->countArticlesActifsForNumeroAgentEtProfil(
                 $normalizedNumeroAgent,
-                $commandeProfil,
+                CommandeProfilEnum::TELETRAVAILLEUR,
             );
         }
 
-        return $this->commandeRepository->countArticlesActifsForSession($sessionId);
+        if ($profil === ProfilUtilisateur::PUBLIC) {
+            // Pour le profil PUBLIC (admin/public sans numéro d'agent), on compte par session
+            return $this->commandeRepository->countArticlesActifsForSession($sessionId);
+        }
+
+        // Pour PARTENAIRE et DMAX, pas de quota
+        return 0;
     }
 }

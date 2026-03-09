@@ -1,0 +1,73 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Commandes validées sans créneau{% endblock %}
+
+{% block body %}
+<main class="container py-4">
+    <section class="dmax-list-shell">
+        <header class="dmax-list-head">
+            <div>
+                <h1>Commandes validées sans créneau</h1>
+                <p class="dmax-list-meta mb-0">Commandes ADMIN et PARTENAIRE validées automatiquement.</p>
+            </div>
+            <a class="btn btn-outline-secondary" href="{{ path('admin_suivi_commandes_index') }}">Retour au suivi</a>
+        </header>
+
+        {% if commandes is empty %}
+            <div class="alert alert-light border">Aucune commande validée sans créneau.</div>
+        {% else %}
+            <div class="dmax-table-wrap">
+                <table class="dmax-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Date</th>
+                            <th>Nom</th>
+                            <th>Prénom</th>
+                            <th>Profil</th>
+                            <th>Articles</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for commande in commandes %}
+                            <tr>
+                                <td>#{{ commande.id }}</td>
+                                <td>{{ commande.dateValidation|date('d/m/Y H:i') }}</td>
+                                <td>{{ commande.nom ?: '—' }}</td>
+                                <td>{{ commande.prenom ?: '—' }}</td>
+                                <td>
+                                    <span class="badge text-bg-info">{{ commande.profilCommande.value }}</span>
+                                </td>
+                                <td>
+                                    <ul class="mb-0 ps-3">
+                                        {% for ligne in commande.lignesCommande %}
+                                            <li>{{ ligne.produit.libelle }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </td>
+                                <td>
+                                    <div class="d-flex flex-column gap-1">
+                                        <a class="btn btn-sm btn-outline-primary" href="{{ path('admin_suivi_commandes_show', {id: commande.id}) }}">
+                                            Voir détails
+                                        </a>
+                                        <a class="btn btn-sm btn-outline-secondary" href="{{ path('admin_suivi_commandes_validees_sans_creneau_bon_commande_pdf', {id: commande.id}) }}" target="_blank">
+                                            Bon de commande
+                                        </a>
+                                        <a class="btn btn-sm btn-outline-secondary" href="{{ path('admin_suivi_commandes_validees_sans_creneau_bon_preparation_pdf', {id: commande.id}) }}" target="_blank">
+                                            Bon de préparation
+                                        </a>
+                                        <a class="btn btn-sm btn-outline-secondary" href="{{ path('admin_suivi_commandes_validees_sans_creneau_bon_livraison_pdf', {id: commande.id}) }}" target="_blank">
+                                            Bon de livraison
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </section>
+</main>
+{% endblock %}

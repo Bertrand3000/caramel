@@ -22,25 +22,28 @@ final class CommandeDecisionService implements CommandeDecisionServiceInterface
 
     public function apply(Commande $commande, CommandeStatutEnum $status): bool
     {
+        // Vérifier l'email AVANT toute opération (la purge RGPD le supprimera)
+        $contact = $commande->getCommandeContactTmp();
+        $hasEmail = $contact?->getEmail() !== null && $contact?->getEmail() !== '';
+
         if ($status === CommandeStatutEnum::ANNULEE) {
             $this->checkoutService->annulerCommande($commande);
-        } else {
-            $commande->setStatut(CommandeStatutEnum::VALIDEE);
-            $this->entityManager->flush();
+            // L'email de refus est envoyé par le workflow (CommandeWorkflowSubscriber)
+            // La purge RGPD est aussi appliquée par le workflow
+            // On retourne true si un email était disponible pour l'envoi
+            return $hasEmail;
         }
 
-        $contact = $commande->getCommandeContactTmp();
-        $email = $contact?->getEmail();
-        if ($email === null || $email === '') {
+        $commande->setStatut(CommandeStatutEnum::VALIDEE);
+        $this->entityManager->flush();
+
+        if (!$hasEmail) {
             return false;
         }
 
-        if ($status === CommandeStatutEnum::VALIDEE) {
-            $this->mailerNotifier->notifyCommandeValidee($commande);
-        } elseif ($status !== CommandeStatutEnum::ANNULEE) {
-            $this->mailerNotifier->notifyCommandeRefusee($commande);
-        }
+        $this->mailerNotifier->notifyCommandeValidee($commande);
 
+        // Vider l'email après envoi (données GRH jetables)
         $contact?->setEmail(null);
         $this->entityManager->flush();
 
