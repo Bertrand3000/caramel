@@ -45,6 +45,10 @@ final class ShopController extends AbstractController
 
         $keyword = trim($request->query->getString('q'));
         $keywordNormalized = mb_strtolower($keyword);
+        $productIdFilter = null;
+        if (preg_match('/^#(\d+)$/', $keyword, $matches) === 1) {
+            $productIdFilter = (int) $matches[1];
+        }
         $page = max(1, $request->query->getInt('page', 1));
         $mustRestrictByVnc = !in_array('ROLE_ADMIN', $roles, true)
             && (in_array('ROLE_AGENT', $roles, true) || in_array('ROLE_TELETRAVAILLEUR', $roles, true));
@@ -57,7 +61,11 @@ final class ShopController extends AbstractController
         $catalogue = [];
 
         foreach ($produits as $produit) {
-            if ($keywordNormalized !== '') {
+            if ($productIdFilter !== null) {
+                if ($produit->getId() !== $productIdFilter) {
+                    continue;
+                }
+            } elseif ($keywordNormalized !== '') {
                 $haystack = implode(' ', array_filter([
                     mb_strtolower($produit->getLibelle()),
                     mb_strtolower($produit->getDescription() ?? ''),
