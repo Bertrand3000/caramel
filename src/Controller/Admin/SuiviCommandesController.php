@@ -32,9 +32,22 @@ final class SuiviCommandesController extends AbstractController
     #[Route('', name: 'index', methods: ['GET'])]
     public function index(): Response
     {
+        $commandesParStatut = $this->commandeRepository->countByStatut();
+
+        // Ordre logique des statuts (sans les annulées)
+        $ordreStatuts = [
+            CommandeStatutEnum::EN_ATTENTE_VALIDATION->value => 'En attente de validation',
+            CommandeStatutEnum::VALIDEE->value => 'Validée',
+            CommandeStatutEnum::EN_PREPARATION->value => 'En préparation',
+            CommandeStatutEnum::PRETE->value => 'Prête',
+            CommandeStatutEnum::RETIREE->value => 'Retirée',
+        ];
+
         return $this->render('admin/suivi_commandes/index.html.twig', [
             'commandes' => $this->commandeRepository->findEnAttenteValidationWithRelations(),
             'importForm' => $this->createForm(ImportGrhCommandesType::class)->createView(),
+            'commandesParStatut' => $commandesParStatut,
+            'ordreStatuts' => $ordreStatuts,
         ]);
     }
 

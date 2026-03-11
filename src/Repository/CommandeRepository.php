@@ -321,4 +321,25 @@ class CommandeRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    /**
+     * @return array<string, int>
+     */
+    public function countByStatut(): array
+    {
+        $results = $this->createQueryBuilder('c')
+            ->select('c.statut as statut, COUNT(c.id) as count')
+            ->groupBy('c.statut')
+            ->getQuery()
+            ->getResult();
+
+        $counts = [];
+        foreach ($results as $result) {
+            /** @var CommandeStatutEnum $statut */
+            $statut = $result['statut'];
+            $counts[$statut->value] = (int) $result['count'];
+        }
+
+        return $counts;
+    }
 }

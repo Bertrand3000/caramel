@@ -60,7 +60,7 @@
             <p class="mb-1"><strong>Articles :</strong></p>
             <ul class="mb-2">
                 {% for ligne in commande.lignesCommande %}
-                    <li>{{ ligne.produit.libelle }}</li>
+                    <li>{{ ligne.produit.libelle }} (#{{ ligne.produit.id }})</li>
                 {% else %}
                     <li>Aucun article</li>
                 {% endfor %}

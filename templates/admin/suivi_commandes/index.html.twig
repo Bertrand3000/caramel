@@ -26,8 +26,22 @@
             </div>
         </header>
 
-        <section class="form-section">
-            <h2>Import GRH</h2>
+    <section class="form-section">
+      <h2>Récapitulatif des commandes</h2>
+      <div class="commandes-stats mb-3">
+        {% for statutValue, statutLabel in ordreStatuts %}
+          {% if commandesParStatut[statutValue] is defined and commandesParStatut[statutValue] > 0 %}
+            <div class="stat-item">
+              <span class="stat-label">{{ statutLabel }} :</span>
+              <span class="stat-count"><strong>{{ commandesParStatut[statutValue] }}</strong></span>
+            </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="form-section">
+      <h2>Import GRH</h2>
             <p class="form-help mb-2">Importe un fichier XLSX pour enrichir nom/prénom/email/téléphone sur les commandes en attente.</p>
             {{ form_start(importForm, {action: path('admin_suivi_commandes_import_grh'), attr: {'class': 'produit-form'}}) }}
                 {{ form_errors(importForm) }}
