@@ -25,7 +25,16 @@
                 {% endif %}
             </div>
             {% if jour %}
-                <div class="ms-auto">
+                <div class="ms-auto d-flex flex-wrap gap-2 justify-content-end">
+                    <a href="{{ path('logistique_all_bons_commande_pdf') }}" target="_blank" class="btn btn-outline-secondary">
+                        Tous les bons de commande
+                    </a>
+                    <a href="{{ path('logistique_all_bons_preparation_pdf') }}" target="_blank" class="btn btn-outline-secondary">
+                        Tous les bons de préparation
+                    </a>
+                    <a href="{{ path('logistique_all_bons_livraison_pdf') }}" target="_blank" class="btn btn-outline-secondary">
+                        Tous les bons de livraison
+                    </a>
                     <a href="{{ path('logistique_recap') }}" class="btn btn-primary">
                         📦 Récap matériel à récupérer
                     </a>

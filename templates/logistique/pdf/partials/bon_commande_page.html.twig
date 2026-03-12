@@ -1,0 +1,83 @@
+<div class="page">
+
+  <h1>Bon de commande</h1>
+  <p class="subtitle">CPAM — Opération de don de mobilier — Document généré le {{ "now"|date("d/m/Y à H:i") }}</p>
+
+  <table class="two-col">
+    <tr>
+      <td class="left">
+
+        <div class="info-block">
+          <h2>Informations commande</h2>
+          <div class="info-row"><strong>N° commande :</strong> #{{ commande.id }}</div>
+          <div class="info-row"><strong>Date validation :</strong> {{ commande.dateValidation|date('d/m/Y') }}</div>
+          <div class="info-row"><strong>Profil :</strong> {{ commande.profilCommande.value|replace({'_': ' '})|capitalize }}</div>
+        </div>
+
+        <div class="info-block">
+          <h2>Bénéficiaire</h2>
+          {% if commande.prenom or commande.nom %}
+            <div class="info-row"><strong>Identité :</strong> {{ commande.prenom }} {{ commande.nom }}</div>
+          {% else %}
+            <div class="info-row"><strong>Identité :</strong> (Partenaire)</div>
+          {% endif %}
+          {% if commande.numeroAgent %}
+            <div class="info-row"><strong>N° agent :</strong> {{ commande.numeroAgent }}</div>
+          {% endif %}
+        </div>
+
+        <div class="info-block">
+          <h2>Créneau de retrait</h2>
+          {% if commande.creneau %}
+            <div class="info-row"><strong>Date :</strong> {{ commande.creneau.dateHeure|date('d/m/Y') }}</div>
+            <div class="info-row"><strong>Horaire :</strong> {{ commande.creneau.heureDebut|date('H:i') }} – {{ commande.creneau.heureFin|date('H:i') }}</div>
+          {% else %}
+            <div class="info-row">Aucun créneau (partenaire).</div>
+          {% endif %}
+        </div>
+
+      </td>
+      <td class="right">
+
+        <div class="zone-etiquettes">
+          <div class="zone-etiquettes-title">Zone étiquettes d'inventaire</div>
+          <div class="zone-etiquettes-hint">Coller ici les étiquettes<br>d'inventaire physique</div>
+        </div>
+
+      </td>
+    </tr>
+  </table>
+
+  <div class="produits-section">
+    <h2>Produits commandés ({{ commande.lignesCommande|length }})</h2>
+    {% if commande.lignesCommande|length > 0 %}
+      <table class="produits-table">
+        <thead>
+          <tr>
+            <th>Libellé</th>
+            <th>N° inventaire</th>
+            <th>Étage / Porte</th>
+            <th>État</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ligne in commande.lignesCommande %}
+            <tr>
+              <td>{{ ligne.produit.libelle }}</td>
+              <td>{{ ligne.produit.numeroInventaire ?: '—' }}</td>
+              <td>Ét. {{ ligne.produit.etage }} / P. {{ ligne.produit.porte }}</td>
+              <td>{{ ligne.produit.etat.label() }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p style="color:#888; font-style:italic;">Aucun produit dans cette commande.</p>
+    {% endif %}
+  </div>
+
+  <div class="footer">
+    Bon de commande CARAMEL · Commande #{{ commande.id }} · {{ "now"|date("d/m/Y") }}
+  </div>
+
+</div>

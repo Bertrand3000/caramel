@@ -34,4 +34,25 @@ interface DocumentPdfGeneratorInterface
      * @return string Contenu binaire PDF
      */
     public function generateBonLivraison(Commande $commande): string;
+
+    /**
+     * Génère un PDF unique contenant tous les bons de commande fournis.
+     *
+     * @param list<Commande> $commandes
+     */
+    public function generateAllBonCommande(array $commandes): string;
+
+    /**
+     * Génère un PDF unique contenant tous les bons de préparation fournis.
+     *
+     * @param list<Commande> $commandes
+     */
+    public function generateAllBonPreparation(array $commandes): string;
+
+    /**
+     * Génère un PDF unique contenant tous les bons de livraison fournis.
+     *
+     * @param list<Commande> $commandes
+     */
+    public function generateAllBonLivraison(array $commandes): string;
 }

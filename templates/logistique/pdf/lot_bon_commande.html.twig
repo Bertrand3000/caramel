@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Bon de commande #{{ commande.id }}</title>
+<title>Tous les bons de commande</title>
 <style>
   body {
     font-family: Helvetica, Arial, sans-serif;
@@ -25,8 +25,6 @@
     color: #555;
     margin: 0 0 8mm 0;
   }
-
-  /* Layout deux colonnes : infos à gauche, étiquettes à droite */
   .two-col {
     width: 100%;
     margin-bottom: 6mm;
@@ -42,8 +40,6 @@
   .two-col td.right {
     width: 45%;
   }
-
-  /* Blocs d'info */
   .info-block {
     margin-bottom: 5mm;
   }
@@ -65,8 +61,6 @@
     width: 38mm;
     color: #333;
   }
-
-  /* Zone étiquettes */
   .zone-etiquettes {
     border: 2px dashed #aaa;
     border-radius: 3px;
@@ -90,8 +84,6 @@
     font-style: italic;
     margin-top: 18mm;
   }
-
-  /* Tableau produits — pleine largeur sous les deux colonnes */
   .produits-section h2 {
     font-size: 10pt;
     text-transform: uppercase;
@@ -121,8 +113,6 @@
   .produits-table tr:nth-child(even) td {
     background: #fafafa;
   }
-
-  /* Bas de page */
   .footer {
     margin-top: 8mm;
     font-size: 8pt;
@@ -131,9 +121,17 @@
     padding-top: 3mm;
     text-align: center;
   }
+  .document-break {
+    page-break-after: always;
+  }
 </style>
 </head>
 <body>
-{% include 'logistique/pdf/partials/bon_commande_page.html.twig' with { commande: commande } only %}
+{% for commande in commandes %}
+  {% include 'logistique/pdf/partials/bon_commande_page.html.twig' with { commande: commande } only %}
+  {% if not loop.last %}
+    <div class="document-break"></div>
+  {% endif %}
+{% endfor %}
 </body>
 </html>

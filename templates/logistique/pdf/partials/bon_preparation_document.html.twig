@@ -1,0 +1,97 @@
+{% for page_index, page_lignes in pages %}
+
+  {% if not loop.first %}
+    <div class="page-break"></div>
+  {% endif %}
+
+  <div class="header-commande">
+    <h1>Bon de préparation — Commande #{{ commande.id }}</h1>
+    <span class="meta"><strong>Bénéficiaire :</strong>
+      {% if commande.prenom or commande.nom %}
+        {{ commande.prenom }} {{ commande.nom }}{% if commande.numeroAgent %} (#{{ commande.numeroAgent }}){% endif %}
+      {% else %}
+        (Partenaire)
+      {% endif %}
+    </span>
+    {% if commande.creneau %}
+      <span class="meta"><strong>Créneau :</strong> {{ commande.creneau.dateHeure|date('d/m/Y') }} {{ commande.creneau.heureDebut|date('H:i') }}–{{ commande.creneau.heureFin|date('H:i') }}</span>
+    {% endif %}
+    {% if pages|length > 1 %}
+      <span class="meta"><strong>Page :</strong> {{ loop.index }}/{{ pages|length }}</span>
+    {% endif %}
+  </div>
+
+  <div class="page-wrapper">
+
+    {% set produit_offset = page_index * 3 %}
+
+    {% for slot in 1..3 %}
+      {% set ligne_index = slot - 1 %}
+      {% set ligne = page_lignes[ligne_index] is defined ? page_lignes[ligne_index] : null %}
+      {% set num_global = produit_offset + slot %}
+
+      {% if ligne is not null %}
+        <div class="etiquette">
+          <div class="etiquette-inner">
+            <div class="num-section">Produit {{ num_global }}</div>
+            <table class="etiquette-layout">
+              <tr>
+                <td class="col-libelle">
+                  <div class="libelle-produit">{{ ligne.produit.libelle }}</div>
+                </td>
+                <td class="col-details">
+                  <div class="detail-row">
+                    <span class="label">N° inventaire</span>
+                    <span class="valeur{% if not ligne.produit.numeroInventaire %} vide{% endif %}">
+                      {{ ligne.produit.numeroInventaire ?: '—' }}
+                    </span>
+                  </div>
+                  <div class="detail-row">
+                    <span class="label">Porte / Bureau</span>
+                    <span class="valeur">{{ ligne.produit.porte }}</span>
+                  </div>
+                  <div class="detail-row">
+                    <span class="label">Étage</span>
+                    <span class="valeur">{{ ligne.produit.etage }}</span>
+                  </div>
+                </td>
+              </tr>
+            </table>
+          </div>
+          <div class="etiquette-footer">Cmd #{{ commande.id }} · {{ "now"|date("d/m/Y") }}</div>
+        </div>
+      {% else %}
+        <div class="etiquette vide">
+          <div class="etiquette-inner">
+            <div class="num-section">Produit {{ num_global }}</div>
+            <table class="etiquette-layout">
+              <tr>
+                <td class="col-libelle">
+                  <div class="libelle-produit vide">À compléter</div>
+                </td>
+                <td class="col-details">
+                  <div class="detail-row">
+                    <span class="label">N° inventaire</span>
+                    <span class="valeur vide">—</span>
+                  </div>
+                  <div class="detail-row">
+                    <span class="label">Porte / Bureau</span>
+                    <span class="valeur vide">—</span>
+                  </div>
+                  <div class="detail-row">
+                    <span class="label">Étage</span>
+                    <span class="valeur vide">—</span>
+                  </div>
+                </td>
+              </tr>
+            </table>
+          </div>
+          <div class="etiquette-footer">Cmd #{{ commande.id }} · {{ "now"|date("d/m/Y") }}</div>
+        </div>
+      {% endif %}
+
+    {% endfor %}
+
+  </div>
+
+{% endfor %}

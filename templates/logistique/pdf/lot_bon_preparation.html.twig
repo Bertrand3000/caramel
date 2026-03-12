@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Bon de préparation #{{ commande.id }}</title>
+<title>Tous les bons de préparation</title>
 <style>
   body {
     font-family: Helvetica, Arial, sans-serif;
@@ -11,8 +11,6 @@
     margin: 0;
     padding: 0;
   }
-
-  /* ===== ENTÊTE COMMANDE (petit, en haut de chaque page) ===== */
   .header-commande {
     padding: 4mm 10mm 3mm 10mm;
     border-bottom: 2px solid #1a1a1a;
@@ -28,26 +26,16 @@
     display: inline-block;
     margin-right: 6mm;
   }
-
-  /* Saut de page entre chaque groupe de 3 produits */
   .page-break {
     page-break-after: always;
   }
-
-  /* ===== WRAPPER PAGE ===== */
   .page-wrapper {
     padding: 0 10mm 6mm 10mm;
   }
-
-  /* ===== ÉTIQUETTES HORIZONTALES =====
-     3 étiquettes empilées, chacune sur toute la largeur.
-     Séparées par un trait de coupe en pointillés.
-  */
   .etiquette {
     border: 2px solid #1a1a1a;
     padding: 3mm 6mm;
     box-sizing: border-box;
-    /* Hauteur fixe : (page utile ~257mm - entête ~22mm - 2 marges 4mm) / 3 ≈ 75mm → réduit à 63mm */
     height: 63mm;
     margin-bottom: 4mm;
     position: relative;
@@ -58,15 +46,11 @@
     border-style: dashed;
     border-color: #aaa;
   }
-
-  /* Contenu centré verticalement dans l'étiquette */
   .etiquette-inner {
     display: table-cell;
     vertical-align: middle;
     width: 100%;
   }
-
-  /* Numéro de section */
   .num-section {
     font-size: 8pt;
     font-weight: bold;
@@ -75,8 +59,6 @@
     color: #777;
     margin-bottom: 2mm;
   }
-
-  /* Layout intérieur de l'étiquette : libellé à gauche (large), détails à droite */
   .etiquette-layout {
     width: 100%;
     border-collapse: collapse;
@@ -94,8 +76,6 @@
     width: 42%;
     padding-left: 6mm;
   }
-
-  /* Libellé produit */
   .libelle-produit {
     font-size: 22pt;
     font-weight: bold;
@@ -108,8 +88,6 @@
     font-style: italic;
     font-weight: normal;
   }
-
-  /* Champs détail */
   .detail-row {
     margin-bottom: 2.5mm;
   }
@@ -132,8 +110,6 @@
     font-weight: normal;
     font-style: italic;
   }
-
-  /* Pied d'étiquette */
   .etiquette-footer {
     position: absolute;
     bottom: 2mm;
@@ -144,6 +120,11 @@
 </style>
 </head>
 <body>
-{% include 'logistique/pdf/partials/bon_preparation_document.html.twig' with { commande: commande, pages: pages } only %}
+{% for pack in commandesPages %}
+  {% include 'logistique/pdf/partials/bon_preparation_document.html.twig' with { commande: pack.commande, pages: pack.pages } only %}
+  {% if not loop.last %}
+    <div class="page-break"></div>
+  {% endif %}
+{% endfor %}
 </body>
 </html>

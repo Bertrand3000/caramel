@@ -63,6 +63,48 @@ final class DocumentPdfGenerator implements DocumentPdfGeneratorInterface
         return $this->renderPdf($html);
     }
 
+    public function generateAllBonCommande(array $commandes): string
+    {
+        $html = $this->twig->render('logistique/pdf/lot_bon_commande.html.twig', [
+            'commandes' => $commandes,
+        ]);
+
+        return $this->renderPdf($html);
+    }
+
+    public function generateAllBonPreparation(array $commandes): string
+    {
+        $commandesPages = [];
+
+        foreach ($commandes as $commande) {
+            $pages = array_chunk($commande->getLignesCommande()->toArray(), 3);
+
+            if ($pages === []) {
+                $pages = [[]];
+            }
+
+            $commandesPages[] = [
+                'commande' => $commande,
+                'pages' => $pages,
+            ];
+        }
+
+        $html = $this->twig->render('logistique/pdf/lot_bon_preparation.html.twig', [
+            'commandesPages' => $commandesPages,
+        ]);
+
+        return $this->renderPdf($html);
+    }
+
+    public function generateAllBonLivraison(array $commandes): string
+    {
+        $html = $this->twig->render('logistique/pdf/lot_bon_livraison.html.twig', [
+            'commandes' => $commandes,
+        ]);
+
+        return $this->renderPdf($html);
+    }
+
     private function renderPdf(string $html): string
     {
         $options = new Options();

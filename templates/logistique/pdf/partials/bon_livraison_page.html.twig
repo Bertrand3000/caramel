@@ -1,0 +1,81 @@
+<div class="page">
+
+  <h1>Attestation de cession à titre gratuit de mobilier</h1>
+
+  <div class="body-text">
+    Je soussigné(e) :
+  </div>
+
+  <div class="body-text">
+    <strong>Nom / Prénom :</strong>
+    <span class="field-value">{% if commande.prenom or commande.nom %}{{ commande.prenom }} {{ commande.nom }}{% if commande.numeroAgent %} &nbsp;(agent n° {{ commande.numeroAgent }}){% endif %}{% else %}&nbsp;{% endif %}</span>
+  </div>
+
+  <div class="body-text">
+    <strong>Service :</strong><span class="field-blank">&nbsp;</span>
+  </div>
+
+  <div class="body-text" style="margin-top: 3mm;">
+    Déclare avoir reçu à titre gratuit le(s) bien(s) suivant(s) :
+  </div>
+
+  {% if commande.lignesCommande|length > 0 %}
+    <table class="biens-table">
+      <thead>
+        <tr>
+          <th>Description précise</th>
+          <th>N° inventaire</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ligne in commande.lignesCommande %}
+          <tr>
+            <td>{{ ligne.produit.libelle }}</td>
+            <td>{{ ligne.produit.numeroInventaire ?: '—' }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div class="body-text" style="color:#888; font-style:italic; margin-left: 4mm;">
+      (Description précise – N° inventaire le cas échéant)
+    </div>
+  {% endif %}
+
+  <div class="body-text" style="margin-top: 3mm;">
+    <strong>Je reconnais que :</strong>
+  </div>
+
+  <div class="clauses">
+    <div class="clause-item">Le bien est cédé en l'état, sans garantie de fonctionnement ou de conformité.</div>
+    <div class="clause-item">La CPAM est dégagée de toute responsabilité liée à l'usage, au transport ou à la détention du bien à compter de sa remise.</div>
+    <div class="clause-item">Le transfert de propriété et de responsabilité est effectif à la date de signature du présent document.</div>
+    <div class="clause-item">Le bien est destiné à un usage personnel.</div>
+  </div>
+
+  <table class="lieu-date-signatures">
+    <tr>
+      <td class="lieu-date-col">
+        <div class="lieu-date-line">
+          Fait à&nbsp;<span class="field-blank" style="min-width: 40mm;">&nbsp;</span>
+        </div>
+        <div class="lieu-date-line">
+          Le&nbsp;<span class="field-blank" style="min-width: 40mm;">&nbsp;</span>
+        </div>
+      </td>
+      <td class="sig-col">
+        <div class="signature-label">Signature du bénéficiaire</div>
+        <div class="signature-box"></div>
+      </td>
+      <td class="sig-col">
+        <div class="signature-label">Signature de l'administration</div>
+        <div class="signature-box"></div>
+      </td>
+    </tr>
+  </table>
+
+  <div class="footer">
+    Attestation de cession CARAMEL · Commande #{{ commande.id }} · Document généré le {{ "now"|date("d/m/Y") }}
+  </div>
+
+</div>
