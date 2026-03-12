@@ -23,6 +23,18 @@ interface LogistiqueServiceInterface
     public function findAllOrdersForLogistique(JourLivraison $jour): array;
 
     /**
+     * @param int|null    $filtreId        Filtre par numéro de commande
+     * @param string|null $filtreNumeroAgent Filtre par numéro d'agent
+     * @param int|null    $filtreCreneauId Filtre par créneau
+     *
+     * @return list<Commande>
+     */
+    public function findFilteredOrdersForLogistique(JourLivraison $jour, ?int $filtreId = null, ?string $filtreNumeroAgent = null, ?int $filtreCreneauId = null): array;
+
+    /** @return list<\App\Entity\Creneau> */
+    public function findCreneauxForLogistique(JourLivraison $jour): array;
+
+    /**
      * Récupère le matériel à récupérer groupé par étage puis par porte.
      *
      * @return array<string, array<string, list<array{

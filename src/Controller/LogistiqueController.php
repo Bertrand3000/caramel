@@ -18,13 +18,42 @@ final class LogistiqueController extends AbstractController
 {
     #[Route('/logistique', name: 'logistique_index', methods: ['GET'])]
     #[IsGranted('ROLE_DMAX')]
-    public function index(LogistiqueServiceInterface $logistiqueService): Response
+    public function index(LogistiqueServiceInterface $logistiqueService, Request $request): Response
     {
         $jour = $logistiqueService->findNextDeliveryDay();
 
+        $commandes = [];
+        $creneaux = [];
+        if ($jour !== null) {
+            $filtreId = $request->query->getInt('filtre_id');
+            $filtreNumeroAgent = $request->query->get('filtre_numero_agent');
+            $filtreCreneauId = $request->query->getInt('filtre_creneau');
+
+            $hasFilters = $filtreId > 0 || trim($filtreNumeroAgent ?? '') !== '' || $filtreCreneauId > 0;
+
+            if ($hasFilters) {
+                $commandes = $logistiqueService->findFilteredOrdersForLogistique(
+                    $jour,
+                    $filtreId > 0 ? $filtreId : null,
+                    trim($filtreNumeroAgent ?? '') !== '' ? trim($filtreNumeroAgent) : null,
+                    $filtreCreneauId > 0 ? $filtreCreneauId : null,
+                );
+            } else {
+                $commandes = $logistiqueService->findAllOrdersForLogistique($jour);
+            }
+
+            $creneaux = $logistiqueService->findCreneauxForLogistique($jour);
+        }
+
         return $this->render('logistique/index.html.twig', [
             'jour'      => $jour,
-            'commandes' => $jour !== null ? $logistiqueService->findAllOrdersForLogistique($jour) : [],
+            'commandes' => $commandes,
+            'creneaux'  => $creneaux,
+            'filtres'   => [
+                'id'            => $filtreId > 0 ? $filtreId : null,
+                'numero_agent'  => trim($filtreNumeroAgent ?? '') !== '' ? trim($filtreNumeroAgent) : null,
+                'creneau'       => $filtreCreneauId > 0 ? $filtreCreneauId : null,
+            ],
         ]);
     }
 

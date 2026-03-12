@@ -44,6 +44,45 @@
             </div>
         {% else %}
 
+            {# Formulaire de filtres #}
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="get" action="{{ path('logistique_index') }}" class="row g-3 align-items-end">
+                        <div class="col-md-3">
+                            <label for="filtre_id" class="form-label">N° commande</label>
+                            <input type="number" class="form-control" id="filtre_id" name="filtre_id"
+                                   value="{{ filtres.id ?? '' }}" placeholder="Ex: 123" min="1">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="filtre_numero_agent" class="form-label">N° agent</label>
+                            <input type="number" class="form-control" id="filtre_numero_agent" name="filtre_numero_agent"
+                                   value="{{ filtres.numero_agent ?? '' }}" placeholder="Ex: 54321" min="1">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="filtre_creneau" class="form-label">Créneau</label>
+                            <select class="form-select" id="filtre_creneau" name="filtre_creneau">
+                                <option value="">Tous</option>
+                                {% for creneau in creneaux %}
+                                    <option value="{{ creneau.id }}" {{ filtres.creneau == creneau.id ? 'selected' : '' }}>
+                                        {{ creneau.heureDebut|date('H:i') }} – {{ creneau.heureFin|date('H:i') }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" class="btn btn-primary w-100">
+                                Filtrer
+                            </button>
+                            {% if filtres.id is not null or filtres.numero_agent is not null or filtres.creneau is not null %}
+                                <a href="{{ path('logistique_index') }}" class="btn btn-outline-secondary w-100 mt-1">
+                                    Réinitialiser
+                                </a>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+
             {% set groups = [
                 { statut: 'validee',        label: 'À préparer',     badgeClass: 'text-bg-warning'   },
                 { statut: 'en_preparation', label: 'En préparation', badgeClass: 'text-bg-primary'   },

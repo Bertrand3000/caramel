@@ -297,6 +297,68 @@ class CommandeRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    /**
+     * @param int|null   $filtreId       Filtre par numéro de commande
+     * @param string|null $filtreNumeroAgent Filtre par numéro d'agent
+     * @param int|null   $filtreCreneauId Filtre par créneau
+     *
+     * @return list<Commande>
+     */
+    public function findFilteredForLogistique(JourLivraison $jour, ?int $filtreId = null, ?string $filtreNumeroAgent = null, ?int $filtreCreneauId = null): array
+    {
+        $qb = $this->createQueryBuilder('c')
+            ->innerJoin('c.creneau', 'cr')
+            ->addSelect('cr')
+            ->innerJoin('cr.jourLivraison', 'j')
+            ->innerJoin('c.lignesCommande', 'lc')
+            ->addSelect('lc')
+            ->innerJoin('lc.produit', 'p')
+            ->addSelect('p')
+            ->andWhere('j.id = :jourId')
+            ->andWhere('c.statut IN (:statuts)')
+            ->setParameter('jourId', $jour->getId())
+            ->setParameter('statuts', [
+                CommandeStatutEnum::VALIDEE,
+                CommandeStatutEnum::EN_PREPARATION,
+                CommandeStatutEnum::PRETE,
+                CommandeStatutEnum::RETIREE,
+            ]);
+
+        if ($filtreId !== null && $filtreId > 0) {
+            $qb->andWhere('c.id = :filtreId')
+                ->setParameter('filtreId', $filtreId);
+        }
+
+        if ($filtreNumeroAgent !== null && trim($filtreNumeroAgent) !== '') {
+            $qb->andWhere('c.numeroAgent = :filtreNumeroAgent')
+                ->setParameter('filtreNumeroAgent', trim($filtreNumeroAgent));
+        }
+
+        if ($filtreCreneauId !== null && $filtreCreneauId > 0) {
+            $qb->andWhere('cr.id = :filtreCreneauId')
+                ->setParameter('filtreCreneauId', $filtreCreneauId);
+        }
+
+        return $qb->orderBy('cr.heureDebut', 'ASC')
+            ->addOrderBy('c.id', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /** @return list<Creneau> */
+    public function findCreneauxForJourLivraison(JourLivraison $jour): array
+    {
+        return $this->getEntityManager()
+            ->getRepository(\App\Entity\Creneau::class)
+            ->createQueryBuilder('cr')
+            ->innerJoin('cr.jourLivraison', 'j')
+            ->andWhere('j.id = :jourId')
+            ->setParameter('jourId', $jour->getId())
+            ->orderBy('cr.heureDebut', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
     /** @return list<Commande> */
     public function findForVentesExport(): array
     {
