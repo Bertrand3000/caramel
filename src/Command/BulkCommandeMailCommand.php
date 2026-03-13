@@ -35,6 +35,7 @@ final class BulkCommandeMailCommand extends Command
             ->addOption('status', null, InputOption::VALUE_REQUIRED, 'Cible: en_attente ou validee')
             ->addOption('subject', null, InputOption::VALUE_REQUIRED, 'Sujet du mail')
             ->addOption('body-file', null, InputOption::VALUE_REQUIRED, 'Chemin du fichier contenant le corps du mail')
+            ->addOption('test-email', null, InputOption::VALUE_REQUIRED, 'Mode test: adresse email unique destinataire')
             ->addOption('dry-run', null, InputOption::VALUE_NONE, 'Simulation sans envoi');
     }
 
@@ -44,11 +45,11 @@ final class BulkCommandeMailCommand extends Command
         $statusOption = trim((string) $input->getOption('status'));
         $subject = trim((string) $input->getOption('subject'));
         $bodyFile = trim((string) $input->getOption('body-file'));
+        $testEmail = trim((string) $input->getOption('test-email'));
         $dryRun = (bool) $input->getOption('dry-run');
 
-        $status = $this->resolveStatus($statusOption);
-        if ($status === null || $subject === '' || $bodyFile === '') {
-            $io->error('Options requises: --status=en_attente|validee --subject="..." --body-file=/chemin/fichier.txt');
+        if ($subject === '' || $bodyFile === '') {
+            $io->error('Options requises: --subject="..." --body-file=/chemin/fichier.txt');
 
             return Command::INVALID;
         }
@@ -64,6 +65,46 @@ final class BulkCommandeMailCommand extends Command
             $io->error('Le fichier de contenu est vide ou illisible.');
 
             return Command::FAILURE;
+        }
+
+        if ($testEmail !== '') {
+            if (!filter_var($testEmail, FILTER_VALIDATE_EMAIL)) {
+                $io->error(sprintf('Adresse email de test invalide: %s', $testEmail));
+
+                return Command::INVALID;
+            }
+
+            $io->section('Préparation envoi (mode test-email)');
+            $io->definitionList(
+                ['Destinataire test' => $testEmail],
+                ['Sujet' => $subject],
+                ['Fichier contenu' => $bodyFile],
+                ['Mode' => $dryRun ? 'DRY-RUN (sans envoi)' : 'ENVOI RÉEL'],
+            );
+
+            if (!$dryRun) {
+                $this->mailer->send(
+                    (new Email())
+                        ->from($this->fromEmail)
+                        ->to($testEmail)
+                        ->subject($subject)
+                        ->text($body),
+                );
+            }
+
+            $io->success($dryRun
+                ? sprintf('Simulation terminée: 1 email serait envoyé à %s.', $testEmail)
+                : sprintf('Envoi terminé: 1 email envoyé à %s.', $testEmail),
+            );
+
+            return Command::SUCCESS;
+        }
+
+        $status = $this->resolveStatus($statusOption);
+        if ($status === null) {
+            $io->error('Mode bulk: --status=en_attente|validee est requis (ou utiliser --test-email=adresse).');
+
+            return Command::INVALID;
         }
 
         $commandes = $this->commandeRepository->findByStatutWithEmail($status);
