@@ -39,7 +39,7 @@ class CommandeGrhImportService implements CommandeGrhImportServiceInterface
                     }
 
                     ++$processedRows;
-                    $matches = $this->commandeRepository->findEnAttenteValidationByNumeroAgent($numeroAgent);
+                    $matches = $this->commandeRepository->findForGrhImportByNumeroAgent($numeroAgent);
                     if ($matches === []) {
                         continue;
                     }
@@ -66,6 +66,21 @@ class CommandeGrhImportService implements CommandeGrhImportServiceInterface
         } finally {
             $this->safeDelete($filePath);
         }
+    }
+
+    public function anonymizeAllContacts(): int
+    {
+        $count = (int) $this->entityManager->getRepository(CommandeContactTmp::class)->count([]);
+        if ($count === 0) {
+            return 0;
+        }
+
+        $this->entityManager->createQueryBuilder()
+            ->delete(CommandeContactTmp::class, 'cct')
+            ->getQuery()
+            ->execute();
+
+        return $count;
     }
 
     private function upsertContact(

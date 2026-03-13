@@ -42,7 +42,7 @@
 
     <section class="form-section">
       <h2>Import GRH</h2>
-            <p class="form-help mb-2">Importe un fichier XLSX pour enrichir nom/prénom/email/téléphone sur les commandes en attente.</p>
+            <p class="form-help mb-2">Importe un fichier XLSX pour enrichir nom/prénom/email/téléphone sur les commandes en attente et validées.</p>
             {{ form_start(importForm, {action: path('admin_suivi_commandes_import_grh'), attr: {'class': 'produit-form'}}) }}
                 {{ form_errors(importForm) }}
                 {{ form_row(importForm.xlsxFile, {label: 'Fichier GRH (.xlsx)', attr: {'class': 'form-control'}}) }}
@@ -50,6 +50,17 @@
                     <button class="btn btn-primary" type="submit">Importer</button>
                 </div>
             {{ form_end(importForm) }}
+
+            <div class="mt-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <div class="text-muted small">
+                    <div><strong>En attente</strong> : {{ grhStats.en_attente.with }} avec email · {{ grhStats.en_attente.without }} sans email</div>
+                    <div><strong>Validées</strong> : {{ grhStats.validee.with }} avec email · {{ grhStats.validee.without }} sans email</div>
+                </div>
+                <form method="post" action="{{ path('admin_suivi_commandes_anonymiser_grh') }}" onsubmit="return confirm('Anonymiser toutes les informations GRH importées ?');">
+                    <input type="hidden" name="_token" value="{{ csrf_token('anonymiser_grh_tout') }}">
+                    <button class="btn btn-outline-danger" type="submit">Anonymiser toutes les infos GRH</button>
+                </form>
+            </div>
         </section>
 
         <div class="dmax-table-wrap">

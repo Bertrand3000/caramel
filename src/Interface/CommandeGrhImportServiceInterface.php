@@ -9,4 +9,6 @@ use App\DTO\CommandeGrhImportResult;
 interface CommandeGrhImportServiceInterface
 {
     public function importFromXlsx(string $filePath): CommandeGrhImportResult;
+
+    public function anonymizeAllContacts(): int;
 }

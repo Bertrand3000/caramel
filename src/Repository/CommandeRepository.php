@@ -99,6 +99,66 @@ class CommandeRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    /** @return list<Commande> */
+    public function findByStatutWithEmail(CommandeStatutEnum $statut): array
+    {
+        return $this->createQueryBuilder('c')
+            ->innerJoin('c.commandeContactTmp', 'contact')
+            ->addSelect('contact')
+            ->andWhere('c.statut = :statut')
+            ->andWhere('contact.email IS NOT NULL')
+            ->andWhere("TRIM(contact.email) != ''")
+            ->setParameter('statut', $statut)
+            ->orderBy('c.id', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /** @return list<Commande> */
+    public function findForGrhImportByNumeroAgent(string $numeroAgent): array
+    {
+        return $this->createQueryBuilder('c')
+            ->leftJoin('c.commandeContactTmp', 'contact')
+            ->addSelect('contact')
+            ->andWhere('c.numeroAgent = :numeroAgent')
+            ->andWhere('c.statut IN (:statuts)')
+            ->setParameter('numeroAgent', $numeroAgent)
+            ->setParameter('statuts', [
+                CommandeStatutEnum::EN_ATTENTE_VALIDATION,
+                CommandeStatutEnum::VALIDEE,
+            ])
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * @return array{with: int, without: int}
+     */
+    public function countWithAndWithoutEmailByStatut(CommandeStatutEnum $statut): array
+    {
+        $total = (int) $this->createQueryBuilder('c')
+            ->select('COUNT(c.id)')
+            ->andWhere('c.statut = :statut')
+            ->setParameter('statut', $statut)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        $with = (int) $this->createQueryBuilder('c')
+            ->select('COUNT(c.id)')
+            ->innerJoin('c.commandeContactTmp', 'contact')
+            ->andWhere('c.statut = :statut')
+            ->andWhere('contact.email IS NOT NULL')
+            ->andWhere("TRIM(contact.email) != ''")
+            ->setParameter('statut', $statut)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return [
+            'with' => $with,
+            'without' => max(0, $total - $with),
+        ];
+    }
+
     public function countArticlesActifsForNumeroAgent(string $numeroAgent): int
     {
         return (int) $this->createQueryBuilder('c')

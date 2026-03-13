@@ -33,6 +33,10 @@ final class SuiviCommandesController extends AbstractController
     public function index(): Response
     {
         $commandesParStatut = $this->commandeRepository->countByStatut();
+        $grhStats = [
+            'en_attente' => $this->commandeRepository->countWithAndWithoutEmailByStatut(CommandeStatutEnum::EN_ATTENTE_VALIDATION),
+            'validee' => $this->commandeRepository->countWithAndWithoutEmailByStatut(CommandeStatutEnum::VALIDEE),
+        ];
 
         // Ordre logique des statuts (sans les annulées)
         $ordreStatuts = [
@@ -48,6 +52,7 @@ final class SuiviCommandesController extends AbstractController
             'importForm' => $this->createForm(ImportGrhCommandesType::class)->createView(),
             'commandesParStatut' => $commandesParStatut,
             'ordreStatuts' => $ordreStatuts,
+            'grhStats' => $grhStats,
         ]);
     }
 
@@ -69,13 +74,32 @@ final class SuiviCommandesController extends AbstractController
                 $file = $form->get('xlsxFile')->getData();
                 $result = $this->commandeGrhImportService->importFromXlsx($file->getPathname());
                 $this->addFlash('success', sprintf(
-                    'Import terminé : %d commande(s) enrichie(s) sur %d lignes traitées.',
+                    'Import terminé : %d commande(s) enrichie(s) (en attente + validées) sur %d lignes traitées.',
                     $result->matchedCount,
                     $result->processedRows,
                 ));
             } catch (\Throwable $exception) {
                 $this->addFlash('error', sprintf('Import GRH impossible : %s', $exception->getMessage()));
             }
+        }
+
+        return $this->redirectToRoute('admin_suivi_commandes_index');
+    }
+
+    #[Route('/anonymiser-grh', name: 'anonymiser_grh', methods: ['POST'])]
+    public function anonymiserGrh(Request $request): RedirectResponse
+    {
+        if (!$this->isCsrfTokenValid('anonymiser_grh_tout', $request->request->getString('_token'))) {
+            $this->addFlash('error', 'Jeton CSRF invalide.');
+
+            return $this->redirectToRoute('admin_suivi_commandes_index');
+        }
+
+        try {
+            $anonymizedCount = $this->commandeGrhImportService->anonymizeAllContacts();
+            $this->addFlash('success', sprintf('%d donnée(s) GRH anonymisée(s).', $anonymizedCount));
+        } catch (\Throwable $exception) {
+            $this->addFlash('error', sprintf('Anonymisation impossible : %s', $exception->getMessage()));
         }
 
         return $this->redirectToRoute('admin_suivi_commandes_index');
