@@ -10,6 +10,6 @@ final class BoutiqueClosedException extends AccessDeniedHttpException
 {
     public function __construct()
     {
-        parent::__construct('La boutique n\'est pas encore ouverte, elle ouvrira au cours de la journée, merci pour votre patience.');
+        parent::__construct('La boutique est actuellement fermée. Nous vous remercions pour votre compréhension.');
     }
 }

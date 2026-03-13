@@ -24,7 +24,11 @@
 
             {% if error %}
                 <div class="login-error">
-                    {{ error.messageKey|trans(error.messageData, 'security') }}
+                    {% if error.messageKey == 'Invalid credentials.' %}
+                        Identifiant ou mot de passe incorrect.
+                    {% else %}
+                        {{ error.messageKey|trans(error.messageData, 'security') }}
+                    {% endif %}
                 </div>
             {% endif %}
 
