@@ -297,6 +297,31 @@ class CommandeRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    /** @return list<Commande> */
+    public function findAgentsForLogistique(JourLivraison $jour): array
+    {
+        return $this->createQueryBuilder('c')
+            ->innerJoin('c.creneau', 'cr')
+            ->addSelect('cr')
+            ->innerJoin('cr.jourLivraison', 'j')
+            ->andWhere('j.id = :jourId')
+            ->andWhere('c.statut IN (:statuts)')
+            ->andWhere('c.numeroAgent IS NOT NULL')
+            ->andWhere("TRIM(c.numeroAgent) != ''")
+            ->setParameter('jourId', $jour->getId())
+            ->setParameter('statuts', [
+                CommandeStatutEnum::VALIDEE,
+                CommandeStatutEnum::EN_PREPARATION,
+                CommandeStatutEnum::PRETE,
+                CommandeStatutEnum::RETIREE,
+            ])
+            ->orderBy('cr.heureDebut', 'ASC')
+            ->addOrderBy('c.nom', 'ASC')
+            ->addOrderBy('c.prenom', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
     /**
      * @param int|null   $filtreId       Filtre par numéro de commande
      * @param string|null $filtreNumeroAgent Filtre par numéro d'agent

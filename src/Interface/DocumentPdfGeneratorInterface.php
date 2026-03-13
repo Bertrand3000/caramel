@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Interface;
 
 use App\Entity\Commande;
+use App\Entity\JourLivraison;
 
 /**
  * Génère les documents PDF liés à une commande (bon de commande, bon de préparation, bon de livraison).
@@ -55,4 +56,11 @@ interface DocumentPdfGeneratorInterface
      * @param list<Commande> $commandes
      */
     public function generateAllBonLivraison(array $commandes): string;
+
+    /**
+     * Génère un PDF listant les agents ayant une commande sur le jour de livraison.
+     *
+     * @param list<Commande> $commandes
+     */
+    public function generateListeAgents(JourLivraison $jour, array $commandes): string;
 }

@@ -22,6 +22,9 @@ interface LogistiqueServiceInterface
     /** @return list<Commande> */
     public function findAllOrdersForLogistique(JourLivraison $jour): array;
 
+    /** @return list<Commande> */
+    public function findAgentOrdersForLogistique(JourLivraison $jour): array;
+
     /**
      * @param int|null    $filtreId        Filtre par numéro de commande
      * @param string|null $filtreNumeroAgent Filtre par numéro d'agent

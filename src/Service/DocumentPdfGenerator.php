@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Entity\Commande;
+use App\Entity\JourLivraison;
 use App\Interface\DocumentPdfGeneratorInterface;
 use Dompdf\Dompdf;
 use Dompdf\Options;
@@ -99,6 +100,16 @@ final class DocumentPdfGenerator implements DocumentPdfGeneratorInterface
     public function generateAllBonLivraison(array $commandes): string
     {
         $html = $this->twig->render('logistique/pdf/lot_bon_livraison.html.twig', [
+            'commandes' => $commandes,
+        ]);
+
+        return $this->renderPdf($html);
+    }
+
+    public function generateListeAgents(JourLivraison $jour, array $commandes): string
+    {
+        $html = $this->twig->render('logistique/pdf/liste_agents.html.twig', [
+            'jour' => $jour,
             'commandes' => $commandes,
         ]);
 

@@ -58,6 +58,12 @@ final class LogistiqueService implements LogistiqueServiceInterface
     }
 
     /** @return list<Commande> */
+    public function findAgentOrdersForLogistique(JourLivraison $jour): array
+    {
+        return $this->commandeRepository->findAgentsForLogistique($jour);
+    }
+
+    /** @return list<Commande> */
     public function findFilteredOrdersForLogistique(JourLivraison $jour, ?int $filtreId = null, ?string $filtreNumeroAgent = null, ?int $filtreCreneauId = null): array
     {
         return $this->commandeRepository->findFilteredForLogistique($jour, $filtreId, $filtreNumeroAgent, $filtreCreneauId);
