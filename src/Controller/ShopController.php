@@ -52,20 +52,25 @@ final class ShopController extends AbstractController
         $page = max(1, $request->query->getInt('page', 1));
         $mustRestrictByVnc = !in_array('ROLE_ADMIN', $roles, true)
             && (in_array('ROLE_AGENT', $roles, true) || in_array('ROLE_TELETRAVAILLEUR', $roles, true));
-        $filters = ['statut' => ProduitStatutEnum::DISPONIBLE];
-        if (in_array('ROLE_TELETRAVAILLEUR', $roles, true) && !in_array('ROLE_ADMIN', $roles, true)) {
-            $filters['tagTeletravailleur'] = true;
+
+        $produits = [];
+        if ($productIdFilter !== null) {
+            $p = $produitRepository->find($productIdFilter);
+            if ($p !== null) {
+                $produits = [$p];
+            }
+        } else {
+            $filters = ['statut' => ProduitStatutEnum::DISPONIBLE];
+            if (in_array('ROLE_TELETRAVAILLEUR', $roles, true) && !in_array('ROLE_ADMIN', $roles, true)) {
+                $filters['tagTeletravailleur'] = true;
+            }
+            $produits = $produitRepository->findBy($filters, ['id' => 'DESC']);
         }
 
-        $produits = $produitRepository->findBy($filters, ['id' => 'DESC']);
         $catalogue = [];
 
         foreach ($produits as $produit) {
-            if ($productIdFilter !== null) {
-                if ($produit->getId() !== $productIdFilter) {
-                    continue;
-                }
-            } elseif ($keywordNormalized !== '') {
+            if ($productIdFilter === null && $keywordNormalized !== '') {
                 $haystack = implode(' ', array_filter([
                     mb_strtolower($produit->getLibelle()),
                     mb_strtolower($produit->getDescription() ?? ''),
@@ -75,12 +80,19 @@ final class ShopController extends AbstractController
                     continue;
                 }
             }
+
+            // Vérification des restrictions de profil (Télétravailleur / VNC)
+            if (in_array('ROLE_TELETRAVAILLEUR', $roles, true) && !in_array('ROLE_ADMIN', $roles, true) && !$produit->isTagTeletravailleur()) {
+                continue;
+            }
             if ($mustRestrictByVnc && trim($produit->getVnc()) !== '=0') {
                 continue;
             }
 
             $stockDisponible = $this->cartManager->getAvailableStockForDisplay($produit);
-            if ($stockDisponible < 1) {
+
+            // Si ce n'est PAS une recherche par ID, on ne montre que ce qui est disponible
+            if ($productIdFilter === null && $stockDisponible < 1) {
                 continue;
             }
 
