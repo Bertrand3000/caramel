@@ -31,5 +31,7 @@ interface CheckoutServiceInterface
 
     public function assignCreneau(Commande $commande, Creneau $creneau): void;
 
+    public function modifierCreneau(Commande $commande, Creneau $nouveauCreneau): void;
+
     public function annulerCommande(Commande $commande): void;
 }

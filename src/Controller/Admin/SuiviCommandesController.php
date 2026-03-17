@@ -11,6 +11,8 @@ use App\Interface\CommandeDecisionServiceInterface;
 use App\Interface\CommandeGrhImportServiceInterface;
 use App\Interface\DocumentPdfGeneratorInterface;
 use App\Repository\CommandeRepository;
+use App\Interface\CheckoutServiceInterface;
+use App\Repository\JourLivraisonRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -26,7 +28,58 @@ final class SuiviCommandesController extends AbstractController
         private readonly CommandeRepository $commandeRepository,
         private readonly CommandeGrhImportServiceInterface $commandeGrhImportService,
         private readonly CommandeDecisionServiceInterface $commandeDecisionService,
+        private readonly CheckoutServiceInterface $checkoutService,
+        private readonly JourLivraisonRepository $jourLivraisonRepository,
     ) {
+    }
+
+    #[Route('/{id}/modifier-creneau', name: 'modifier_creneau', requirements: ['id' => '\d+'], methods: ['GET'])]
+    public function modifierCreneau(int $id): Response
+    {
+        $commande = $this->commandeRepository->findOneForSuiviCommandes($id);
+        if ($commande === null) {
+            throw $this->createNotFoundException('Commande introuvable.');
+        }
+
+        $jours = $this->jourLivraisonRepository->findActifsOrderedByDate();
+
+        return $this->render('admin/suivi_commandes/modifier_creneau.html.twig', [
+            'commande' => $commande,
+            'jours' => $jours,
+        ]);
+    }
+
+    #[Route('/{id}/modifier-creneau', name: 'appliquer_modifier_creneau', requirements: ['id' => '\d+'], methods: ['POST'])]
+    public function appliquerModifierCreneau(int $id, Request $request, \App\Repository\CreneauRepository $creneauRepository): RedirectResponse
+    {
+        $commande = $this->commandeRepository->find($id);
+        if ($commande === null) {
+            throw $this->createNotFoundException('Commande introuvable.');
+        }
+
+        if (!$this->isCsrfTokenValid('modifier_creneau_' . $commande->getId(), $request->request->getString('_token'))) {
+            $this->addFlash('error', 'Jeton CSRF invalide.');
+
+            return $this->redirectToRoute('admin_suivi_commandes_show', ['id' => $commande->getId()]);
+        }
+
+        $nouveauCreneauId = $request->request->getInt('creneau_id');
+        $nouveauCreneau = $creneauRepository->find($nouveauCreneauId);
+
+        if ($nouveauCreneau === null) {
+            $this->addFlash('error', 'Créneau invalide.');
+
+            return $this->redirectToRoute('admin_suivi_commandes_modifier_creneau', ['id' => $commande->getId()]);
+        }
+
+        try {
+            $this->checkoutService->modifierCreneau($commande, $nouveauCreneau);
+            $this->addFlash('success', 'Créneau modifié avec succès.');
+        } catch (\Throwable $e) {
+            $this->addFlash('error', 'Impossible de modifier le créneau: ' . $e->getMessage());
+        }
+
+        return $this->redirectToRoute('admin_suivi_commandes_show', ['id' => $commande->getId()]);
     }
 
     #[Route('', name: 'index', methods: ['GET'])]

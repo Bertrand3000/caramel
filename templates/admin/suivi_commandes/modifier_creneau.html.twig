@@ -1,0 +1,90 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier créneau commande #{{ commande.id }}{% endblock %}
+
+{% block body %}
+<main class="container py-4">
+    <section class="form-shell dmax-list-shell">
+        <header class="dmax-list-head mb-4">
+            <div>
+                <h1>Modifier le créneau</h1>
+                <p class="dmax-list-meta mb-0">
+                    Commande #{{ commande.id }} — Agent : {{ commande.prenom }} {{ commande.nom }} (#{{ commande.numeroAgent }})
+                </p>
+            </div>
+            <a href="{{ path('admin_suivi_commandes_show', {id: commande.id}) }}" class="btn btn-outline-secondary">Annuler</a>
+        </header>
+
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Créneau actuel</h5>
+                <p class="card-text">
+                    {% if commande.creneau %}
+                        <strong>{{ commande.creneau.dateHeure|date('d/m/Y') }}</strong> · {{ commande.creneau.heureDebut|date('H:i') }}-{{ commande.creneau.heureFin|date('H:i') }}
+                    {% else %}
+                        <span class="text-muted fst-italic">Aucun créneau assigné</span>
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+
+        <form method="post" action="{{ path('admin_suivi_commandes_appliquer_modifier_creneau', {id: commande.id}) }}">
+            <input type="hidden" name="_token" value="{{ csrf_token('modifier_creneau_' ~ commande.id) }}">
+
+            {% for jour in jours %}
+                <div class="mb-5">
+                    <h2 class="h5 mb-3 border-bottom pb-2">
+                        {{ jour.date|date('d/m/Y') }}
+                        {% if jour.creneaux|length == 0 %}
+                            <small class="text-muted">(Aucun créneau disponible)</small>
+                        {% endif %}
+                    </h2>
+
+                    <div class="row g-3">
+                        {% for creneau in jour.creneaux %}
+                            {% set isCurrent = commande.creneau and commande.creneau.id == creneau.id %}
+                            {% set used = creneau.capaciteUtilisee %}
+                            {% set max = creneau.capaciteMax %}
+                            {% set available = max - used %}
+
+                            <div class="col-md-4 col-lg-3">
+                                <div class="card h-100 {{ isCurrent ? 'border-primary shadow-sm' : '' }} {{ available <= 0 and not isCurrent ? 'bg-light' : '' }}">
+                                    <div class="card-body d-flex flex-column">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <h6 class="mb-0">{{ creneau.heureDebut|date('H:i') }} - {{ creneau.heureFin|date('H:i') }}</h6>
+                                            {% if isCurrent %}
+                                                <span class="badge text-bg-primary">Actuel</span>
+                                            {% endif %}
+                                        </div>
+
+                                        <p class="small mb-3">
+                                            Dispo :
+                                            {% if available > 0 %}
+                                                <span class="text-success fw-bold">{{ available }} / {{ max }}</span>
+                                            {% else %}
+                                                <span class="text-danger fw-bold">Complet ({{ used }}/{{ max }})</span>
+                                            {% endif %}
+                                        </p>
+
+                                        {% if not isCurrent and (available > 0 or is_granted('ROLE_ADMIN')) %}
+                                            <button type="submit" name="creneau_id" value="{{ creneau.id }}"
+                                                    class="btn btn-sm btn-outline-primary mt-auto"
+                                                    {{ available <= 0 ? 'onclick="return confirm(\'Le créneau est plein. Forcer le déplacement ?\')"' : '' }}>
+                                                Sélectionner
+                                            </button>
+                                        {% elseif isCurrent %}
+                                            <button type="button" class="btn btn-sm btn-primary mt-auto" disabled>Actuel</button>
+                                        {% else %}
+                                            <button type="button" class="btn btn-sm btn-secondary mt-auto" disabled>Indisponible</button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endfor %}
+        </form>
+    </section>
+</main>
+{% endblock %}

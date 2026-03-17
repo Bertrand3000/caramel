@@ -55,6 +55,9 @@
                 {% else %}
                     —
                 {% endif %}
+                <a href="{{ path('admin_suivi_commandes_modifier_creneau', {id: commande.id}) }}" class="btn btn-sm btn-outline-primary ms-2">
+                    Modifier
+                </a>
             </p>
             <p class="mb-1"><strong>Statut :</strong> {{ commande.statut.value|replace({'_':' '})|capitalize }}</p>
             <p class="mb-1"><strong>Articles :</strong></p>

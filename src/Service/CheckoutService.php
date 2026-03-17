@@ -102,6 +102,17 @@ class CheckoutService implements CheckoutServiceInterface
         $this->creneauManager->reserverCreneau($creneau, $commande);
     }
 
+    public function modifierCreneau(Commande $commande, Creneau $nouveauCreneau): void
+    {
+        $this->em->wrapInTransaction(function () use ($commande, $nouveauCreneau): void {
+            if ($commande->getCreneau() !== null) {
+                $this->creneauManager->libererCreneau($commande->getCreneau(), $commande);
+            }
+            $this->creneauManager->reserverCreneau($nouveauCreneau, $commande);
+            $this->em->flush();
+        });
+    }
+
     public function annulerCommande(Commande $commande): void
     {
         $this->em->wrapInTransaction(function () use ($commande): void {

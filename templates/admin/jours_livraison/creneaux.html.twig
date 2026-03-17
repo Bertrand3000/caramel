@@ -85,11 +85,10 @@
                 <table class="dmax-table">
                     <thead>
                         <tr>
-                            <th>Créneau</th>
-                            <th>Capacité</th>
-                            <th>Progression</th>
-                            <th>Réservations</th>
-                            <th>Action</th>
+                            <th style="width: 10%;">Créneau</th>
+                            <th style="width: 15%;">Capacité & État</th>
+                            <th style="width: 50%;">Réservations</th>
+                            <th style="width: 25%;">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -98,52 +97,50 @@
                             {% set max = creneau.capaciteMax %}
                             {% set percent = max > 0 ? ((used / max) * 100)|round : 0 %}
                             <tr>
-                                <td>
-                                    <p class="fw-semibold mb-0">{{ creneau.heureDebut|date('H:i') }} - {{ creneau.heureFin|date('H:i') }}</p>
+                                <td class="align-middle text-nowrap">
+                                    <p class="fw-bold mb-0">{{ creneau.heureDebut|date('H:i') }} - {{ creneau.heureFin|date('H:i') }}</p>
                                 </td>
-                                <td>{{ used }}/{{ max }}</td>
-                                <td>
-                                    <p class="mb-1">
+                                <td class="align-middle">
+                                    <div class="mb-1 d-flex justify-content-between align-items-center">
+                                        <span class="small fw-semibold">{{ used }}/{{ max }}</span>
                                         {% if percent >= 100 %}
-                                            <span class="badge text-bg-danger">Complet</span>
-                                        {% elseif percent >= 50 %}
-                                            <span class="badge" style="background:#fef3c7;color:#92400e;">En charge</span>
-                                        {% else %}
-                                            <span class="badge text-bg-success">Disponible</span>
+                                            <span class="badge text-bg-danger" style="font-size: 0.7rem;">Complet</span>
                                         {% endif %}
-                                        {{ percent }}%
-                                    </p>
-                                    <div class="progress" role="progressbar" aria-valuenow="{{ percent }}" aria-valuemin="0" aria-valuemax="100">
+                                    </div>
+                                    <div class="progress" style="height: 6px;" role="progressbar" aria-valuenow="{{ percent }}" aria-valuemin="0" aria-valuemax="100">
                                         <div class="progress-bar" style="width: {{ percent }}%; {% if percent >= 100 %}background:#dc2626;{% elseif percent >= 50 %}background:#d97706;{% endif %}"></div>
                                     </div>
                                 </td>
-                                <td>
+                                <td class="p-0 align-middle">
                                     {% if creneau.commandes|length > 0 %}
-                                        <ul class="mb-0" style="padding-left:1rem;">
-                                            {% for commande in creneau.commandes %}
-                                                <li class="mb-1">
-                                                    <span class="fw-semibold">{{ commande.numeroAgent ?: 'Sans numéro' }}</span>
-                                                    - {{ commande.nom ?: 'Nom inconnu' }} {{ commande.prenom ?: '' }}
-                                                    <span class="text-body-secondary">({{ statutLabels[commande.statut.value] ?? commande.statut.value }})</span>
-                                                </li>
-                                            {% endfor %}
-                                        </ul>
+                                        {% for commande in creneau.commandes %}
+                                            <div class="d-flex align-items-center px-3 {{ not loop.last ? 'border-bottom' : '' }}" 
+                                                 style="height: 48px; {{ loop.index is even ? 'background-color: rgba(0,0,0,0.04);' : 'background-color: #ffffff;' }}">
+                                                <span class="fw-bold me-2">#{{ commande.numeroAgent ?: '?' }}</span>
+                                                <span class="text-truncate me-1"> - {{ commande.nom ?: 'Nom inconnu' }} {{ commande.prenom ?: '' }}</span>
+                                                <span class="badge text-bg-light border text-secondary ms-2" style="font-size: 0.75rem;">{{ statutLabels[commande.statut.value] ?? commande.statut.value }}</span>
+                                            </div>
+                                        {% endfor %}
                                     {% else %}
-                                        <span class="text-body-secondary">Aucune réservation</span>
+                                        <div class="px-3 py-2 text-body-secondary fst-italic">Aucune réservation</div>
                                     {% endif %}
                                 </td>
-                                <td>
+                                <td class="p-0 align-middle">
                                     {% if creneau.commandes|length > 0 %}
-                                        <div class="dmax-actions">
-                                            {% for commande in creneau.commandes %}
-                                                <form method="post" action="{{ path('admin_jours_livraison_annuler_reservation', {id: jour.id, creneauId: creneau.id, commandeId: commande.id}) }}" onsubmit="return confirm('Annuler cette commande ?');">
+                                        {% for commande in creneau.commandes %}
+                                            <div class="d-flex gap-2 align-items-center justify-content-end px-3 {{ not loop.last ? 'border-bottom' : '' }}" 
+                                                 style="height: 48px; {{ loop.index is even ? 'background-color: rgba(0,0,0,0.04);' : 'background-color: #ffffff;' }}">
+                                                <a href="{{ path('admin_suivi_commandes_modifier_creneau', {id: commande.id}) }}" class="btn btn-sm btn-outline-primary" title="Déplacer vers un autre créneau">
+                                                    Déplacer
+                                                </a>
+                                                <form method="post" action="{{ path('admin_jours_livraison_annuler_reservation', {id: jour.id, creneauId: creneau.id, commandeId: commande.id}) }}" onsubmit="return confirm('Annuler cette commande ?');" class="m-0">
                                                     <input type="hidden" name="_token" value="{{ csrf_token('admin_annuler_commande_' ~ commande.id) }}">
-                                                    <button class="btn btn-sm btn-outline-danger" type="submit">Annuler #{{ commande.numeroAgent ?: commande.id }}</button>
+                                                    <button class="btn btn-sm btn-outline-danger" type="submit">Annuler</button>
                                                 </form>
-                                            {% endfor %}
-                                        </div>
+                                            </div>
+                                        {% endfor %}
                                     {% else %}
-                                        <span class="text-body-secondary">-</span>
+                                        <div class="px-3 py-2 text-body-secondary text-end">-</div>
                                     {% endif %}
                                 </td>
                             </tr>
