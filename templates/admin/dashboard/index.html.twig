@@ -36,6 +36,14 @@
                         label: 'Quota maximum d\'articles par commande',
                         attr: {'class': 'form-control', 'min': 1}
                     }) }}
+                    {{ form_row(form.max_commandes_agents, {
+                        label: 'Nombre max de commandes agent',
+                        attr: {'class': 'form-control', 'min': 1}
+                    }) }}
+                    {{ form_row(form.max_commandes_teletravailleurs, {
+                        label: 'Nombre max de commandes télétravailleur',
+                        attr: {'class': 'form-control', 'min': 1}
+                    }) }}
 
                     <div class="form-actions">
                         <button class="btn btn-primary" type="submit">Sauvegarder</button>

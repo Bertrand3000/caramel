@@ -17,6 +17,8 @@ class ParametreType extends AbstractType
             ->add('boutique_ouverte_agents', CheckboxType::class, ['required' => false])
             ->add('boutique_ouverte_teletravailleurs', CheckboxType::class, ['required' => false])
             ->add('boutique_ouverte_partenaires', CheckboxType::class, ['required' => false])
-            ->add('max_produits_par_commande', IntegerType::class);
+            ->add('max_produits_par_commande', IntegerType::class)
+            ->add('max_commandes_agents', IntegerType::class)
+            ->add('max_commandes_teletravailleurs', IntegerType::class);
     }
 }

@@ -8,6 +8,7 @@ use App\Enum\CommandeProfilEnum;
 use App\Enum\ProfilUtilisateur;
 use App\Exception\CommandeDejaExistanteException;
 use App\Repository\CommandeRepository;
+use App\Repository\ParametreRepository;
 use App\Service\CommandeLimitCheckerService;
 use PHPUnit\Framework\TestCase;
 
@@ -18,11 +19,11 @@ final class CommandeLimitCheckerServiceTest extends TestCase
         $repository = $this->createMock(CommandeRepository::class);
         $repository
             ->expects(self::once())
-            ->method('hasCommandeActiveForNumeroAgentEtProfil')
+            ->method('countCommandesActivesForNumeroAgentEtProfil')
             ->with('12345', CommandeProfilEnum::AGENT)
-            ->willReturn(false);
+            ->willReturn(0);
 
-        $service = new CommandeLimitCheckerService($repository);
+        $service = new CommandeLimitCheckerService($repository, $this->mockParamRepo());
         $service->assertPeutCommander('12345', ProfilUtilisateur::PUBLIC);
 
         self::assertTrue(true);
@@ -34,11 +35,11 @@ final class CommandeLimitCheckerServiceTest extends TestCase
 
         $repository = $this->createMock(CommandeRepository::class);
         $repository
-            ->method('hasCommandeActiveForNumeroAgentEtProfil')
+            ->method('countCommandesActivesForNumeroAgentEtProfil')
             ->with('12345', CommandeProfilEnum::AGENT)
-            ->willReturn(true);
+            ->willReturn(2);
 
-        $service = new CommandeLimitCheckerService($repository);
+        $service = new CommandeLimitCheckerService($repository, $this->mockParamRepo());
         $service->assertPeutCommander('12345', ProfilUtilisateur::PUBLIC);
     }
 
@@ -47,11 +48,11 @@ final class CommandeLimitCheckerServiceTest extends TestCase
         $repository = $this->createMock(CommandeRepository::class);
         $repository
             ->expects(self::once())
-            ->method('hasCommandeActiveForNumeroAgentEtProfil')
+            ->method('countCommandesActivesForNumeroAgentEtProfil')
             ->with('12345', CommandeProfilEnum::AGENT)
-            ->willReturn(false);
+            ->willReturn(0);
 
-        $service = new CommandeLimitCheckerService($repository);
+        $service = new CommandeLimitCheckerService($repository, $this->mockParamRepo());
         $service->assertPeutCommander('12345', ProfilUtilisateur::PUBLIC);
 
         self::assertTrue(true);
@@ -63,20 +64,20 @@ final class CommandeLimitCheckerServiceTest extends TestCase
 
         $repository = $this->createMock(CommandeRepository::class);
         $repository
-            ->method('hasCommandeActiveForNumeroAgentEtProfil')
+            ->method('countCommandesActivesForNumeroAgentEtProfil')
             ->with('12345', CommandeProfilEnum::AGENT)
-            ->willReturn(true);
+            ->willReturn(2);
 
-        $service = new CommandeLimitCheckerService($repository);
+        $service = new CommandeLimitCheckerService($repository, $this->mockParamRepo());
         $service->assertPeutCommander('12345', ProfilUtilisateur::PUBLIC);
     }
 
     public function testAssertPeutCommanderPartenaireToujoursAutorise(): void
     {
         $repository = $this->createMock(CommandeRepository::class);
-        $repository->expects(self::never())->method('hasCommandeActiveForNumeroAgentEtProfil');
+        $repository->expects(self::never())->method('countCommandesActivesForNumeroAgentEtProfil');
 
-        $service = new CommandeLimitCheckerService($repository);
+        $service = new CommandeLimitCheckerService($repository, $this->mockParamRepo());
         $service->assertPeutCommander('12345', ProfilUtilisateur::PARTENAIRE);
 
         self::assertTrue(true);
@@ -85,9 +86,9 @@ final class CommandeLimitCheckerServiceTest extends TestCase
     public function testAssertPeutCommanderDmaxToujoursAutorise(): void
     {
         $repository = $this->createMock(CommandeRepository::class);
-        $repository->expects(self::never())->method('hasCommandeActiveForNumeroAgentEtProfil');
+        $repository->expects(self::never())->method('countCommandesActivesForNumeroAgentEtProfil');
 
-        $service = new CommandeLimitCheckerService($repository);
+        $service = new CommandeLimitCheckerService($repository, $this->mockParamRepo());
         $service->assertPeutCommander('12345', ProfilUtilisateur::DMAX);
 
         self::assertTrue(true);
@@ -98,11 +99,11 @@ final class CommandeLimitCheckerServiceTest extends TestCase
         $repository = $this->createMock(CommandeRepository::class);
         $repository
             ->expects(self::once())
-            ->method('hasCommandeActiveForNumeroAgentEtProfil')
+            ->method('countCommandesActivesForNumeroAgentEtProfil')
             ->with('12345', CommandeProfilEnum::TELETRAVAILLEUR)
-            ->willReturn(false);
+            ->willReturn(0);
 
-        $service = new CommandeLimitCheckerService($repository);
+        $service = new CommandeLimitCheckerService($repository, $this->mockParamRepo());
         $service->assertPeutCommander('12345', ProfilUtilisateur::TELETRAVAILLEUR);
 
         self::assertTrue(true);
@@ -114,11 +115,60 @@ final class CommandeLimitCheckerServiceTest extends TestCase
 
         $repository = $this->createMock(CommandeRepository::class);
         $repository
-            ->method('hasCommandeActiveForNumeroAgentEtProfil')
+            ->method('countCommandesActivesForNumeroAgentEtProfil')
             ->with('12345', CommandeProfilEnum::TELETRAVAILLEUR)
-            ->willReturn(true);
+            ->willReturn(1);
 
-        $service = new CommandeLimitCheckerService($repository);
+        $service = new CommandeLimitCheckerService($repository, $this->mockParamRepo());
         $service->assertPeutCommander('12345', ProfilUtilisateur::TELETRAVAILLEUR);
+    }
+
+    public function testAssertPeutCommanderAgentAvecUneCommandeActiveEstAutoriseParDefaut(): void
+    {
+        $repository = $this->createMock(CommandeRepository::class);
+        $repository
+            ->expects(self::once())
+            ->method('countCommandesActivesForNumeroAgentEtProfil')
+            ->with('12345', CommandeProfilEnum::AGENT)
+            ->willReturn(1);
+
+        $service = new CommandeLimitCheckerService($repository, $this->mockParamRepo());
+        $service->assertPeutCommander('12345', ProfilUtilisateur::PUBLIC);
+
+        self::assertTrue(true);
+    }
+
+    public function testAssertPeutCommanderAgentRespecteParametrePersonnalise(): void
+    {
+        $this->expectException(CommandeDejaExistanteException::class);
+
+        $repository = $this->createMock(CommandeRepository::class);
+        $repository
+            ->method('countCommandesActivesForNumeroAgentEtProfil')
+            ->with('12345', CommandeProfilEnum::AGENT)
+            ->willReturn(1);
+
+        $service = new CommandeLimitCheckerService($repository, $this->mockParamRepo('1', '1'));
+        $service->assertPeutCommander('12345', ProfilUtilisateur::PUBLIC);
+    }
+
+    private function mockParamRepo(?string $maxAgents = null, ?string $maxTeletravailleurs = null): ParametreRepository
+    {
+        $parametreRepository = $this->createMock(ParametreRepository::class);
+        $parametreRepository
+            ->method('findOneByKey')
+            ->willReturnCallback(static function (string $key) use ($maxAgents, $maxTeletravailleurs) {
+                $parametre = new \App\Entity\Parametre();
+                if ($key === 'max_commandes_agents' && $maxAgents !== null) {
+                    return $parametre->setCle($key)->setValeur($maxAgents);
+                }
+                if ($key === 'max_commandes_teletravailleurs' && $maxTeletravailleurs !== null) {
+                    return $parametre->setCle($key)->setValeur($maxTeletravailleurs);
+                }
+
+                return null;
+            });
+
+        return $parametreRepository;
     }
 }

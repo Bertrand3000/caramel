@@ -188,6 +188,20 @@ class CommandeRepository extends ServiceEntityRepository
         return $count > 0;
     }
 
+    public function countCommandesActivesForNumeroAgentEtProfil(string $numeroAgent, CommandeProfilEnum $profil): int
+    {
+        return (int) $this->createQueryBuilder('c')
+            ->select('COUNT(c.id)')
+            ->andWhere('c.numeroAgent = :numeroAgent')
+            ->andWhere('c.profilCommande = :profil')
+            ->andWhere('c.statut != :annulee')
+            ->setParameter('numeroAgent', $numeroAgent)
+            ->setParameter('profil', $profil)
+            ->setParameter('annulee', CommandeStatutEnum::ANNULEE)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
     public function countArticlesActifsForNumeroAgentEtProfil(string $numeroAgent, CommandeProfilEnum $profil): int
     {
         return (int) $this->createQueryBuilder('c')
