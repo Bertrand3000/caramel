@@ -41,6 +41,14 @@
                 </td>
                 <td class="col-details">
                   <div class="detail-row">
+                    <span class="label">N° commande</span>
+                    <span class="valeur commande-highlight">#{{ commande.id }}</span>
+                  </div>
+                  <div class="detail-row">
+                    <span class="label">ID article</span>
+                    <span class="valeur">{{ ligne.produit.id }}</span>
+                  </div>
+                  <div class="detail-row">
                     <span class="label">N° inventaire</span>
                     <span class="valeur{% if not ligne.produit.numeroInventaire %} vide{% endif %}">
                       {{ ligne.produit.numeroInventaire ?: '—' }}
@@ -70,6 +78,14 @@
                   <div class="libelle-produit vide">À compléter</div>
                 </td>
                 <td class="col-details">
+                  <div class="detail-row">
+                    <span class="label">N° commande</span>
+                    <span class="valeur commande-highlight">#{{ commande.id }}</span>
+                  </div>
+                  <div class="detail-row">
+                    <span class="label">ID article</span>
+                    <span class="valeur vide">—</span>
+                  </div>
                   <div class="detail-row">
                     <span class="label">N° inventaire</span>
                     <span class="valeur vide">—</span>
