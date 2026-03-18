@@ -130,6 +130,9 @@
                                         {% for commande in creneau.commandes %}
                                             <div class="d-flex gap-2 align-items-center justify-content-end px-3 {{ not loop.last ? 'border-bottom' : '' }}" 
                                                  style="height: 48px; {{ loop.index is even ? 'background-color: rgba(0,0,0,0.04);' : 'background-color: #ffffff;' }}">
+                                                <a href="{{ path('admin_suivi_commandes_show', {id: commande.id}) }}" class="btn btn-sm btn-outline-secondary" title="Voir les articles et leurs identifiants">
+                                                    Articles
+                                                </a>
                                                 <a href="{{ path('admin_suivi_commandes_modifier_creneau', {id: commande.id}) }}" class="btn btn-sm btn-outline-primary" title="Déplacer vers un autre créneau">
                                                     Déplacer
                                                 </a>
