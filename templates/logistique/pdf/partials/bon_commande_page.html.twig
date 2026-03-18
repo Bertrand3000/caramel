@@ -54,6 +54,7 @@
       <table class="produits-table">
         <thead>
           <tr>
+            <th>ID article</th>
             <th>Libellé</th>
             <th>N° inventaire</th>
             <th>Étage / Porte</th>
@@ -63,6 +64,7 @@
         <tbody>
           {% for ligne in commande.lignesCommande %}
             <tr>
+              <td>{{ ligne.produit.id }}</td>
               <td>{{ ligne.produit.libelle }}</td>
               <td>{{ ligne.produit.numeroInventaire ?: '—' }}</td>
               <td>Ét. {{ ligne.produit.etage }} / P. {{ ligne.produit.porte }}</td>
