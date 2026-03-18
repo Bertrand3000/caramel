@@ -9,6 +9,7 @@ use App\Entity\JourLivraison;
 use App\Form\JourLivraisonType;
 use App\Interface\CheckoutServiceInterface;
 use App\Interface\CreneauGeneratorInterface;
+use App\Interface\LogistiqueServiceInterface;
 use App\Repository\CreneauRepository;
 use App\Repository\JourLivraisonRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -28,6 +29,7 @@ class JourLivraisonController extends AbstractController
         private readonly CreneauRepository $creneauRepository,
         private readonly CreneauGeneratorInterface $creneauGenerator,
         private readonly CheckoutServiceInterface $checkoutService,
+        private readonly LogistiqueServiceInterface $logistiqueService,
     ) {
     }
 
@@ -163,6 +165,33 @@ class JourLivraisonController extends AbstractController
         } catch (WorkflowException $exception) {
             $this->addFlash('error', sprintf('Transition workflow impossible : %s', $exception->getMessage()));
         } catch (\RuntimeException $exception) {
+            $this->addFlash('error', $exception->getMessage());
+        }
+
+        return $this->redirectToRoute('admin_jours_livraison_creneaux', ['id' => $jour->getId()]);
+    }
+
+    #[Route('/{id}/creneaux/{creneauId}/commandes/{commandeId}/devalider', name: 'devalider_reservation', methods: ['POST'])]
+    public function devaliderReservation(JourLivraison $jour, int $creneauId, int $commandeId, Request $request): RedirectResponse
+    {
+        if (!$this->isCsrfTokenValid(sprintf('admin_devalider_commande_%d', $commandeId), $request->request->getString('_token'))) {
+            $this->addFlash('error', 'Jeton CSRF invalide.');
+
+            return $this->redirectToRoute('admin_jours_livraison_creneaux', ['id' => $jour->getId()]);
+        }
+
+        $creneau = $this->creneauRepository->find($creneauId);
+        $commande = $this->entityManager->find(Commande::class, $commandeId);
+        if ($creneau === null || $commande === null || $creneau->getJourLivraison()?->getId() !== $jour->getId() || $commande->getCreneau()?->getId() !== $creneau->getId()) {
+            $this->addFlash('error', 'Réservation introuvable pour cette journée.');
+
+            return $this->redirectToRoute('admin_jours_livraison_creneaux', ['id' => $jour->getId()]);
+        }
+
+        try {
+            $this->logistiqueService->markAsEnAttenteValidation($commande);
+            $this->addFlash('success', 'Commande remise en attente de validation.');
+        } catch (\LogicException $exception) {
             $this->addFlash('error', $exception->getMessage());
         }
 
