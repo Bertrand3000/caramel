@@ -63,4 +63,17 @@ final class CommandeWorkflowTest extends KernelTestCase
 
         self::assertSame(CommandeStatutEnum::ANNULEE, $commande->getStatut());
     }
+
+    public function testRetourEnAttenteValidationDepuisValidee(): void
+    {
+        $commandeValidee = (new Commande())->setStatut(CommandeStatutEnum::VALIDEE);
+        $commandePrete = (new Commande())->setStatut(CommandeStatutEnum::PRETE);
+
+        self::assertTrue($this->workflow->can($commandeValidee, 'retour_en_attente_validation'));
+        self::assertFalse($this->workflow->can($commandePrete, 'retour_en_attente_validation'));
+
+        $this->workflow->apply($commandeValidee, 'retour_en_attente_validation');
+
+        self::assertSame(CommandeStatutEnum::EN_ATTENTE_VALIDATION, $commandeValidee->getStatut());
+    }
 }

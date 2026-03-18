@@ -135,6 +135,26 @@ final class LogistiqueController extends AbstractController
         return $this->redirectToRoute('logistique_index');
     }
 
+    #[Route('/logistique/commande/{id}/retour-en-attente-validation', name: 'logistique_commande_retour_en_attente_validation', methods: ['POST'])]
+    #[IsGranted('ROLE_DMAX')]
+    public function retourEnAttenteValidation(Commande $commande, Request $request, LogistiqueServiceInterface $logistiqueService): RedirectResponse
+    {
+        if (!$this->isCsrfTokenValid('retour_en_attente_validation_' . $commande->getId(), $request->request->getString('_token'))) {
+            $this->addFlash('error', 'Jeton CSRF invalide.');
+
+            return $this->redirectToRoute('logistique_index');
+        }
+
+        try {
+            $logistiqueService->markAsEnAttenteValidation($commande);
+            $this->addFlash('success', sprintf('Commande #%d remise en attente de validation.', $commande->getId()));
+        } catch (\LogicException $e) {
+            $this->addFlash('error', $e->getMessage());
+        }
+
+        return $this->redirectToRoute('logistique_index');
+    }
+
     #[Route('/logistique/commande/{id}/prete', name: 'logistique_commande_prete', methods: ['POST'])]
     #[IsGranted('ROLE_DMAX')]
     public function prete(Commande $commande, Request $request, LogistiqueServiceInterface $logistiqueService): RedirectResponse

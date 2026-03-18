@@ -22,6 +22,9 @@ framework:
                 demarrer_preparation:
                     from: validee
                     to: en_preparation
+                retour_en_attente_validation:
+                    from: validee
+                    to: en_attente_validation
                 annuler_preparation:
                     from: en_preparation
                     to: validee

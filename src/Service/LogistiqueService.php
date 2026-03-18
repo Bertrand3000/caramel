@@ -186,6 +186,22 @@ final class LogistiqueService implements LogistiqueServiceInterface
         }
     }
 
+    public function markAsEnAttenteValidation(Commande $commande): void
+    {
+        $workflow = $this->workflowRegistry->get($commande, 'commande_lifecycle');
+
+        try {
+            $workflow->apply($commande, 'retour_en_attente_validation');
+            $this->entityManager->flush();
+        } catch (NotEnabledTransitionException $e) {
+            throw new \LogicException(sprintf(
+                'Commande #%d : transition impossible (%s).',
+                $commande->getId(),
+                $e->getTransitionName(),
+            ));
+        }
+    }
+
     public function markRevenirEnPreparation(Commande $commande): void
     {
         $workflow = $this->workflowRegistry->get($commande, 'commande_lifecycle');

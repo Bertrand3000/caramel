@@ -196,7 +196,14 @@
                                                     {% if commande.statut.value in ['retiree', 'en_preparation', 'prete'] %}
                                                         <div style="height: 6px;"></div>
                                                     {% endif %}
-                                                    {% if commande.statut.value == 'retiree' %}
+                                                    {% if commande.statut.value == 'validee' %}
+                                                        <form method="post" action="{{ path('logistique_commande_retour_en_attente_validation', {id: commande.id}) }}">
+                                                            <input type="hidden" name="_token" value="{{ csrf_token('retour_en_attente_validation_' ~ commande.id) }}">
+                                                            <button type="submit" class="btn btn-sm btn-outline-secondary text-nowrap w-100">
+                                                                ← En attente validation
+                                                            </button>
+                                                        </form>
+                                                    {% elseif commande.statut.value == 'retiree' %}
                                                         <form method="post" action="{{ path('logistique_commande_retour_prete', {id: commande.id}) }}">
                                                             <input type="hidden" name="_token" value="{{ csrf_token('retour_prete_' ~ commande.id) }}">
                                                             <button type="submit" class="btn btn-sm btn-outline-secondary text-nowrap w-100">
