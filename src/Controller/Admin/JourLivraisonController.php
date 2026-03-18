@@ -142,6 +142,32 @@ class JourLivraisonController extends AbstractController
         return $this->render('admin/jours_livraison/creneaux.html.twig', ['jour' => $jour, 'creneaux' => $creneaux, 'stats' => $stats]);
     }
 
+    #[Route('/{id}/toggle-reservations', name: 'toggle_reservations', methods: ['POST'])]
+    public function toggleReservations(JourLivraison $jour, Request $request): RedirectResponse
+    {
+        if (!$this->isCsrfTokenValid(sprintf('toggle_reservations_jour_livraison_%d', $jour->getId()), $request->request->getString('_token'))) {
+            $this->addFlash('error', 'Jeton CSRF invalide.');
+
+            return $this->redirectToRoute('admin_jours_livraison_index');
+        }
+
+        $jour->setReservationsOuvertes(!$jour->isReservationsOuvertes());
+        $this->entityManager->flush();
+
+        $this->addFlash(
+            'success',
+            $jour->isReservationsOuvertes()
+                ? 'Réservations rouvertes pour cette journée.'
+                : 'Réservations fermées pour cette journée.',
+        );
+
+        if ($request->request->getString('_redirect') === 'creneaux') {
+            return $this->redirectToRoute('admin_jours_livraison_creneaux', ['id' => $jour->getId()]);
+        }
+
+        return $this->redirectToRoute('admin_jours_livraison_index');
+    }
+
     #[Route('/{id}/creneaux/{creneauId}/commandes/{commandeId}/annuler', name: 'annuler_reservation', methods: ['POST'])]
     public function annulerReservation(JourLivraison $jour, int $creneauId, int $commandeId, Request $request): RedirectResponse
     {

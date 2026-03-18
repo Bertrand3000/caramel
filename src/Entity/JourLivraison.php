@@ -27,6 +27,9 @@ class JourLivraison
     #[ORM\Column]
     private bool $actif = true;
 
+    #[ORM\Column]
+    private bool $reservationsOuvertes = true;
+
     #[ORM\Column(type: Types::TIME_MUTABLE)]
     private \DateTimeInterface $heureOuverture;
 
@@ -81,6 +84,18 @@ class JourLivraison
     public function setActif(bool $actif): self
     {
         $this->actif = $actif;
+
+        return $this;
+    }
+
+    public function isReservationsOuvertes(): bool
+    {
+        return $this->reservationsOuvertes;
+    }
+
+    public function setReservationsOuvertes(bool $reservationsOuvertes): self
+    {
+        $this->reservationsOuvertes = $reservationsOuvertes;
 
         return $this;
     }

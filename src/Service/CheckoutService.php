@@ -65,6 +65,7 @@ class CheckoutService implements CheckoutServiceInterface
                 throw new \RuntimeException('Quota d articles dépassé');
             }
 
+            $this->assertReservationsOuvertesRule($creneau);
             $this->assertJourneePleineRule($creneau);
             $commande = $this->cartManager->validateCart($sessionId, $utilisateur);
             if ($creneau !== null) {
@@ -162,5 +163,20 @@ class CheckoutService implements CheckoutServiceInterface
             'La journée du %s doit être complète avant de pouvoir choisir cette date.',
             $blockingDay->getDate()->format('d/m/Y'),
         ));
+    }
+
+    private function assertReservationsOuvertesRule(?Creneau $creneau): void
+    {
+        if ($creneau === null) {
+            return;
+        }
+
+        $jour = $creneau->getJourLivraison();
+        if ($jour !== null && !$jour->isReservationsOuvertes()) {
+            throw new \RuntimeException(sprintf(
+                'Les réservations sont fermées pour la journée du %s.',
+                $jour->getDate()->format('d/m/Y'),
+            ));
+        }
     }
 }

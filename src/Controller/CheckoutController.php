@@ -43,7 +43,7 @@ final class CheckoutController extends AbstractController
         }
         $this->cartManager->extendActiveReservations($sessionId, 15);
 
-        $date = new \DateTimeImmutable('today');
+        $date = new \DateTimeImmutable('tomorrow');
         $creneaux = $this->creneauManager->getDisponiblesPourCheckout($date);
 
         return $this->render('checkout/creneaux.html.twig', [
@@ -96,6 +96,12 @@ final class CheckoutController extends AbstractController
             $creneau = $creneauRepository->find($creneauId);
             if ($creneau === null) {
                 $this->addFlash('error', 'Créneau introuvable.');
+
+                return $this->redirectToRoute('checkout_creneaux');
+            }
+            $today = (new \DateTimeImmutable('today'))->format('Y-m-d');
+            if ($creneau->getDateHeure()->format('Y-m-d') === $today) {
+                $this->addFlash('error', 'La réservation le jour même n\'est pas autorisée.');
 
                 return $this->redirectToRoute('checkout_creneaux');
             }
