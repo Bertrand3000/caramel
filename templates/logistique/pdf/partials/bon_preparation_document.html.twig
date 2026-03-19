@@ -55,6 +55,16 @@
                     </span>
                   </div>
                   <div class="detail-row">
+                    <span class="label">Description</span>
+                    <span class="valeur small{% if not ligne.produit.description %} vide{% endif %}">
+                      {{ ligne.produit.description ?: '—' }}
+                    </span>
+                  </div>
+                  <div class="detail-row">
+                    <span class="label">Dimensions</span>
+                    <span class="valeur small">{{ ligne.produit.largeur }} × {{ ligne.produit.hauteur }} × {{ ligne.produit.profondeur }} cm</span>
+                  </div>
+                  <div class="detail-row">
                     <span class="label">Porte / Bureau</span>
                     <span class="valeur">{{ ligne.produit.porte }}</span>
                   </div>
@@ -89,6 +99,14 @@
                   <div class="detail-row">
                     <span class="label">N° inventaire</span>
                     <span class="valeur vide">—</span>
+                  </div>
+                  <div class="detail-row">
+                    <span class="label">Description</span>
+                    <span class="valeur small vide">—</span>
+                  </div>
+                  <div class="detail-row">
+                    <span class="label">Dimensions</span>
+                    <span class="valeur small vide">—</span>
                   </div>
                   <div class="detail-row">
                     <span class="label">Porte / Bureau</span>
