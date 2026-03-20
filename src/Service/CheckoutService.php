@@ -172,7 +172,18 @@ class CheckoutService implements CheckoutServiceInterface
         }
 
         $jour = $creneau->getJourLivraison();
-        if ($jour !== null && !$jour->isReservationsOuvertes()) {
+        if ($jour === null) {
+            throw new \RuntimeException('Ce creneau est invalide.');
+        }
+
+        if (!$jour->isActif()) {
+            throw new \RuntimeException(sprintf(
+                'La journee du %s est inactive.',
+                $jour->getDate()->format('d/m/Y'),
+            ));
+        }
+
+        if (!$jour->isReservationsOuvertes()) {
             throw new \RuntimeException(sprintf(
                 'Les réservations sont fermées pour la journée du %s.',
                 $jour->getDate()->format('d/m/Y'),

@@ -174,4 +174,52 @@ final class CreneauManagerTest extends TestCase
         self::assertSame('2026-03-14', $result[0]->getDateHeure()->format('Y-m-d'));
         self::assertSame('2026-03-21', $result[1]->getDateHeure()->format('Y-m-d'));
     }
+
+    public function testGetDisponiblesPourCheckoutIgnoreCreneauxOrphelinsOuJourFerme(): void
+    {
+        $jourOuvert = (new JourLivraison())
+            ->setDate(new \DateTimeImmutable('2026-03-21'))
+            ->setActif(true)
+            ->setReservationsOuvertes(true);
+        $jourFerme = (new JourLivraison())
+            ->setDate(new \DateTimeImmutable('2026-03-22'))
+            ->setActif(true)
+            ->setReservationsOuvertes(false);
+
+        $orphan = (new Creneau())
+            ->setDateHeure(new \DateTimeImmutable('2026-03-21 08:00:00'))
+            ->setCapaciteMax(1)
+            ->setJourLivraison(null);
+        $closed = (new Creneau())
+            ->setDateHeure(new \DateTimeImmutable('2026-03-22 08:00:00'))
+            ->setCapaciteMax(1)
+            ->setJourLivraison($jourFerme);
+        $open = (new Creneau())
+            ->setDateHeure(new \DateTimeImmutable('2026-03-21 09:00:00'))
+            ->setCapaciteMax(1)
+            ->setJourLivraison($jourOuvert);
+
+        $queryList = $this->createMock(Query::class);
+        $queryList->method('getResult')->willReturn([$orphan, $closed, $open]);
+        $queryCount = $this->createMock(Query::class);
+        $queryCount->method('getSingleScalarResult')->willReturn(0);
+
+        $em = $this->createMock(EntityManagerInterface::class);
+        $em->method('createQueryBuilder')->willReturnOnConsecutiveCalls(
+            $this->buildQb($em, $queryList),
+            $this->buildQb($em, $queryCount),
+        );
+
+        $item = $this->createMock(CacheItemInterface::class);
+        $item->method('isHit')->willReturn(false);
+        $item->method('set')->willReturnSelf();
+        $item->method('expiresAfter')->willReturnSelf();
+        $item->method('get')->willReturn(0);
+        $cache = $this->createMock(CacheItemPoolInterface::class);
+        $cache->method('getItem')->willReturn($item);
+
+        $result = (new CreneauManager($em, $cache))->getDisponiblesPourCheckout(new \DateTimeImmutable('2026-03-01'));
+        self::assertCount(1, $result);
+        self::assertSame('2026-03-21 09:00:00', $result[0]->getDateHeure()->format('Y-m-d H:i:s'));
+    }
 }

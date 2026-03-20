@@ -99,6 +99,13 @@ final class CheckoutController extends AbstractController
 
                 return $this->redirectToRoute('checkout_creneaux');
             }
+            $disponibles = $this->creneauManager->getDisponiblesPourCheckout(new \DateTimeImmutable('tomorrow'));
+            $disponibleIds = array_map(static fn (\App\Entity\Creneau $slot): ?int => $slot->getId(), $disponibles);
+            if (!in_array($creneau->getId(), $disponibleIds, true)) {
+                $this->addFlash('error', 'Ce creneau n\'est plus disponible.');
+
+                return $this->redirectToRoute('checkout_creneaux');
+            }
             $today = (new \DateTimeImmutable('today'))->format('Y-m-d');
             if ($creneau->getDateHeure()->format('Y-m-d') === $today) {
                 $this->addFlash('error', 'La réservation le jour même n\'est pas autorisée.');

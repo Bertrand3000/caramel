@@ -111,9 +111,10 @@ class CreneauManager implements SlotManagerInterface
         $slots = $this->em->createQueryBuilder()
             ->from(Creneau::class, 'c')
             ->select('c', 'j')
-            ->leftJoin('c.jourLivraison', 'j')
+            ->innerJoin('c.jourLivraison', 'j')
             ->andWhere('c.dateHeure >= :start')
-            ->andWhere('j.id IS NULL OR (j.actif = :actif AND j.reservationsOuvertes = :reservationsOuvertes)')
+            ->andWhere('j.actif = :actif')
+            ->andWhere('j.reservationsOuvertes = :reservationsOuvertes')
             ->setParameter('start', $start)
             ->setParameter('actif', true)
             ->setParameter('reservationsOuvertes', true)
@@ -122,6 +123,13 @@ class CreneauManager implements SlotManagerInterface
             ->getQuery()
             ->getResult();
 
-        return array_values(array_filter($slots, fn (Creneau $creneau): bool => $this->getJaugeDisponible($creneau) > 0));
+        return array_values(array_filter($slots, function (Creneau $creneau): bool {
+            $jour = $creneau->getJourLivraison();
+            if ($jour === null || !$jour->isActif() || !$jour->isReservationsOuvertes()) {
+                return false;
+            }
+
+            return $this->getJaugeDisponible($creneau) > 0;
+        }));
     }
 }

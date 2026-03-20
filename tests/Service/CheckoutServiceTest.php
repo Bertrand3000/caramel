@@ -30,6 +30,11 @@ final class CheckoutServiceTest extends TestCase
     public function testConfirmCommandeCompleteParcours(): void
     {
         $commande = new Commande();
+        $jour = (new JourLivraison())
+            ->setDate(new \DateTimeImmutable('2030-03-28'))
+            ->setActif(true)
+            ->setReservationsOuvertes(true);
+        $creneau = (new Creneau())->setJourLivraison($jour);
         $utilisateur = (new Utilisateur())->setLogin('agent@test.local')->setPassword('dummy')->setRoles(['ROLE_AGENT']);
         $cart = $this->createMock(CartManagerInterface::class);
         $cart->method('getContents')->willReturn([['quantite' => 1], ['quantite' => 1]]);
@@ -47,7 +52,7 @@ final class CheckoutServiceTest extends TestCase
         $em->expects(self::once())->method('wrapInTransaction')->willReturnCallback(fn ($cb) => $cb());
 
         $result = (new CheckoutService($em, $cart, $limitChecker, $quota, $slot, $workflow))
-            ->confirmCommande('s', new Creneau(), ProfilUtilisateur::PUBLIC, $utilisateur, '12345', 'Durand', 'Alice');
+            ->confirmCommande('s', $creneau, ProfilUtilisateur::PUBLIC, $utilisateur, '12345', 'Durand', 'Alice');
         self::assertSame($commande, $result);
         self::assertSame('12345', $commande->getNumeroAgent());
         self::assertSame('Durand', $commande->getNom());
@@ -199,7 +204,7 @@ final class CheckoutServiceTest extends TestCase
         $em->method('wrapInTransaction')->willReturnCallback(fn ($cb) => $cb());
 
         (new CheckoutService($em, $cart, $limitChecker, $quota, $slot, $workflow))
-            ->confirmCommande('s', new Creneau(), ProfilUtilisateur::PARTENAIRE, $utilisateur, null);
+            ->confirmCommande('s', null, ProfilUtilisateur::PARTENAIRE, $utilisateur, null);
 
         self::assertSame(CommandeProfilEnum::PARTENAIRE, $commande->getProfilCommande());
     }
@@ -224,7 +229,7 @@ final class CheckoutServiceTest extends TestCase
         $em->method('wrapInTransaction')->willReturnCallback(fn ($cb) => $cb());
 
         (new CheckoutService($em, $cart, $limitChecker, $quota, $slot, $workflow))
-            ->confirmCommande('s', new Creneau(), ProfilUtilisateur::DMAX, $utilisateur, null);
+            ->confirmCommande('s', null, ProfilUtilisateur::DMAX, $utilisateur, null);
 
         self::assertSame(CommandeProfilEnum::DMAX, $commande->getProfilCommande());
     }
@@ -293,19 +298,20 @@ final class CheckoutServiceTest extends TestCase
         self::assertSame($commande, $result);
     }
 
-    public function testConfirmCommandeSansJourLivraisonIgnoreRegle(): void
+    public function testConfirmCommandeSansJourLivraisonRejetee(): void
     {
-        $commande = new Commande();
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('invalide');
 
         $cart = $this->createMock(CartManagerInterface::class);
         $cart->method('getContents')->willReturn([['quantite' => 1]]);
-        $cart->method('validateCart')->willReturn($commande);
+        $cart->expects(self::never())->method('validateCart');
 
         $quota = $this->createMock(QuotaCheckerService::class);
         $quota->method('check')->willReturn(true);
 
         $slot = $this->createMock(SlotManagerInterface::class);
-        $slot->expects(self::once())->method('reserverCreneau');
+        $slot->expects(self::never())->method('reserverCreneau');
         $limitChecker = $this->createMock(CommandeLimitCheckerService::class);
 
         $repository = $this->createMock(JourLivraisonRepository::class);
@@ -316,10 +322,41 @@ final class CheckoutServiceTest extends TestCase
         $workflow = $this->createMock(WorkflowInterface::class);
         $utilisateur = (new Utilisateur())->setLogin('agent@test.local')->setPassword('dummy')->setRoles(['ROLE_AGENT']);
 
-        $result = (new CheckoutService($em, $cart, $limitChecker, $quota, $slot, $workflow, $repository))
+        (new CheckoutService($em, $cart, $limitChecker, $quota, $slot, $workflow, $repository))
             ->confirmCommande('s', new Creneau(), ProfilUtilisateur::PUBLIC, $utilisateur, '12345');
+    }
 
-        self::assertSame($commande, $result);
+    public function testConfirmCommandeJourInactifRejetee(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('inactive');
+
+        $jour = (new JourLivraison())
+            ->setDate(new \DateTimeImmutable('2030-03-28'))
+            ->setActif(false);
+        $creneau = (new Creneau())->setJourLivraison($jour);
+
+        $cart = $this->createMock(CartManagerInterface::class);
+        $cart->method('getContents')->willReturn([['quantite' => 1]]);
+        $cart->expects(self::never())->method('validateCart');
+
+        $quota = $this->createMock(QuotaCheckerService::class);
+        $quota->method('check')->willReturn(true);
+
+        $slot = $this->createMock(SlotManagerInterface::class);
+        $slot->expects(self::never())->method('reserverCreneau');
+        $limitChecker = $this->createMock(CommandeLimitCheckerService::class);
+
+        $repository = $this->createMock(JourLivraisonRepository::class);
+        $repository->expects(self::never())->method('findPremierJourNonPleinAvant');
+
+        $em = $this->createMock(EntityManagerInterface::class);
+        $em->method('wrapInTransaction')->willReturnCallback(fn ($cb) => $cb());
+        $workflow = $this->createMock(WorkflowInterface::class);
+        $utilisateur = (new Utilisateur())->setLogin('agent@test.local')->setPassword('dummy')->setRoles(['ROLE_AGENT']);
+
+        (new CheckoutService($em, $cart, $limitChecker, $quota, $slot, $workflow, $repository))
+            ->confirmCommande('s', $creneau, ProfilUtilisateur::PUBLIC, $utilisateur, '12345');
     }
 
     public function testConfirmCommandeBloqueeSiCommandeDejaExistante(): void

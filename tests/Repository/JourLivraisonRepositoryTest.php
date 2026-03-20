@@ -108,6 +108,7 @@ final class JourLivraisonRepositoryTest extends KernelTestCase
     private function cleanupJourLivraisonData(): void
     {
         $connection = $this->entityManager->getConnection();
+        $connection->executeStatement('DELETE lc FROM lignes_commande lc INNER JOIN commandes c ON c.id = lc.commande_id INNER JOIN creneaux cr ON cr.id = c.creneau_id WHERE cr.jour_livraison_id IS NOT NULL');
         $connection->executeStatement('DELETE FROM commandes WHERE creneau_id IN (SELECT id FROM creneaux WHERE jour_livraison_id IS NOT NULL)');
         $connection->executeStatement('DELETE FROM creneaux WHERE jour_livraison_id IS NOT NULL');
         $connection->executeStatement('DELETE FROM jours_livraison');

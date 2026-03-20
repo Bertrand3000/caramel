@@ -187,6 +187,43 @@ final class CheckoutControllerTest extends WebTestCase
         self::assertSame(2, $count);
     }
 
+    public function testConfirmationRejeteeSiCreneauOrphelinPosteEnForce(): void
+    {
+        $client = static::createClient();
+        $user = $this->createUser('agent-orphan-slot');
+        $client->loginUser($user);
+        $numeroAgent = (string) random_int(10000, 99999);
+        $this->addAgentEligible($numeroAgent);
+
+        $produit = $this->createProduit('Produit creneau orphelin');
+        $orphanSlot = $this->createOrphanCreneau();
+
+        $client->request('POST', '/panier/ajouter', ['produitId' => $produit->getId()]);
+        self::assertResponseRedirects('/panier');
+
+        $client->request('POST', '/commande/confirmer', [
+            'creneauId' => $orphanSlot->getId(),
+            'nom' => 'Durand',
+            'prenom' => 'Alice',
+            'numeroAgent' => $numeroAgent,
+        ]);
+        self::assertResponseRedirects('/commande/creneaux');
+
+        $entityManager = static::getContainer()->get(EntityManagerInterface::class);
+        $entityManager->clear();
+        $count = (int) $entityManager->createQueryBuilder()
+            ->from(Commande::class, 'c')
+            ->select('COUNT(c.id)')
+            ->andWhere('c.numeroAgent = :numeroAgent')
+            ->andWhere('c.sessionId NOT LIKE :sessionPrefix')
+            ->setParameter('numeroAgent', $numeroAgent)
+            ->setParameter('sessionPrefix', 'sess-%')
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        self::assertSame(0, $count);
+    }
+
     private function addAgentEligible(string $numeroAgent): void
     {
         $entityManager = static::getContainer()->get(EntityManagerInterface::class);
@@ -278,12 +315,38 @@ final class CheckoutControllerTest extends WebTestCase
     private function createCreneau(): Creneau
     {
         $entityManager = static::getContainer()->get(EntityManagerInterface::class);
+        $jour = (new \App\Entity\JourLivraison())
+            ->setDate(new \DateTimeImmutable('tomorrow'))
+            ->setActif(true)
+            ->setReservationsOuvertes(true)
+            ->setHeureOuverture(new \DateTime('08:00:00'))
+            ->setHeureFermeture(new \DateTime('17:00:00'));
+
         $creneau = (new Creneau())
             ->setDateHeure(new \DateTimeImmutable('tomorrow 08:00:00'))
             ->setHeureDebut(new \DateTime('08:00:00'))
             ->setHeureFin(new \DateTime('08:30:00'))
             ->setCapaciteMax(10)
-            ->setCapaciteUtilisee(0);
+            ->setCapaciteUtilisee(0)
+            ->setJourLivraison($jour);
+
+        $entityManager->persist($jour);
+        $entityManager->persist($creneau);
+        $entityManager->flush();
+
+        return $creneau;
+    }
+
+    private function createOrphanCreneau(): Creneau
+    {
+        $entityManager = static::getContainer()->get(EntityManagerInterface::class);
+        $creneau = (new Creneau())
+            ->setDateHeure(new \DateTimeImmutable('tomorrow 10:00:00'))
+            ->setHeureDebut(new \DateTime('10:00:00'))
+            ->setHeureFin(new \DateTime('10:30:00'))
+            ->setCapaciteMax(10)
+            ->setCapaciteUtilisee(0)
+            ->setJourLivraison(null);
 
         $entityManager->persist($creneau);
         $entityManager->flush();
