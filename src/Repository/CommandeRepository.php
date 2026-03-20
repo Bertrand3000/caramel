@@ -115,6 +115,31 @@ class CommandeRepository extends ServiceEntityRepository
     }
 
     /** @return list<Commande> */
+    public function findByJourLivraisonWithEmail(JourLivraison $jour, ?CommandeStatutEnum $statut = null): array
+    {
+        $qb = $this->createQueryBuilder('c')
+            ->innerJoin('c.commandeContactTmp', 'contact')
+            ->addSelect('contact')
+            ->innerJoin('c.creneau', 'cr')
+            ->innerJoin('cr.jourLivraison', 'j')
+            ->andWhere('j.id = :jourId')
+            ->andWhere('contact.email IS NOT NULL')
+            ->andWhere("TRIM(contact.email) != ''")
+            ->setParameter('jourId', $jour->getId())
+            ->orderBy('c.id', 'ASC');
+
+        if ($statut !== null) {
+            $qb->andWhere('c.statut = :statut')
+                ->setParameter('statut', $statut);
+        } else {
+            $qb->andWhere('c.statut != :annulee')
+                ->setParameter('annulee', CommandeStatutEnum::ANNULEE);
+        }
+
+        return $qb->getQuery()->getResult();
+    }
+
+    /** @return list<Commande> */
     public function findForGrhImportByNumeroAgent(string $numeroAgent): array
     {
         return $this->createQueryBuilder('c')

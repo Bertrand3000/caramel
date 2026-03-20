@@ -101,6 +101,10 @@
                 ></span>
             </div>
             <div class="admin-stats-kpis">
+                <article class="admin-stats-kpi" data-testid="admin-stat-produits-disponibles">
+                    <p class="admin-stats-label">Produits disponibles</p>
+                    <p class="admin-stats-value">{{ dashboardStats.totalProduitsDisponibles }}</p>
+                </article>
                 <article class="admin-stats-kpi" data-testid="admin-stat-produits">
                     <p class="admin-stats-label">Produits commandés</p>
                     <p class="admin-stats-value">{{ dashboardStats.totalProduitsCommandes }}</p>
@@ -131,6 +135,7 @@
                 data-admin-dashboard-stats-copy-target="text"
                 hidden
             >Statistiques commandes
+Produits disponibles : {{ dashboardStats.totalProduitsDisponibles }}
 Produits commandés : {{ dashboardStats.totalProduitsCommandes }}
 Commandes effectuées : {{ dashboardStats.totalCommandesEffectuees }}
 

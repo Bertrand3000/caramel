@@ -6,6 +6,7 @@ namespace App\Command;
 
 use App\Enum\CommandeStatutEnum;
 use App\Repository\CommandeRepository;
+use App\Repository\JourLivraisonRepository;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -17,12 +18,13 @@ use Symfony\Component\Mime\Email;
 
 #[AsCommand(
     name: 'app:commandes:mail-bulk',
-    description: 'Envoie un email en masse aux commandes en attente ou validées avec email renseigné.',
+    description: 'Envoie un email en masse aux commandes ciblées avec email renseigné.',
 )]
 final class BulkCommandeMailCommand extends Command
 {
     public function __construct(
         private readonly CommandeRepository $commandeRepository,
+        private readonly JourLivraisonRepository $jourLivraisonRepository,
         private readonly MailerInterface $mailer,
         private readonly string $fromEmail = 'noreply@caramel.local',
     ) {
@@ -33,6 +35,7 @@ final class BulkCommandeMailCommand extends Command
     {
         $this
             ->addOption('status', null, InputOption::VALUE_REQUIRED, 'Cible: en_attente ou validee')
+            ->addOption('next-delivery-day', null, InputOption::VALUE_NONE, 'Cible le prochain jour de livraison actif')
             ->addOption('subject', null, InputOption::VALUE_REQUIRED, 'Sujet du mail')
             ->addOption('body-file', null, InputOption::VALUE_REQUIRED, 'Chemin du fichier contenant le corps du mail')
             ->addOption('test-email', null, InputOption::VALUE_REQUIRED, 'Mode test: adresse email unique destinataire')
@@ -47,6 +50,7 @@ final class BulkCommandeMailCommand extends Command
         $bodyFile = trim((string) $input->getOption('body-file'));
         $testEmail = trim((string) $input->getOption('test-email'));
         $dryRun = (bool) $input->getOption('dry-run');
+        $nextDeliveryDay = (bool) $input->getOption('next-delivery-day');
 
         if ($subject === '' || $bodyFile === '') {
             $io->error('Options requises: --subject="..." --body-file=/chemin/fichier.txt');
@@ -101,22 +105,39 @@ final class BulkCommandeMailCommand extends Command
         }
 
         $status = $this->resolveStatus($statusOption);
-        if ($status === null) {
-            $io->error('Mode bulk: --status=en_attente|validee est requis (ou utiliser --test-email=adresse).');
+        if (!$nextDeliveryDay && $status === null) {
+            $io->error('Mode bulk: --status=en_attente|validee est requis (ou utiliser --next-delivery-day, ou --test-email=adresse).');
 
             return Command::INVALID;
         }
 
-        $commandes = $this->commandeRepository->findByStatutWithEmail($status);
+        if ($nextDeliveryDay) {
+            $jour = $this->jourLivraisonRepository->findNextActiveDeliveryDay();
+            if ($jour === null) {
+                $io->warning('Aucun prochain jour de livraison actif trouvé.');
+
+                return Command::SUCCESS;
+            }
+            $commandes = $this->commandeRepository->findByJourLivraisonWithEmail($jour, $status);
+            $targetDescription = sprintf(
+                'jour=%s%s',
+                $jour->getDate()->format('Y-m-d'),
+                $status !== null ? sprintf(', statut=%s', $status->value) : ', statut!=annulee',
+            );
+        } else {
+            $commandes = $this->commandeRepository->findByStatutWithEmail($status);
+            $targetDescription = sprintf('statut=%s', $status->value);
+        }
+
         if ($commandes === []) {
-            $io->warning('Aucune commande éligible avec email renseigné pour ce statut.');
+            $io->warning('Aucune commande éligible avec email renseigné pour la cible demandée.');
 
             return Command::SUCCESS;
         }
 
         $io->section('Préparation envoi');
         $io->definitionList(
-            ['Statut ciblé' => $status->value],
+            ['Cible' => $targetDescription],
             ['Sujet' => $subject],
             ['Fichier contenu' => $bodyFile],
             ['Mode' => $dryRun ? 'DRY-RUN (sans envoi)' : 'ENVOI RÉEL'],

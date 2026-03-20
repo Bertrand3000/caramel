@@ -65,6 +65,17 @@ class ProduitRepository extends ServiceEntityRepository
             ->getSingleScalarResult();
     }
 
+    public function countProduitsDisponibles(): int
+    {
+        return (int) $this->createQueryBuilder('p')
+            ->select('COALESCE(SUM(p.quantite), 0)')
+            ->andWhere('p.statut = :statut')
+            ->andWhere('p.quantite > 0')
+            ->setParameter('statut', ProduitStatutEnum::DISPONIBLE)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
     /**
      * @return list<string>
      */

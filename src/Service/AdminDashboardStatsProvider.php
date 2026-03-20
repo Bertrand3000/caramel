@@ -6,12 +6,14 @@ namespace App\Service;
 
 use App\Interface\AdminDashboardStatsProviderInterface;
 use App\Repository\CommandeRepository;
+use App\Repository\ProduitRepository;
 
 final class AdminDashboardStatsProvider implements AdminDashboardStatsProviderInterface
 {
-    public function __construct(private readonly CommandeRepository $commandeRepository)
-    {
-    }
+    public function __construct(
+        private readonly CommandeRepository $commandeRepository,
+        private readonly ProduitRepository $produitRepository,
+    ) {}
 
     public function getStats(): array
     {
@@ -24,6 +26,7 @@ final class AdminDashboardStatsProvider implements AdminDashboardStatsProviderIn
         }
 
         return [
+            'totalProduitsDisponibles' => $this->produitRepository->countProduitsDisponibles(),
             'totalProduitsCommandes' => $this->commandeRepository->countProduitsCommandesAtLeastEnAttenteValidation(),
             'totalCommandesEffectuees' => $this->commandeRepository->countCommandesAtLeastEnAttenteValidation(),
             'commandesEffectueesParJour' => $byJour,

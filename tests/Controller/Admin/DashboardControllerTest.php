@@ -36,6 +36,7 @@ final class DashboardControllerTest extends WebTestCase
         self::assertSelectorTextContains('h1', 'Administration');
         self::assertStringContainsString('Paramètres boutique', (string) $client->getResponse()->getContent());
         self::assertSelectorExists('a[href="/admin/exports/ventes.csv"]');
+        self::assertSelectorExists('[data-testid="admin-stat-produits-disponibles"]');
         self::assertSelectorExists('[data-testid="admin-stat-produits"]');
         self::assertSelectorExists('[data-testid="admin-stat-commandes"]');
         self::assertSelectorExists('[data-testid="admin-stat-commandes-par-jour"]');
