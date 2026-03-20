@@ -11,7 +11,6 @@ use App\Entity\Utilisateur;
 use App\Enum\CommandeProfilEnum;
 use App\Enum\CommandeStatutEnum;
 use App\Interface\MailerNotifierInterface;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -28,7 +27,6 @@ final class MailerTestCommand extends Command
 {
     public function __construct(
         private readonly MailerNotifierInterface $mailerNotifier,
-        private readonly EntityManagerInterface $entityManager,
     ) {
         parent::__construct();
     }
@@ -71,6 +69,12 @@ final class MailerTestCommand extends Command
         );
 
         try {
+            if ($noSend) {
+                $io->success('Dry-run terminé: aucun email envoyé, aucune donnée persistée.');
+
+                return Command::SUCCESS;
+            }
+
             if ($type === 'validation') {
                 $this->mailerNotifier->notifyCommandeValidee($commande);
                 $io->success('Email de validation envoyé avec succès !');
@@ -89,25 +93,16 @@ final class MailerTestCommand extends Command
 
     private function createTestCommande(string $email): Commande
     {
-        $login = 'test-mailer@caramel.local';
-        
-        // Réutiliser l'utilisateur de test s'il existe déjà
-        $utilisateur = $this->entityManager->getRepository(Utilisateur::class)->findOneBy(['login' => $login]);
-        if ($utilisateur === null) {
-            $utilisateur = (new Utilisateur())
-                ->setLogin($login)
-                ->setPassword('dummy')
-                ->setRoles(['ROLE_AGENT']);
-            $this->entityManager->persist($utilisateur);
-        }
+        $utilisateur = (new Utilisateur())
+            ->setLogin('test-mailer@caramel.local')
+            ->setPassword('dummy')
+            ->setRoles(['ROLE_AGENT']);
 
         $creneau = (new Creneau())
             ->setDateHeure(new \DateTimeImmutable('tomorrow 10:00:00'))
             ->setHeureDebut(new \DateTime('10:00:00'))
             ->setHeureFin(new \DateTime('10:30:00'))
-            ->setCapaciteMax(10)
-            ->setCapaciteUtilisee(0);
-        $this->entityManager->persist($creneau);
+            ->setCapaciteMax(10);
 
         $contact = (new CommandeContactTmp())
             ->setNomGrh('TEST')
@@ -131,10 +126,6 @@ final class MailerTestCommand extends Command
             ->setCommandeContactTmp($contact);
 
         $contact->setCommande($commande);
-
-        $this->entityManager->persist($contact);
-        $this->entityManager->persist($commande);
-        $this->entityManager->flush();
 
         return $commande;
     }
