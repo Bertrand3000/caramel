@@ -15,7 +15,7 @@ final class AgentEligibilityCheckerServiceTest extends TestCase
     public function testTeletravailleurBloqueSiAbsentDeLaListeTeletravailleurs(): void
     {
         $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('liste teletravailleurs autorisee');
+        $this->expectExceptionMessage('base des télétravailleurs');
 
         $teletravailleurs = $this->createMock(TeletravailleurListeRepository::class);
         $teletravailleurs->method('existsByNumeroAgent')->with('12345')->willReturn(false);
@@ -35,7 +35,7 @@ final class AgentEligibilityCheckerServiceTest extends TestCase
     public function testAgentBloqueSiAbsentDeLaListeAgentsEligibles(): void
     {
         $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('liste des agents autorises');
+        $this->expectExceptionMessage('numéro d\'agent n\'est pas reconnu');
 
         $teletravailleurs = $this->createMock(TeletravailleurListeRepository::class);
         $teletravailleurs->expects(self::never())->method('existsByNumeroAgent');

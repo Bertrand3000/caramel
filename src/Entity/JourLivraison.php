@@ -27,7 +27,7 @@ class JourLivraison
     #[ORM\Column]
     private bool $actif = true;
 
-    #[ORM\Column]
+    #[ORM\Column(options: ['default' => 1])]
     private bool $reservationsOuvertes = true;
 
     #[ORM\Column(type: Types::TIME_MUTABLE)]

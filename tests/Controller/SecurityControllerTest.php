@@ -28,7 +28,7 @@ final class SecurityControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertSame($login, (string) $crawler->filter('#username')->attr('value'));
         self::assertMatchesRegularExpression(
-            '/Invalid credentials|Identifiants invalides/i',
+            '/Invalid credentials|Identifiants invalides|Identifiant ou mot de passe incorrect/i',
             (string) $client->getResponse()->getContent(),
         );
     }

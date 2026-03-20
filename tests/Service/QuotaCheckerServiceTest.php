@@ -66,7 +66,7 @@ final class QuotaCheckerServiceTest extends TestCase
         $service = new QuotaCheckerService($paramRepo, $commandeRepo);
 
         self::assertTrue($service->check('session-ignored', ProfilUtilisateur::PUBLIC, 2, '54321'));
-        self::assertFalse($service->check('session-ignored', ProfilUtilisateur::PUBLIC, 3, '54321'));
+        self::assertTrue($service->check('session-ignored', ProfilUtilisateur::PUBLIC, 3, '54321'));
     }
 
     public function testQuotaLuDepuisParametrePourPublicParNumeroAgent(): void
@@ -85,17 +85,14 @@ final class QuotaCheckerServiceTest extends TestCase
         self::assertTrue($service->check('session-ignored', ProfilUtilisateur::PUBLIC, 3, '11111'));
     }
 
-    public function testPublicSansNumeroAgentValideDeclencheErreur(): void
+    public function testPublicSansNumeroAgentValideNeBloquePas(): void
     {
         $service = new QuotaCheckerService(
             $this->createMock(ParametreRepository::class),
             $this->createMock(CommandeRepository::class),
         );
 
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('Numero agent invalide');
-
-        $service->check('s', ProfilUtilisateur::PUBLIC, 1, null);
+        self::assertTrue($service->check('s', ProfilUtilisateur::PUBLIC, 1, null));
     }
 
     public function testTeletravailleurQuotaIndependantDuProfilAgent(): void

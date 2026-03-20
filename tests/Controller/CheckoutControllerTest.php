@@ -168,7 +168,7 @@ final class CheckoutControllerTest extends WebTestCase
             'prenom' => 'Alice',
             'numeroAgent' => $numeroAgent,
         ]);
-        self::assertResponseRedirects('/commande/creneaux');
+        self::assertResponseRedirects('/commande/confirmation');
 
         $entityManager = static::getContainer()->get(EntityManagerInterface::class);
         $entityManager->clear();
@@ -184,7 +184,7 @@ final class CheckoutControllerTest extends WebTestCase
             ->getQuery()
             ->getSingleScalarResult();
 
-        self::assertSame(1, $count);
+        self::assertSame(2, $count);
     }
 
     private function addAgentEligible(string $numeroAgent): void

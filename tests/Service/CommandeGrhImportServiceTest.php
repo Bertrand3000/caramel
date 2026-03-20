@@ -56,13 +56,13 @@ final class CommandeGrhImportServiceTest extends KernelTestCase
         $numeroAgent = (string) random_int(80000, 89999);
         $commande = $this->createPendingCommande($numeroAgent);
         $first = $this->createXlsx([
-            ['N. agent', 'Prenom', 'Nom', 'Email', 'Tel'],
+            ['N. agent', 'Prenom', 'Nom', 'Mail pro', 'Tel'],
             [$numeroAgent, 'Bob', 'Martin', 'bob1@test.local', '0600000000'],
         ]);
         $this->service->importFromXlsx($first);
 
         $second = $this->createXlsx([
-            ['N. agent', 'Prenom', 'Nom', 'Email', 'Tel'],
+            ['N. agent', 'Prenom', 'Nom', 'Mail pro', 'Tel'],
             [$numeroAgent, 'Robert', 'Martin', 'bob2@test.local', '0699999999'],
         ]);
         $this->service->importFromXlsx($second);

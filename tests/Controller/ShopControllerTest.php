@@ -43,7 +43,7 @@ final class ShopControllerTest extends WebTestCase
         self::assertResponseStatusCodeSame(403);
         self::assertGreaterThan(0, $crawler->filter('.alert.alert-danger')->count());
         self::assertSelectorTextContains('.alert.alert-danger', 'Boutique fermée');
-        self::assertSelectorTextContains('.alert.alert-danger', 'La boutique n\'est pas encore ouverte pour votre profil.');
+        self::assertSelectorTextContains('.alert.alert-danger', 'La boutique est actuellement fermée. Nous vous remercions pour votre compréhension.');
     }
 
     public function testCatalogueNafficheQueLesProduitsDisponibles(): void
@@ -273,6 +273,7 @@ final class ShopControllerTest extends WebTestCase
         ProduitStatutEnum $statut,
         int $quantite,
         bool $tagTeletravailleur = false,
+        string $vnc = '=0',
     ): Produit
     {
         $entityManager = static::getContainer()->get(EntityManagerInterface::class);
@@ -287,7 +288,8 @@ final class ShopControllerTest extends WebTestCase
             ->setProfondeur(50)
             ->setStatut($statut)
             ->setQuantite($quantite)
-            ->setTagTeletravailleur($tagTeletravailleur);
+            ->setTagTeletravailleur($tagTeletravailleur)
+            ->setVnc($vnc);
 
         $entityManager->persist($produit);
         $entityManager->flush();

@@ -104,7 +104,7 @@ final class DashboardControllerTest extends WebTestCase
         $inventoryManager = $this->createMock(InventoryManagerInterface::class);
         $inventoryManager->expects(self::once())
             ->method('findDashboardPage')
-            ->with(null, null, 1, 10)
+            ->with(null, null, null, null, null, null, 1, 10)
             ->willReturn([
                 'items' => [],
                 'total' => 0,
@@ -113,8 +113,13 @@ final class DashboardControllerTest extends WebTestCase
                 'totalPages' => 1,
                 'etage' => null,
                 'bureau' => null,
+                'vnc' => null,
+                'q' => null,
+                'teletravailleur' => null,
+                'inventaireEtat' => null,
                 'etageOptions' => [],
                 'bureauOptions' => [],
+                'vncOptions' => [],
             ]);
         static::getContainer()->set(InventoryManagerInterface::class, $inventoryManager);
 
@@ -133,7 +138,7 @@ final class DashboardControllerTest extends WebTestCase
         $inventoryManager = $this->createMock(InventoryManagerInterface::class);
         $inventoryManager->expects(self::once())
             ->method('findDashboardPage')
-            ->with('2', 'B12', 3, 25)
+            ->with('2', 'B12', null, null, null, null, 3, 25)
             ->willReturn([
                 'items' => [],
                 'total' => 0,
@@ -142,8 +147,13 @@ final class DashboardControllerTest extends WebTestCase
                 'totalPages' => 1,
                 'etage' => '2',
                 'bureau' => 'B12',
+                'vnc' => null,
+                'q' => null,
+                'teletravailleur' => null,
+                'inventaireEtat' => null,
                 'etageOptions' => ['2'],
                 'bureauOptions' => ['B12'],
+                'vncOptions' => [],
             ]);
         static::getContainer()->set(InventoryManagerInterface::class, $inventoryManager);
 
