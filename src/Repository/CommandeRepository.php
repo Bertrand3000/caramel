@@ -503,4 +503,70 @@ class CommandeRepository extends ServiceEntityRepository
 
         return $counts;
     }
+
+    public function countProduitsCommandesAtLeastEnAttenteValidation(): int
+    {
+        return (int) $this->createQueryBuilder('c')
+            ->select('COALESCE(SUM(lc.quantite), 0)')
+            ->innerJoin('c.lignesCommande', 'lc')
+            ->andWhere('c.statut IN (:statuts)')
+            ->setParameter('statuts', $this->getStatutsAtLeastEnAttenteValidation())
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    public function countCommandesAtLeastEnAttenteValidation(): int
+    {
+        return (int) $this->createQueryBuilder('c')
+            ->select('COUNT(c.id)')
+            ->andWhere('c.statut IN (:statuts)')
+            ->setParameter('statuts', $this->getStatutsAtLeastEnAttenteValidation())
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
+     * @return list<array{jourDate: \DateTimeImmutable, total: int}>
+     */
+    public function countCommandesAtLeastEnAttenteValidationByJourLivraison(): array
+    {
+        $rows = $this->createQueryBuilder('c')
+            ->select('j.date AS jourDate, COUNT(c.id) AS total')
+            ->innerJoin('c.creneau', 'cr')
+            ->innerJoin('cr.jourLivraison', 'j')
+            ->andWhere('c.statut IN (:statuts)')
+            ->setParameter('statuts', $this->getStatutsAtLeastEnAttenteValidation())
+            ->groupBy('j.date')
+            ->orderBy('j.date', 'ASC')
+            ->getQuery()
+            ->getResult();
+
+        $result = [];
+        foreach ($rows as $row) {
+            $date = $row['jourDate'];
+            if (!$date instanceof \DateTimeImmutable) {
+                $date = new \DateTimeImmutable((string) $date);
+            }
+            $result[] = [
+                'jourDate' => $date,
+                'total' => (int) $row['total'],
+            ];
+        }
+
+        return $result;
+    }
+
+    /**
+     * @return list<CommandeStatutEnum>
+     */
+    private function getStatutsAtLeastEnAttenteValidation(): array
+    {
+        return [
+            CommandeStatutEnum::EN_ATTENTE_VALIDATION,
+            CommandeStatutEnum::VALIDEE,
+            CommandeStatutEnum::EN_PREPARATION,
+            CommandeStatutEnum::PRETE,
+            CommandeStatutEnum::RETIREE,
+        ];
+    }
 }

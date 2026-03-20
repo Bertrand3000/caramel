@@ -30,11 +30,38 @@ final class JourLivraisonControllerTest extends WebTestCase
         );
     }
 
-    public function testSuppressionJourneeSupprimeCreneauxAssocies(): void
+    public function testSuppressionJourneeRefuseeSiCommandeAssociee(): void
     {
         $client = static::createClient();
         $admin = $this->createAdminUser();
         [$jour, $creneau, $commande] = $this->createJourWithCreneauAndCommande();
+        $client->loginUser($admin);
+
+        $crawler = $client->request('GET', sprintf('/admin/jours-livraison/%d/edit', $jour->getId()));
+        $token = (string) $crawler
+            ->filter(sprintf('form[action="/admin/jours-livraison/%d/delete"] input[name="_token"]', $jour->getId()))
+            ->attr('value');
+
+        $client->request('POST', sprintf('/admin/jours-livraison/%d/delete', $jour->getId()), [
+            '_token' => $token,
+        ]);
+
+        self::assertResponseRedirects(sprintf('/admin/jours-livraison/%d/edit', $jour->getId()));
+
+        $entityManager = static::getContainer()->get(EntityManagerInterface::class);
+        $entityManager->clear();
+        self::assertInstanceOf(JourLivraison::class, $entityManager->find(JourLivraison::class, $jour->getId()));
+        self::assertInstanceOf(Creneau::class, $entityManager->find(Creneau::class, $creneau->getId()));
+        $savedCommande = $entityManager->find(Commande::class, $commande->getId());
+        self::assertInstanceOf(Commande::class, $savedCommande);
+        self::assertNotNull($savedCommande->getCreneau());
+    }
+
+    public function testSuppressionJourneeSansCommandeSupprimeCreneauxAssocies(): void
+    {
+        $client = static::createClient();
+        $admin = $this->createAdminUser();
+        [$jour, $creneau] = $this->createJourWithCreneauWithoutCommande();
         $client->loginUser($admin);
 
         $crawler = $client->request('GET', sprintf('/admin/jours-livraison/%d/edit', $jour->getId()));
@@ -52,9 +79,6 @@ final class JourLivraisonControllerTest extends WebTestCase
         $entityManager->clear();
         self::assertNull($entityManager->find(JourLivraison::class, $jour->getId()));
         self::assertNull($entityManager->find(Creneau::class, $creneau->getId()));
-        $savedCommande = $entityManager->find(Commande::class, $commande->getId());
-        self::assertInstanceOf(Commande::class, $savedCommande);
-        self::assertNull($savedCommande->getCreneau());
     }
 
     private function createAdminUser(): Utilisateur
@@ -115,5 +139,24 @@ final class JourLivraisonControllerTest extends WebTestCase
         $entityManager->flush();
 
         return [$jour, $creneau, $commande];
+    }
+
+    /** @return array{0:JourLivraison,1:Creneau} */
+    private function createJourWithCreneauWithoutCommande(): array
+    {
+        $entityManager = static::getContainer()->get(EntityManagerInterface::class);
+        $jour = $this->createJourLivraison();
+        $creneau = (new Creneau())
+            ->setJourLivraison($jour)
+            ->setDateHeure(new \DateTimeImmutable('2030-03-28 08:00:00'))
+            ->setHeureDebut(new \DateTime('08:00:00'))
+            ->setHeureFin(new \DateTime('08:30:00'))
+            ->setCapaciteMax(1)
+            ->setCapaciteUtilisee(0);
+
+        $entityManager->persist($creneau);
+        $entityManager->flush();
+
+        return [$jour, $creneau];
     }
 }

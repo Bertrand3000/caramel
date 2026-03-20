@@ -8,6 +8,7 @@ use App\Form\ImportTeletravailleursType;
 use App\Form\ImportGrhCommandesType;
 use App\Form\ParametreType;
 use App\Interface\AgentEligibleImportServiceInterface;
+use App\Interface\AdminDashboardStatsProviderInterface;
 use App\Interface\GrhImportServiceInterface;
 use App\Repository\AgentEligibleRepository;
 use App\Repository\ParametreRepository;
@@ -26,6 +27,7 @@ class DashboardController extends AbstractController
         ParametreRepository $parametreRepository,
         TeletravailleurListeRepository $teletravailleurListeRepository,
         AgentEligibleRepository $agentEligibleRepository,
+        AdminDashboardStatsProviderInterface $adminDashboardStatsProvider,
         EntityManagerInterface $entityManager,
     ): Response {
         $values = [];
@@ -61,6 +63,7 @@ class DashboardController extends AbstractController
             'agentEligibleImportForm' => $this->createForm(ImportGrhCommandesType::class)->createView(),
             'teletravailleurCount' => $teletravailleurListeRepository->count([]),
             'agentEligibleCount' => $agentEligibleRepository->count([]),
+            'dashboardStats' => $adminDashboardStatsProvider->getStats(),
         ]);
     }
 

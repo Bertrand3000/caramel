@@ -119,10 +119,16 @@ class JourLivraisonController extends AbstractController
             return $this->redirectToRoute('admin_jours_livraison_edit', ['id' => $jour->getId()]);
         }
 
-        foreach ($this->creneauRepository->findByJourWithCommandes($jour) as $creneau) {
-            foreach ($creneau->getCommandes() as $commande) {
-                $commande->setCreneau(null);
+        $creneaux = $this->creneauRepository->findByJourWithCommandes($jour);
+        foreach ($creneaux as $creneau) {
+            if ($creneau->getCommandes()->count() > 0) {
+                $this->addFlash('error', 'Suppression impossible: au moins une commande est encore rattachée à un créneau de cette journée.');
+
+                return $this->redirectToRoute('admin_jours_livraison_edit', ['id' => $jour->getId()]);
             }
+        }
+
+        foreach ($creneaux as $creneau) {
             $this->entityManager->remove($creneau);
         }
 

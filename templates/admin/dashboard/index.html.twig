@@ -84,6 +84,66 @@
             </section>
         </div>
 
+        <section class="form-section admin-stats-section" data-controller="admin-dashboard-stats-copy">
+            <h2>Statistiques commandes</h2>
+            <div class="form-actions mb-2" style="justify-content:flex-start;">
+                <button
+                    type="button"
+                    class="btn btn-outline-primary"
+                    data-action="admin-dashboard-stats-copy#copy"
+                >
+                    Copier dans le presse-papier
+                </button>
+                <span
+                    class="form-help mb-0"
+                    data-admin-dashboard-stats-copy-target="feedback"
+                    aria-live="polite"
+                ></span>
+            </div>
+            <div class="admin-stats-kpis">
+                <article class="admin-stats-kpi" data-testid="admin-stat-produits">
+                    <p class="admin-stats-label">Produits commandés</p>
+                    <p class="admin-stats-value">{{ dashboardStats.totalProduitsCommandes }}</p>
+                </article>
+                <article class="admin-stats-kpi" data-testid="admin-stat-commandes">
+                    <p class="admin-stats-label">Commandes effectuées</p>
+                    <p class="admin-stats-value">{{ dashboardStats.totalCommandesEffectuees }}</p>
+                </article>
+            </div>
+
+            <div class="admin-stats-days" data-testid="admin-stat-commandes-par-jour">
+                <p class="form-help mb-2">Commandes effectuées par jour de livraison</p>
+                {% if dashboardStats.commandesEffectueesParJour is empty %}
+                    <p class="mb-0">Aucune commande rattachée à un jour de livraison.</p>
+                {% else %}
+                    <ul class="admin-stats-day-list">
+                        {% for row in dashboardStats.commandesEffectueesParJour %}
+                            <li class="admin-stats-day-item">
+                                <span class="admin-stats-day-date">{{ row.date }}</span>
+                                <span class="admin-stats-day-count">{{ row.total }}</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+
+            <textarea
+                data-admin-dashboard-stats-copy-target="text"
+                hidden
+            >Statistiques commandes
+Produits commandés : {{ dashboardStats.totalProduitsCommandes }}
+Commandes effectuées : {{ dashboardStats.totalCommandesEffectuees }}
+
+Commandes effectuées par jour de livraison :
+{% if dashboardStats.commandesEffectueesParJour is empty %}
+- Aucune commande rattachée à un jour de livraison.
+{% else %}
+{% for row in dashboardStats.commandesEffectueesParJour %}
+- {{ row.date }} : {{ row.total }}
+{% endfor %}
+{% endif %}</textarea>
+        </section>
+
         <section class="form-section">
             <h2>Exports CDC §13</h2>
             <p class="form-help mb-2">Télécharge les exports ventes, stock restant et comptabilité.</p>
