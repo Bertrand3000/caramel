@@ -39,6 +39,7 @@ class DashboardController extends AbstractController
             'boutique_ouverte_agents' => ($values['boutique_ouverte_agents'] ?? '0') === '1',
             'boutique_ouverte_teletravailleurs' => ($values['boutique_ouverte_teletravailleurs'] ?? '0') === '1',
             'boutique_ouverte_partenaires' => ($values['boutique_ouverte_partenaires'] ?? '0') === '1',
+            'mode_tout_doit_disparaitre' => ($values['mode_tout_doit_disparaitre'] ?? '0') === '1',
             'max_produits_par_commande' => (int) ($values['max_produits_par_commande'] ?? 3),
             'max_commandes_agents' => (int) ($values['max_commandes_agents'] ?? 2),
             'max_commandes_teletravailleurs' => (int) ($values['max_commandes_teletravailleurs'] ?? 1),

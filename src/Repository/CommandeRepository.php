@@ -258,6 +258,34 @@ class CommandeRepository extends ServiceEntityRepository
             ->getOneOrNullResult();
     }
 
+    public function findDerniereCommandeActiveAvecCreneauPourNumeroAgentEtProfilLeJour(
+        string $numeroAgent,
+        CommandeProfilEnum $profil,
+        \DateTimeImmutable $date,
+    ): ?Commande {
+        $start = $date->setTime(0, 0);
+        $end = $start->modify('+1 day');
+
+        return $this->createQueryBuilder('c')
+            ->innerJoin('c.creneau', 'cr')
+            ->addSelect('cr')
+            ->andWhere('c.numeroAgent = :numeroAgent')
+            ->andWhere('c.profilCommande = :profil')
+            ->andWhere('c.statut != :annulee')
+            ->andWhere('cr.dateHeure >= :start')
+            ->andWhere('cr.dateHeure < :end')
+            ->setParameter('numeroAgent', $numeroAgent)
+            ->setParameter('profil', $profil)
+            ->setParameter('annulee', CommandeStatutEnum::ANNULEE)
+            ->setParameter('start', $start)
+            ->setParameter('end', $end)
+            ->orderBy('c.dateValidation', 'DESC')
+            ->addOrderBy('c.id', 'DESC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
     /** @return list<Commande> */
     public function findRetireeOuAnnuleeWithContactTmp(): array
     {

@@ -107,7 +107,7 @@ final class CheckoutControllerTest extends WebTestCase
         $client->request('GET', '/commande/creneaux');
 
         self::assertResponseIsSuccessful();
-        self::assertStringNotContainsString('places', (string) $client->getResponse()->getContent());
+        self::assertSelectorTextContains('main', 'Étape 1 : vos informations');
     }
 
     public function testConfirmationAvecPanierVideRedirigeVersPanier(): void
@@ -115,8 +115,9 @@ final class CheckoutControllerTest extends WebTestCase
         $client = static::createClient();
         $client->loginUser($this->createUser('agent-confirm-empty'));
 
-        $client->request('POST', '/commande/confirmer', [
-            'creneauId' => 1,
+        $client->request('POST', '/commande/preparer', [
+            'nom' => 'Durand',
+            'prenom' => 'Alice',
             'numeroAgent' => '12345',
         ]);
 
@@ -149,11 +150,16 @@ final class CheckoutControllerTest extends WebTestCase
         self::assertResponseRedirects('/panier');
         $client->followRedirect();
 
-        $client->request('POST', '/commande/confirmer', [
-            'creneauId' => $creneau->getId(),
+        $client->request('POST', '/commande/preparer', [
             'nom' => 'Durand',
             'prenom' => 'Alice',
             'numeroAgent' => $numeroAgent,
+        ]);
+        self::assertResponseRedirects('/commande/creneaux');
+        $client->followRedirect();
+
+        $client->request('POST', '/commande/confirmer', [
+            'creneauId' => $creneau->getId(),
         ]);
         self::assertResponseRedirects('/commande/confirmation');
         $client->followRedirect();
@@ -162,11 +168,16 @@ final class CheckoutControllerTest extends WebTestCase
         self::assertResponseRedirects('/panier');
         $client->followRedirect();
 
-        $client->request('POST', '/commande/confirmer', [
-            'creneauId' => $creneau->getId(),
+        $client->request('POST', '/commande/preparer', [
             'nom' => 'Durand',
             'prenom' => 'Alice',
             'numeroAgent' => $numeroAgent,
+        ]);
+        self::assertResponseRedirects('/commande/creneaux');
+        $client->followRedirect();
+
+        $client->request('POST', '/commande/confirmer', [
+            'creneauId' => $creneau->getId(),
         ]);
         self::assertResponseRedirects('/commande/confirmation');
 
@@ -201,11 +212,15 @@ final class CheckoutControllerTest extends WebTestCase
         $client->request('POST', '/panier/ajouter', ['produitId' => $produit->getId()]);
         self::assertResponseRedirects('/panier');
 
-        $client->request('POST', '/commande/confirmer', [
-            'creneauId' => $orphanSlot->getId(),
+        $client->request('POST', '/commande/preparer', [
             'nom' => 'Durand',
             'prenom' => 'Alice',
             'numeroAgent' => $numeroAgent,
+        ]);
+        self::assertResponseRedirects('/commande/creneaux');
+
+        $client->request('POST', '/commande/confirmer', [
+            'creneauId' => $orphanSlot->getId(),
         ]);
         self::assertResponseRedirects('/commande/creneaux');
 
@@ -224,6 +239,64 @@ final class CheckoutControllerTest extends WebTestCase
         self::assertSame(0, $count);
     }
 
+    public function testModeToutDoitDisparaitreCompleteLaCommandeDuProchainSamedi(): void
+    {
+        $client = static::createClient();
+        $user = $this->createUser('agent-clearance');
+        $client->loginUser($user);
+        $numeroAgent = (string) random_int(10000, 99999);
+        $this->addAgentEligible($numeroAgent);
+        $this->setToutDoitDisparaitreMode(true);
+
+        $produit1 = $this->createProduit('Produit clearance 1');
+        $produit2 = $this->createProduit('Produit clearance 2');
+        $creneau = $this->createCreneau();
+
+        $client->request('POST', '/panier/ajouter', ['produitId' => $produit1->getId()]);
+        self::assertResponseRedirects('/panier');
+
+        $client->request('POST', '/commande/preparer', [
+            'nom' => 'Durand',
+            'prenom' => 'Alice',
+            'numeroAgent' => $numeroAgent,
+        ]);
+        self::assertResponseRedirects('/commande/creneaux');
+
+        $client->request('POST', '/commande/confirmer', [
+            'creneauId' => $creneau->getId(),
+        ]);
+        self::assertResponseRedirects('/commande/confirmation');
+
+        $entityManager = static::getContainer()->get(EntityManagerInterface::class);
+        $entityManager->clear();
+        $commandeInitiale = $entityManager->getRepository(Commande::class)->findOneBy([
+            'numeroAgent' => $numeroAgent,
+            'profilCommande' => CommandeProfilEnum::AGENT,
+        ]);
+        self::assertInstanceOf(Commande::class, $commandeInitiale);
+
+        $client->request('POST', '/panier/ajouter', ['produitId' => $produit2->getId()]);
+        self::assertResponseRedirects('/panier');
+
+        $client->request('POST', '/commande/preparer', [
+            'nom' => 'Durand',
+            'prenom' => 'Alice',
+            'numeroAgent' => $numeroAgent,
+        ]);
+        self::assertResponseRedirects('/commande/confirmation');
+
+        $entityManager->clear();
+        $commandes = $entityManager->getRepository(Commande::class)->findBy([
+            'numeroAgent' => $numeroAgent,
+            'profilCommande' => CommandeProfilEnum::AGENT,
+        ]);
+
+        self::assertCount(1, $commandes);
+        self::assertSame($commandeInitiale->getId(), $commandes[0]->getId());
+        self::assertCount(2, $commandes[0]->getLignesCommande());
+        self::assertSame($creneau->getId(), $commandes[0]->getCreneau()?->getId());
+    }
+
     private function addAgentEligible(string $numeroAgent): void
     {
         $entityManager = static::getContainer()->get(EntityManagerInterface::class);
@@ -234,6 +307,7 @@ final class CheckoutControllerTest extends WebTestCase
     private function createUser(string $prefix): Utilisateur
     {
         $this->setBoutiqueOpenForAgents();
+        $this->setToutDoitDisparaitreMode(false);
         $entityManager = static::getContainer()->get(EntityManagerInterface::class);
         $user = (new Utilisateur())
             ->setLogin(sprintf('%s-%s@test.local', $prefix, bin2hex(random_bytes(4))))
@@ -288,6 +362,15 @@ final class CheckoutControllerTest extends WebTestCase
         $entityManager = static::getContainer()->get(EntityManagerInterface::class);
         $param = $entityManager->getRepository(Parametre::class)->findOneBy(['cle' => 'boutique_ouverte_agents']) ?? (new Parametre())->setCle('boutique_ouverte_agents');
         $param->setValeur('1');
+        $entityManager->persist($param);
+        $entityManager->flush();
+    }
+
+    private function setToutDoitDisparaitreMode(bool $enabled): void
+    {
+        $entityManager = static::getContainer()->get(EntityManagerInterface::class);
+        $param = $entityManager->getRepository(Parametre::class)->findOneBy(['cle' => 'mode_tout_doit_disparaitre']) ?? (new Parametre())->setCle('mode_tout_doit_disparaitre');
+        $param->setValeur($enabled ? '1' : '0');
         $entityManager->persist($param);
         $entityManager->flush();
     }

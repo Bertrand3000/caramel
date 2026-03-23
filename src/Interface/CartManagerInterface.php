@@ -19,7 +19,7 @@ interface CartManagerInterface
 
     public function getContents(string $sessionId): array;
 
-    public function validateCart(string $sessionId, Utilisateur $utilisateur): Commande;
+    public function validateCart(string $sessionId, Utilisateur $utilisateur, ?Commande $commande = null): Commande;
 
     public function releaseExpired(): int;
 

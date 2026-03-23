@@ -17,6 +17,7 @@ use App\Exception\JourLivraisonNonPleinException;
 use App\Interface\AgentEligibilityCheckerInterface;
 use App\Interface\CartManagerInterface;
 use App\Interface\SlotManagerInterface;
+use App\Interface\ToutDoitDisparaitreServiceInterface;
 use App\Repository\JourLivraisonRepository;
 use App\Service\CommandeLimitCheckerService;
 use App\Service\CheckoutService;
@@ -51,7 +52,7 @@ final class CheckoutServiceTest extends TestCase
         $em = $this->createMock(EntityManagerInterface::class);
         $em->expects(self::once())->method('wrapInTransaction')->willReturnCallback(fn ($cb) => $cb());
 
-        $result = (new CheckoutService($em, $cart, $limitChecker, $quota, $slot, $workflow))
+        $result = (new CheckoutService($em, $cart, $limitChecker, $quota, $slot, $this->createModeServiceMock(), $workflow))
             ->confirmCommande('s', $creneau, ProfilUtilisateur::PUBLIC, $utilisateur, '12345', 'Durand', 'Alice');
         self::assertSame($commande, $result);
         self::assertSame('12345', $commande->getNumeroAgent());
@@ -75,7 +76,7 @@ final class CheckoutServiceTest extends TestCase
         $limitChecker = $this->createMock(CommandeLimitCheckerService::class);
 
         $utilisateur = (new Utilisateur())->setLogin('agent@test.local')->setPassword('dummy')->setRoles(['ROLE_AGENT']);
-        (new CheckoutService($em, $cart, $limitChecker, $quota, $this->createMock(SlotManagerInterface::class), $workflow))
+        (new CheckoutService($em, $cart, $limitChecker, $quota, $this->createMock(SlotManagerInterface::class), $this->createModeServiceMock(), $workflow))
             ->confirmCommande('s', new Creneau(), ProfilUtilisateur::PUBLIC, $utilisateur, '12345');
     }
 
@@ -100,7 +101,7 @@ final class CheckoutServiceTest extends TestCase
         $workflow = $this->createMock(WorkflowInterface::class);
 
         $utilisateur = (new Utilisateur())->setLogin('agent@test.local')->setPassword('dummy')->setRoles(['ROLE_AGENT']);
-        (new CheckoutService($em, $cart, $limitChecker, $quota, $slot, $workflow))
+        (new CheckoutService($em, $cart, $limitChecker, $quota, $slot, $this->createModeServiceMock(), $workflow))
             ->confirmCommande('s', new Creneau(), ProfilUtilisateur::PUBLIC, $utilisateur, '12345');
     }
 
@@ -121,7 +122,7 @@ final class CheckoutServiceTest extends TestCase
         $workflow = $this->createMock(WorkflowInterface::class);
 
         $utilisateur = (new Utilisateur())->setLogin('agent@test.local')->setPassword('dummy')->setRoles(['ROLE_AGENT']);
-        (new CheckoutService($em, $cart, $limitChecker, $quota, $slot, $workflow))
+        (new CheckoutService($em, $cart, $limitChecker, $quota, $slot, $this->createModeServiceMock(), $workflow))
             ->confirmCommande('s', new Creneau(), ProfilUtilisateur::PUBLIC, $utilisateur, '12345');
     }
 
@@ -153,7 +154,7 @@ final class CheckoutServiceTest extends TestCase
         $workflow = $this->createMock(WorkflowInterface::class);
 
         $utilisateur = (new Utilisateur())->setLogin('agent@test.local')->setPassword('dummy')->setRoles(['ROLE_AGENT']);
-        (new CheckoutService($em, $cart, $limitChecker, $quota, $slot, $workflow, null, $checker))
+        (new CheckoutService($em, $cart, $limitChecker, $quota, $slot, $this->createModeServiceMock(), $workflow, null, $checker))
             ->confirmCommande('s', new Creneau(), ProfilUtilisateur::PUBLIC, $utilisateur, '12345');
     }
 
@@ -177,6 +178,7 @@ final class CheckoutServiceTest extends TestCase
             $this->createMock(CommandeLimitCheckerService::class),
             $this->createMock(QuotaCheckerService::class),
             $this->createMock(SlotManagerInterface::class),
+            $this->createModeServiceMock(),
             $workflow,
         );
         $service->annulerCommande($commande);
@@ -203,7 +205,7 @@ final class CheckoutServiceTest extends TestCase
         $em = $this->createMock(EntityManagerInterface::class);
         $em->method('wrapInTransaction')->willReturnCallback(fn ($cb) => $cb());
 
-        (new CheckoutService($em, $cart, $limitChecker, $quota, $slot, $workflow))
+        (new CheckoutService($em, $cart, $limitChecker, $quota, $slot, $this->createModeServiceMock(), $workflow))
             ->confirmCommande('s', null, ProfilUtilisateur::PARTENAIRE, $utilisateur, null);
 
         self::assertSame(CommandeProfilEnum::PARTENAIRE, $commande->getProfilCommande());
@@ -228,7 +230,7 @@ final class CheckoutServiceTest extends TestCase
         $em = $this->createMock(EntityManagerInterface::class);
         $em->method('wrapInTransaction')->willReturnCallback(fn ($cb) => $cb());
 
-        (new CheckoutService($em, $cart, $limitChecker, $quota, $slot, $workflow))
+        (new CheckoutService($em, $cart, $limitChecker, $quota, $slot, $this->createModeServiceMock(), $workflow))
             ->confirmCommande('s', null, ProfilUtilisateur::DMAX, $utilisateur, null);
 
         self::assertSame(CommandeProfilEnum::DMAX, $commande->getProfilCommande());
@@ -262,7 +264,7 @@ final class CheckoutServiceTest extends TestCase
         $workflow = $this->createMock(WorkflowInterface::class);
         $utilisateur = (new Utilisateur())->setLogin('agent@test.local')->setPassword('dummy')->setRoles(['ROLE_AGENT']);
 
-        (new CheckoutService($em, $cart, $limitChecker, $quota, $slot, $workflow, $repository))
+        (new CheckoutService($em, $cart, $limitChecker, $quota, $slot, $this->createModeServiceMock(), $workflow, $repository))
             ->confirmCommande('s', $creneau, ProfilUtilisateur::PUBLIC, $utilisateur, '12345');
     }
 
@@ -292,7 +294,7 @@ final class CheckoutServiceTest extends TestCase
         $workflow = $this->createMock(WorkflowInterface::class);
         $utilisateur = (new Utilisateur())->setLogin('agent@test.local')->setPassword('dummy')->setRoles(['ROLE_AGENT']);
 
-        $result = (new CheckoutService($em, $cart, $limitChecker, $quota, $slot, $workflow, $repository))
+        $result = (new CheckoutService($em, $cart, $limitChecker, $quota, $slot, $this->createModeServiceMock(), $workflow, $repository))
             ->confirmCommande('s', $creneau, ProfilUtilisateur::PUBLIC, $utilisateur, '12345');
 
         self::assertSame($commande, $result);
@@ -322,7 +324,7 @@ final class CheckoutServiceTest extends TestCase
         $workflow = $this->createMock(WorkflowInterface::class);
         $utilisateur = (new Utilisateur())->setLogin('agent@test.local')->setPassword('dummy')->setRoles(['ROLE_AGENT']);
 
-        (new CheckoutService($em, $cart, $limitChecker, $quota, $slot, $workflow, $repository))
+        (new CheckoutService($em, $cart, $limitChecker, $quota, $slot, $this->createModeServiceMock(), $workflow, $repository))
             ->confirmCommande('s', new Creneau(), ProfilUtilisateur::PUBLIC, $utilisateur, '12345');
     }
 
@@ -355,7 +357,7 @@ final class CheckoutServiceTest extends TestCase
         $workflow = $this->createMock(WorkflowInterface::class);
         $utilisateur = (new Utilisateur())->setLogin('agent@test.local')->setPassword('dummy')->setRoles(['ROLE_AGENT']);
 
-        (new CheckoutService($em, $cart, $limitChecker, $quota, $slot, $workflow, $repository))
+        (new CheckoutService($em, $cart, $limitChecker, $quota, $slot, $this->createModeServiceMock(), $workflow, $repository))
             ->confirmCommande('s', $creneau, ProfilUtilisateur::PUBLIC, $utilisateur, '12345');
     }
 
@@ -382,7 +384,57 @@ final class CheckoutServiceTest extends TestCase
         $workflow = $this->createMock(WorkflowInterface::class);
         $utilisateur = (new Utilisateur())->setLogin('agent@test.local')->setPassword('dummy')->setRoles(['ROLE_AGENT']);
 
-        (new CheckoutService($em, $cart, $limitChecker, $quota, $slot, $workflow))
+        (new CheckoutService($em, $cart, $limitChecker, $quota, $slot, $this->createModeServiceMock(), $workflow))
             ->confirmCommande('s', new Creneau(), ProfilUtilisateur::PUBLIC, $utilisateur, '12345');
+    }
+
+    public function testConfirmCommandeCompleteUneCommandeExistanteQuandLeModeEstActif(): void
+    {
+        $commandeExistante = new Commande();
+        $commandeExistante->setCreneau(new Creneau());
+        $utilisateur = (new Utilisateur())->setLogin('agent@test.local')->setPassword('dummy')->setRoles(['ROLE_AGENT']);
+
+        $cart = $this->createMock(CartManagerInterface::class);
+        $cart->method('getContents')->willReturn([['quantite' => 1]]);
+        $cart->expects(self::once())
+            ->method('validateCart')
+            ->with('s', $utilisateur, $commandeExistante)
+            ->willReturn($commandeExistante);
+
+        $quota = $this->createMock(QuotaCheckerService::class);
+        $quota->method('check')->willReturn(true);
+
+        $slot = $this->createMock(SlotManagerInterface::class);
+        $slot->expects(self::never())->method('reserverCreneau');
+
+        $limitChecker = $this->createMock(CommandeLimitCheckerService::class);
+        $limitChecker->expects(self::never())->method('assertPeutCommander');
+
+        $mode = $this->createModeServiceMock($commandeExistante);
+
+        $em = $this->createMock(EntityManagerInterface::class);
+        $em->expects(self::once())->method('wrapInTransaction')->willReturnCallback(fn ($cb) => $cb());
+
+        $result = (new CheckoutService(
+            $em,
+            $cart,
+            $limitChecker,
+            $quota,
+            $slot,
+            $mode,
+            $this->createMock(WorkflowInterface::class),
+        ))->confirmCommande('s', null, ProfilUtilisateur::PUBLIC, $utilisateur, '12345', 'Durand', 'Alice');
+
+        self::assertSame($commandeExistante, $result);
+        self::assertSame('12345', $commandeExistante->getNumeroAgent());
+    }
+
+    private function createModeServiceMock(?Commande $commande = null): ToutDoitDisparaitreServiceInterface
+    {
+        $service = $this->createMock(ToutDoitDisparaitreServiceInterface::class);
+        $service->method('findCommandeACompleter')->willReturn($commande);
+        $service->method('isEnabledForProfil')->willReturn(false);
+
+        return $service;
     }
 }

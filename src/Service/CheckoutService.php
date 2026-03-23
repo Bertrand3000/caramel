@@ -14,6 +14,7 @@ use App\Interface\AgentEligibilityCheckerInterface;
 use App\Interface\CartManagerInterface;
 use App\Interface\CheckoutServiceInterface;
 use App\Interface\SlotManagerInterface;
+use App\Interface\ToutDoitDisparaitreServiceInterface;
 use App\Repository\JourLivraisonRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -27,6 +28,7 @@ class CheckoutService implements CheckoutServiceInterface
         private readonly CommandeLimitCheckerService $commandeLimitChecker,
         private readonly QuotaCheckerService $quotaChecker,
         private readonly SlotManagerInterface $creneauManager,
+        private readonly ToutDoitDisparaitreServiceInterface $toutDoitDisparaitreService,
         #[Autowire(service: 'state_machine.commande_lifecycle')]
         private readonly WorkflowInterface $commandeLifecycle,
         private readonly ?JourLivraisonRepository $jourLivraisonRepository = null,
@@ -59,7 +61,11 @@ class CheckoutService implements CheckoutServiceInterface
                 $this->agentEligibilityChecker->assertAllowed($utilisateur, trim($numeroAgent));
             }
 
-            $this->commandeLimitChecker->assertPeutCommander(trim((string) $numeroAgent), $profil);
+            $numeroAgentNormalise = trim((string) $numeroAgent);
+            $commandeACompleter = $this->toutDoitDisparaitreService->findCommandeACompleter($numeroAgentNormalise, $profil);
+            if ($commandeACompleter === null) {
+                $this->commandeLimitChecker->assertPeutCommander($numeroAgentNormalise, $profil);
+            }
 
             if (!$this->quotaChecker->check($sessionId, $profil, $totalQuantite, $numeroAgent)) {
                 throw new \RuntimeException('Quota d articles dépassé');
@@ -67,12 +73,12 @@ class CheckoutService implements CheckoutServiceInterface
 
             $this->assertReservationsOuvertesRule($creneau);
             $this->assertJourneePleineRule($creneau);
-            $commande = $this->cartManager->validateCart($sessionId, $utilisateur);
-            if ($creneau !== null) {
+            $commande = $this->cartManager->validateCart($sessionId, $utilisateur, $commandeACompleter);
+            if ($commandeACompleter === null && $creneau !== null) {
                 $this->creneauManager->reserverCreneau($creneau, $commande);
             }
-            if ($numeroAgent !== null && trim($numeroAgent) !== '') {
-                $commande->setNumeroAgent(trim($numeroAgent));
+            if ($numeroAgentNormalise !== '') {
+                $commande->setNumeroAgent($numeroAgentNormalise);
             }
             if ($nom !== null && trim($nom) !== '') {
                 $commande->setNom(trim($nom));

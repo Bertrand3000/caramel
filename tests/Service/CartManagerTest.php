@@ -7,9 +7,11 @@ namespace App\Tests\Service;
 use App\Entity\Produit;
 use App\Entity\ReservationTemporaire;
 use App\Entity\Utilisateur;
+use App\Entity\Commande;
 use App\Service\CartManager;
 use App\Service\QuotaCheckerService;
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\Query;
@@ -92,6 +94,43 @@ final class CartManagerTest extends TestCase
 
         $service = new CartManager($em, $this->createMock(QuotaCheckerService::class));
         $service->validateCart('sess', (new Utilisateur())->setLogin('agent@test.local')->setPassword('dummy')->setRoles(['ROLE_AGENT']));
+    }
+
+    public function testValidateCartPeutCompleterUneCommandeExistante(): void
+    {
+        $produit = (new Produit())->setQuantite(1);
+        $reservation = (new ReservationTemporaire())
+            ->setSessionId('sess')
+            ->setProduit($produit)
+            ->setQuantite(1)
+            ->setExpireAt(new \DateTimeImmutable('+30 minutes'));
+
+        $em = $this->createMock(EntityManagerInterface::class);
+        $conn = $this->createMock(Connection::class);
+        $conn->method('isTransactionActive')->willReturn(false);
+        $em->method('getConnection')->willReturn($conn);
+        $em->expects(self::once())->method('wrapInTransaction')->willReturnCallback(fn ($cb) => $cb());
+
+        $repo = $this->createMock(EntityRepository::class);
+        $repo->method('findBy')->willReturn([$reservation]);
+        $em->method('getRepository')->willReturn($repo);
+
+        $query = $this->createMock(Query::class);
+        $query->method('getSingleScalarResult')->willReturn(0);
+        $qb = $this->buildQb($em, $query);
+        $em->method('createQueryBuilder')->willReturn($qb);
+        $em->expects(self::once())->method('lock')->with($produit, LockMode::PESSIMISTIC_WRITE);
+        $em->expects(self::once())->method('flush');
+
+        $commande = new Commande();
+        $service = new CartManager($em, $this->createMock(QuotaCheckerService::class));
+        $result = $service->validateCart(
+            'sess',
+            (new Utilisateur())->setLogin('agent@test.local')->setPassword('dummy')->setRoles(['ROLE_AGENT']),
+            $commande,
+        );
+
+        self::assertSame($commande, $result);
     }
 
     public function testAddItemWithExistingReservationThrowsWhenAlreadyInCart(): void

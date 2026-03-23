@@ -105,9 +105,9 @@ class CartManager implements CartManagerInterface
         ], $rows);
     }
 
-    public function validateCart(string $sessionId, Utilisateur $utilisateur): Commande
+    public function validateCart(string $sessionId, Utilisateur $utilisateur, ?Commande $commande = null): Commande
     {
-        $action = fn (): Commande => $this->validateCartInternal($sessionId, $utilisateur);
+        $action = fn (): Commande => $this->validateCartInternal($sessionId, $utilisateur, $commande);
 
         if ($this->em->getConnection()->isTransactionActive()) {
             return $action();
@@ -168,13 +168,15 @@ class CartManager implements CartManagerInterface
         return $this->getAvailableStock($produit, null);
     }
 
-    private function validateCartInternal(string $sessionId, Utilisateur $utilisateur): Commande
+    private function validateCartInternal(string $sessionId, Utilisateur $utilisateur, ?Commande $commande = null): Commande
     {
         $reservations = $this->em->getRepository(ReservationTemporaire::class)->findBy(['sessionId' => $sessionId]);
-        $commande = (new Commande())
-            ->setSessionId($sessionId)
-            ->setUtilisateur($utilisateur);
-        $this->em->persist($commande);
+        if ($commande === null) {
+            $commande = (new Commande())
+                ->setSessionId($sessionId)
+                ->setUtilisateur($utilisateur);
+            $this->em->persist($commande);
+        }
 
         foreach ($reservations as $reservation) {
             $produit = $reservation->getProduit();

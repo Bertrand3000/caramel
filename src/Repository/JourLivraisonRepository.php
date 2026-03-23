@@ -57,6 +57,21 @@ class JourLivraisonRepository extends ServiceEntityRepository
             ->getOneOrNullResult();
     }
 
+    public function findNextOpenDeliveryDayFrom(\DateTimeImmutable $date): ?JourLivraison
+    {
+        return $this->createQueryBuilder('j')
+            ->andWhere('j.actif = :actif')
+            ->andWhere('j.reservationsOuvertes = :reservationsOuvertes')
+            ->andWhere('j.date >= :date')
+            ->setParameter('actif', true)
+            ->setParameter('reservationsOuvertes', true)
+            ->setParameter('date', $date->format('Y-m-d'))
+            ->orderBy('j.date', 'ASC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
     /** @return list<JourLivraison> */
     public function findAllWithCreneauxOrderedByDate(): array
     {

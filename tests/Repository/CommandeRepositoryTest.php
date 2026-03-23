@@ -76,6 +76,53 @@ final class CommandeRepositoryTest extends KernelTestCase
         self::assertSame(CommandeStatutEnum::PRETE, $result->getStatut());
     }
 
+    public function testFindDerniereCommandeActiveAvecCreneauPourNumeroAgentEtProfilLeJourFiltreParDate(): void
+    {
+        $user = (new Utilisateur())
+            ->setLogin(sprintf('repo-cmd-%s@test.local', bin2hex(random_bytes(4))))
+            ->setPassword('dummy')
+            ->setRoles(['ROLE_AGENT']);
+        $this->entityManager->persist($user);
+
+        $creneauProchainJour = (new \App\Entity\Creneau())
+            ->setDateHeure(new \DateTimeImmutable('2030-03-30 08:00:00'))
+            ->setHeureDebut(new \DateTime('08:00:00'))
+            ->setHeureFin(new \DateTime('08:30:00'));
+        $creneauAutreJour = (new \App\Entity\Creneau())
+            ->setDateHeure(new \DateTimeImmutable('2030-04-06 08:00:00'))
+            ->setHeureDebut(new \DateTime('08:00:00'))
+            ->setHeureFin(new \DateTime('08:30:00'));
+        $this->entityManager->persist($creneauProchainJour);
+        $this->entityManager->persist($creneauAutreJour);
+
+        $commandeCible = (new Commande())
+            ->setUtilisateur($user)
+            ->setSessionId(sprintf('repo-cmd-%s', bin2hex(random_bytes(4))))
+            ->setNumeroAgent('55555')
+            ->setProfilCommande(CommandeProfilEnum::AGENT)
+            ->setStatut(CommandeStatutEnum::VALIDEE)
+            ->setCreneau($creneauProchainJour);
+        $commandeAutreJour = (new Commande())
+            ->setUtilisateur($user)
+            ->setSessionId(sprintf('repo-cmd-%s', bin2hex(random_bytes(4))))
+            ->setNumeroAgent('55555')
+            ->setProfilCommande(CommandeProfilEnum::AGENT)
+            ->setStatut(CommandeStatutEnum::VALIDEE)
+            ->setCreneau($creneauAutreJour);
+        $this->entityManager->persist($commandeCible);
+        $this->entityManager->persist($commandeAutreJour);
+        $this->entityManager->flush();
+
+        $result = $this->repository->findDerniereCommandeActiveAvecCreneauPourNumeroAgentEtProfilLeJour(
+            '55555',
+            CommandeProfilEnum::AGENT,
+            new \DateTimeImmutable('2030-03-30'),
+        );
+
+        self::assertInstanceOf(Commande::class, $result);
+        self::assertSame($commandeCible->getId(), $result->getId());
+    }
+
     private function createCommandeAvecLignes(
         string $numeroAgent,
         CommandeProfilEnum $profilCommande,
@@ -122,6 +169,7 @@ final class CommandeRepositoryTest extends KernelTestCase
         $connection = $this->entityManager->getConnection();
         $connection->executeStatement("DELETE FROM lignes_commande WHERE commande_id IN (SELECT id FROM commandes WHERE session_id LIKE 'repo-cmd-%')");
         $connection->executeStatement("DELETE FROM commandes WHERE session_id LIKE 'repo-cmd-%'");
+        $connection->executeStatement("DELETE FROM creneaux WHERE date_heure >= '2030-03-30 00:00:00'");
         $connection->executeStatement("DELETE FROM produits WHERE libelle LIKE 'repo-cmd-%'");
         $connection->executeStatement("DELETE FROM utilisateurs WHERE login LIKE 'repo-cmd-%@test.local'");
     }

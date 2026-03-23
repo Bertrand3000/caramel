@@ -52,6 +52,7 @@ final class DashboardControllerTest extends WebTestCase
             'parametre[boutique_ouverte_agents]' => '1',
             'parametre[boutique_ouverte_teletravailleurs]' => '1',
             'parametre[boutique_ouverte_partenaires]' => '1',
+            'parametre[mode_tout_doit_disparaitre]' => '1',
             'parametre[max_produits_par_commande]' => '7',
         ]));
 
@@ -61,6 +62,7 @@ final class DashboardControllerTest extends WebTestCase
         self::assertSame('1', $parametreRepository->findOneByKey('boutique_ouverte_agents')?->getValeur());
         self::assertSame('1', $parametreRepository->findOneByKey('boutique_ouverte_teletravailleurs')?->getValeur());
         self::assertSame('1', $parametreRepository->findOneByKey('boutique_ouverte_partenaires')?->getValeur());
+        self::assertSame('1', $parametreRepository->findOneByKey('mode_tout_doit_disparaitre')?->getValeur());
         self::assertSame('7', $parametreRepository->findOneByKey('max_produits_par_commande')?->getValeur());
     }
 

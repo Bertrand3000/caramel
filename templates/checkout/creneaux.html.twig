@@ -12,14 +12,32 @@
             {% endfor %}
         {% endfor %}
 
-        {% if creneaux is empty %}
-            <div class="alert alert-light border">Aucun créneau disponible.</div>
-        {% else %}
+        {% if modeToutDoitDisparaitre|default(false) %}
+            <div class="alert alert-warning">
+                Mode Tout doit disparaître actif : si vous avez déjà une commande sur le prochain samedi, son créneau sera réutilisé automatiquement.
+            </div>
+        {% endif %}
+
+        {% set user_roles = app.user ? app.user.roles : [] %}
+        {% set showNumeroAgent = false %}
+        {% if 'ROLE_ADMIN' not in user_roles and 'ROLE_PARTENAIRE' not in user_roles %}
+            {% if 'ROLE_AGENT' in user_roles or 'ROLE_TELETRAVAILLEUR' in user_roles %}
+                {% set showNumeroAgent = true %}
+            {% endif %}
+        {% endif %}
+        {% set showCreneau = false %}
+        {% if 'ROLE_ADMIN' not in user_roles and 'ROLE_PARTENAIRE' not in user_roles %}
+            {% if 'ROLE_AGENT' in user_roles or 'ROLE_TELETRAVAILLEUR' in user_roles %}
+                {% set showCreneau = true %}
+            {% endif %}
+        {% endif %}
+
+        {% if preparedCheckout is null %}
             <p class="alert alert-info">Vous avez dix minutes pour finaliser la commande sur cet écran.</p>
-            <form method="post" action="{{ path('checkout_confirmer') }}" id="checkout-form">
+            <form method="post" action="{{ path('checkout_preparer') }}">
                 <section class="card mb-4">
                     <div class="card-body">
-                        <h2 class="h5 mb-3">Vos informations</h2>
+                        <h2 class="h5 mb-3">Étape 1 : vos informations</h2>
                         <div class="row g-3">
                             <div class="col-12 col-md-6">
                                 <label class="form-label" for="checkout-nom">Nom</label>
@@ -29,61 +47,84 @@
                                 <label class="form-label" for="checkout-prenom">Prénom</label>
                                 <input class="form-control" id="checkout-prenom" type="text" name="prenom" maxlength="120" required>
                             </div>
-                            {% set user_roles = app.user ? app.user.roles : [] %}
-                            {% set showNumeroAgent = false %}
-                            {% if 'ROLE_ADMIN' not in user_roles and 'ROLE_PARTENAIRE' not in user_roles %}
-                                {% if 'ROLE_AGENT' in user_roles or 'ROLE_TELETRAVAILLEUR' in user_roles %}
-                                    {% set showNumeroAgent = true %}
-                                {% endif %}
-                            {% endif %}
                             {% if showNumeroAgent %}
-                            <div class="col-12 col-md-6">
-                                <label class="form-label" for="checkout-numero-agent">Numéro d'agent</label>
-                                <input class="form-control" id="checkout-numero-agent" type="text" name="numeroAgent" inputmode="numeric" pattern="\d{5}" maxlength="5" required>
-                            </div>
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label" for="checkout-numero-agent">Numéro d'agent</label>
+                                    <input class="form-control" id="checkout-numero-agent" type="text" name="numeroAgent" inputmode="numeric" pattern="\d{5}" maxlength="5" required>
+                                </div>
                             {% endif %}
                         </div>
                     </div>
                 </section>
 
-                {% set user_roles = app.user ? app.user.roles : [] %}
-                {% set showCreneau = false %}
-                {% if 'ROLE_ADMIN' not in user_roles and 'ROLE_PARTENAIRE' not in user_roles %}
-                    {% if 'ROLE_AGENT' in user_roles or 'ROLE_TELETRAVAILLEUR' in user_roles %}
-                        {% set showCreneau = true %}
-                    {% endif %}
-                {% endif %}
-                {% if showCreneau %}
-                <h2 class="h5 mb-3">Choisissez un créneau</h2>
-                <p class="text-muted mb-3">Le clic sur un créneau valide immédiatement votre commande.</p>
-                <input type="hidden" name="creneauId" id="checkout-creneau-id">
-
-                <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-6 g-3">
-                    {% for slot in creneaux %}
-                        <div class="col">
-                            <button
-                                class="card w-100 h-100 border-0 shadow-sm text-start"
-                                style="cursor: pointer;"
-                                type="button"
-                                data-slot-submit
-                                data-creneau-id="{{ slot.id }}"
-                            >
-                                <div class="card-body">
-                                    <p class="small text-body-secondary mb-1">{{ slot.dateHeure|date('d/m/Y') }}</p>
-                                    <p class="mb-0 fw-semibold">{{ slot.heureDebut|date('H\\hi') }} - {{ slot.heureFin|date('H\\hi') }}</p>
-                                </div>
-                            </button>
-                        </div>
-                    {% endfor %}
-                </div>
-                {% else %}
                 <div class="d-grid gap-2">
                     <button class="btn btn-primary btn-lg" type="submit">
-                        <i class="bi bi-check-circle me-2"></i>Valider ma commande
+                        Continuer
                     </button>
                 </div>
-                {% endif %}
             </form>
+        {% else %}
+            <section class="card mb-4">
+                <div class="card-body">
+                    <div class="d-flex flex-column flex-md-row justify-content-between gap-3 align-items-md-start">
+                        <div>
+                            <h2 class="h5 mb-3">Étape 1 : informations validées</h2>
+                            <p class="mb-1">Nom : {{ preparedCheckout.nom }}</p>
+                            <p class="mb-1">Prénom : {{ preparedCheckout.prenom }}</p>
+                            {% if preparedCheckout.numeroAgent is not null %}
+                                <p class="mb-0">Numéro d'agent : {{ preparedCheckout.numeroAgent }}</p>
+                            {% endif %}
+                        </div>
+                        <form method="post" action="{{ path('checkout_reset_identite') }}">
+                            <button class="btn btn-outline-secondary" type="submit">Modifier mes informations</button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            {% if showCreneau %}
+                {% if creneaux is empty %}
+                    <div class="alert alert-light border">Aucun créneau disponible.</div>
+                {% else %}
+                    <form method="post" action="{{ path('checkout_confirmer') }}" id="checkout-form">
+                        <h2 class="h5 mb-3">Étape 2 : choisissez un créneau</h2>
+                        <p class="text-muted mb-3">Le clic sur un créneau valide immédiatement votre commande.</p>
+                        <input type="hidden" name="creneauId" id="checkout-creneau-id">
+
+                        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-6 g-3">
+                            {% for slot in creneaux %}
+                                <div class="col">
+                                    <button
+                                        class="card w-100 h-100 border-0 shadow-sm text-start"
+                                        style="cursor: pointer;"
+                                        type="button"
+                                        data-slot-submit
+                                        data-creneau-id="{{ slot.id }}"
+                                    >
+                                        <div class="card-body">
+                                            <p class="small text-body-secondary mb-1">{{ slot.dateHeure|date('d/m/Y') }}</p>
+                                            <p class="mb-0 fw-semibold">{{ slot.heureDebut|date('H\\hi') }} - {{ slot.heureFin|date('H\\hi') }}</p>
+                                        </div>
+                                    </button>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </form>
+                {% endif %}
+            {% else %}
+                <form method="post" action="{{ path('checkout_preparer') }}">
+                    <input type="hidden" name="nom" value="{{ preparedCheckout.nom }}">
+                    <input type="hidden" name="prenom" value="{{ preparedCheckout.prenom }}">
+                    {% if preparedCheckout.numeroAgent is not null %}
+                        <input type="hidden" name="numeroAgent" value="{{ preparedCheckout.numeroAgent }}">
+                    {% endif %}
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary btn-lg" type="submit">
+                            Valider ma commande
+                        </button>
+                    </div>
+                </form>
+            {% endif %}
         {% endif %}
     </main>
 

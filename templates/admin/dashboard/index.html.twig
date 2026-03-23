@@ -32,6 +32,13 @@
                     </div>
                     {{ form_errors(form.boutique_ouverte_partenaires) }}
 
+                    <div class="form-check">
+                        {{ form_widget(form.mode_tout_doit_disparaitre, {'attr': {'class': 'form-check-input'}}) }}
+                        {{ form_label(form.mode_tout_doit_disparaitre, 'Mode Tout doit disparaître', {'label_attr': {'class': 'form-check-label'}}) }}
+                    </div>
+                    <p class="form-help mb-3">Autorise les agents a repasser commande et complete automatiquement leur commande du prochain samedi quand un creneau existe deja.</p>
+                    {{ form_errors(form.mode_tout_doit_disparaitre) }}
+
                     {{ form_row(form.max_produits_par_commande, {
                         label: 'Quota maximum d\'articles par commande',
                         attr: {'class': 'form-control', 'min': 1}

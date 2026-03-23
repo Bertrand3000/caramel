@@ -9,18 +9,24 @@ use App\Enum\ProfilUtilisateur;
 use App\Exception\CommandeDejaExistanteException;
 use App\Repository\CommandeRepository;
 use App\Repository\ParametreRepository;
+use App\Interface\ToutDoitDisparaitreServiceInterface;
 
 class CommandeLimitCheckerService
 {
     public function __construct(
         private readonly CommandeRepository $commandeRepository,
         private readonly ParametreRepository $parametreRepository,
+        private readonly ToutDoitDisparaitreServiceInterface $toutDoitDisparaitreService,
     ) {
     }
 
     public function assertPeutCommander(string $numeroAgent, ProfilUtilisateur $profil): void
     {
         if ($profil === ProfilUtilisateur::PARTENAIRE || $profil === ProfilUtilisateur::DMAX) {
+            return;
+        }
+
+        if ($this->toutDoitDisparaitreService->isEnabledForProfil($profil)) {
             return;
         }
 
