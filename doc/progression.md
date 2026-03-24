@@ -1,5 +1,7 @@
 # Progression
 
+Mise à jour 24/03/2026 : les blocs ci-dessous sont complétés avec les évolutions réellement présentes dans le dépôt.
+
 ## Phase 2 — (conservé tel quel)
 
 ### Bloc A — Interfaces & services métier
@@ -77,3 +79,27 @@
 - [x] Entité temporaire `CommandeContactTmp` utilisée pour les contacts importés
 - [x] Tests unitaires service mailer
 - [x] Tests unitaires générateur de bon de livraison
+
+## Compléments transverses livrés après le cadrage initial
+
+### Administration des journées de livraison
+- [x] Entité `JourLivraison`
+- [x] CRUD admin `JourLivraisonController`
+- [x] `CreneauGeneratorService`
+- [x] Fermeture/réouverture des réservations par journée
+- [x] Règle `exigerJourneePleine` au checkout
+- [x] Vue admin des créneaux avec annulation et dévalidation d'une réservation
+
+### Contrôle d'éligibilité et limitation des commandes
+- [x] Entité `AgentEligible`
+- [x] Import XLSX des agents éligibles
+- [x] `AgentEligibilityCheckerService`
+- [x] `CommandeLimitCheckerService`
+- [x] Exception `CommandeDejaExistanteException`
+
+### Documents et exports logistiques
+- [x] `DocumentPdfGenerator`
+- [x] PDF unitaires: bon de commande, bon de préparation, bon de livraison
+- [x] PDF batch pour une journée
+- [x] Liste agents PDF
+- [x] Export récap matériel XLSX

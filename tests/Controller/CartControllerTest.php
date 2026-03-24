@@ -167,7 +167,7 @@ final class CartControllerTest extends WebTestCase
     private function setQuotaArticlesMax(int $quota): void
     {
         $entityManager = static::getContainer()->get(EntityManagerInterface::class);
-        $param = $entityManager->getRepository(Parametre::class)->findOneBy(['cle' => 'quota_articles_max']) ?? (new Parametre())->setCle('quota_articles_max');
+        $param = $entityManager->getRepository(Parametre::class)->findOneBy(['cle' => 'max_produits_par_commande']) ?? (new Parametre())->setCle('max_produits_par_commande');
         $param->setValeur((string) $quota);
         $entityManager->persist($param);
         $entityManager->flush();

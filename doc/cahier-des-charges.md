@@ -240,20 +240,24 @@ Conformément au principe de **limitation de la conservation** (RGPD, art. 5-1-e
 
 ---
 
-## 14. Modèle de données *(ébauche)*
+## 14. Modèle de données *(aligné sur l'implémentation au 24/03/2026)*
 
-- **produits** — id, numéro_inventaire *(nullable)*, libellé, photo_produit, photo_num_inventaire *(nullable)*, état (TBE/bon/abîmé), tag_télétravailleur, étage, porte, largeur, hauteur, profondeur, statut (`disponible` / `réservé_temporaire` / `réservé` / `remis`)
-- **utilisateurs** — id, login, mot_de_passe, rôle (admin / dmax / agent / télétravailleur / partenaire / agent_recuperation), actif (booléen)
-- **partenaires** — id, id_utilisateur, nom, type (institution / association), contact
-- **télétravailleurs_liste** — numéro_agent (5 chiffres, liste de référence importable)
-- **commandes** — id, id_utilisateur, numéro_agent, nom, prénom, id_créneau *(nullable pour partenaires)*, date_validation, statut (`en_attente_validation` / `confirmée` / `refusée` / `à_préparer` / `en_préparation` / `prête` / `retirée` / `annulée`)
+- **produits** — id, numero_inventaire *(nullable)*, libelle, photo_produit, photo_numero_inventaire *(nullable)*, etat, tag_teletravailleur, etage, porte, largeur, hauteur, profondeur, statut, quantite *(défaut 1)*, description *(nullable)*, gestion *(nullable)*, annee *(nullable)*, type *(nullable)*, chrono *(nullable)*, vnc
+- **utilisateurs** — id, login, password, roles *(JSON)*, actif, profil (`public` / `dmax` / `teletravailleur` / `partenaire`)
+- **partenaires** — id, id_utilisateur, nom, type (`institution` / `association`), contact *(nullable)*
+- **teletravailleurs_liste** — id, numero_agent unique
+- **agent_eligible** — id, numero_agent unique ; référentiel distinct pour filtrer les agents autorisés à commander
+- **commandes** — id, id_utilisateur, session_id, numero_agent *(nullable)*, nom *(nullable)*, prenom *(nullable)*, id_creneau *(nullable)*, date_validation, statut (`en_attente_validation` / `validee` / `en_preparation` / `prete` / `retiree` / `annulee`), profil_commande (`agent` / `teletravailleur` / `partenaire` / `dmax`)
 - **lignes_commande** — id, id_commande, id_produit
-- **paniers** — id, id_utilisateur, date_expiration (30 min)
+- **paniers** — id, id_utilisateur *(nullable)*, session_id, date_expiration
 - **lignes_panier** — id, id_panier, id_produit
-- **créneaux** — id, date, heure_début, heure_fin, capacité_max (10), capacité_utilisée, type (télétravailleur / général)
-- **bons_livraison** — id, id_commande, date_impression, signé
-- **commande_contacts_tmp** — id, id_commande, email, téléphone, import_batch_id, imported_at *(purgé à Retirée/Annulée)*
-- **parametres** — boutique_ouverte_agents (bool), boutique_ouverte_télétravailleurs (bool), boutique_ouverte_partenaires (bool), max_produits_par_commande (int, défaut 3), durée_panier_minutes (int, défaut 30), plages_horaires…
+- **reservations_temporaires** — id, id_produit, quantite, session_id, expire_at ; réservations anti-surréservation du panier
+- **jours_livraison** — id, date, actif, reservations_ouvertes, heure_ouverture, heure_fermeture, coupure_meridienne, heure_coupure_debut *(nullable)*, heure_coupure_fin *(nullable)*, exiger_journee_pleine
+- **creneaux** — id, date_heure, heure_debut, heure_fin, capacite_max, capacite_utilisee, type (`general` / `teletravailleur`), id_jour_livraison *(nullable)*
+- **bons_livraison** — id, id_commande, signe
+- **commande_contacts_tmp** — id, id_commande, email *(nullable)*, telephone *(nullable)* ; données GRH jetables, purgées à retrait ou annulation
+- **parametres** — table clé/valeur utilisée notamment pour `boutique_ouverte_agents`, `boutique_ouverte_teletravailleurs`, `boutique_ouverte_partenaires`, `max_produits_par_commande` *(clé quota active côté admin/front)*, `quota_articles_max` *(clé historique encore tolérée en lecture)*, `duree_creneau_minutes`, `capacite_creneau_max`
+- **regles_tagger** — id, libelle_contains, tag_teletravailleur ; règles automatiques de taggage catalogue
 
 ---
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller\Admin;
 
 use App\Interface\ExportServiceInterface;
+use App\Interface\UrssafExportServiceInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -29,6 +30,12 @@ final class ExportController extends AbstractController
         return $this->download($exportService->exportComptabiliteCsv(), 'comptabilite', $format);
     }
 
+    #[Route('/admin/exports/urssaf.xlsx', name: 'admin_export_urssaf', methods: ['GET'])]
+    public function urssaf(UrssafExportServiceInterface $urssafExportService): Response
+    {
+        return $this->downloadXlsx($urssafExportService->exportXlsx(), 'export_urssaf');
+    }
+
     private function download(string $content, string $basename, string $format): Response
     {
         $date = (new \DateTimeImmutable())->format('Ymd_His');
@@ -39,6 +46,16 @@ final class ExportController extends AbstractController
         return new Response($content, Response::HTTP_OK, [
             'Content-Type' => $contentType,
             'Content-Disposition' => sprintf('attachment; filename="%s_%s.%s"', $basename, $date, $format),
+        ]);
+    }
+
+    private function downloadXlsx(string $content, string $basename): Response
+    {
+        $date = (new \DateTimeImmutable())->format('Ymd_His');
+
+        return new Response($content, Response::HTTP_OK, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => sprintf('attachment; filename="%s_%s.xlsx"', $basename, $date),
         ]);
     }
 }

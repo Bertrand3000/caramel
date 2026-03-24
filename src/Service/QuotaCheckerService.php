@@ -76,9 +76,19 @@ class QuotaCheckerService
 
     private function readQuota(): int
     {
-        $param = $this->parametreRepository->findOneByKey('quota_articles_max');
+        foreach (['max_produits_par_commande', 'quota_articles_max'] as $key) {
+            $param = $this->parametreRepository->findOneByKey($key);
+            if ($param === null) {
+                continue;
+            }
 
-        return $param ? (int) $param->getValeur() : self::DEFAULT_QUOTA;
+            $value = (int) $param->getValeur();
+            if ($value > 0) {
+                return $value;
+            }
+        }
+
+        return self::DEFAULT_QUOTA;
     }
 
     private function readExistingArticlesCount(

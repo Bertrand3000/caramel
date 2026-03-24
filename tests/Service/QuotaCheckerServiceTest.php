@@ -38,7 +38,7 @@ final class QuotaCheckerServiceTest extends TestCase
 
     public function testTeletravailleurRespecteLimiteParNumeroAgent(): void
     {
-        $param = (new Parametre())->setCle('quota_articles_max')->setValeur('5');
+        $param = (new Parametre())->setCle('max_produits_par_commande')->setValeur('5');
         $paramRepo = $this->createMock(ParametreRepository::class);
         $paramRepo->method('findOneByKey')->willReturn($param);
         $commandeRepo = $this->createMock(CommandeRepository::class);
@@ -71,7 +71,7 @@ final class QuotaCheckerServiceTest extends TestCase
 
     public function testQuotaLuDepuisParametrePourPublicParNumeroAgent(): void
     {
-        $param = (new Parametre())->setCle('quota_articles_max')->setValeur('7');
+        $param = (new Parametre())->setCle('max_produits_par_commande')->setValeur('7');
         $paramRepo = $this->createMock(ParametreRepository::class);
         $paramRepo->method('findOneByKey')->willReturn($param);
         $commandeRepo = $this->createMock(CommandeRepository::class);
@@ -97,7 +97,7 @@ final class QuotaCheckerServiceTest extends TestCase
 
     public function testTeletravailleurQuotaIndependantDuProfilAgent(): void
     {
-        $param = (new Parametre())->setCle('quota_articles_max')->setValeur('3');
+        $param = (new Parametre())->setCle('max_produits_par_commande')->setValeur('3');
         $paramRepo = $this->createMock(ParametreRepository::class);
         $paramRepo->method('findOneByKey')->willReturn($param);
         $commandeRepo = $this->createMock(CommandeRepository::class);
@@ -114,7 +114,7 @@ final class QuotaCheckerServiceTest extends TestCase
 
     public function testTeletravailleurPeutEncorePrendreQuotaCompletEnCommandeAgent(): void
     {
-        $param = (new Parametre())->setCle('quota_articles_max')->setValeur('3');
+        $param = (new Parametre())->setCle('max_produits_par_commande')->setValeur('3');
         $paramRepo = $this->createMock(ParametreRepository::class);
         $paramRepo->method('findOneByKey')->willReturn($param);
 
@@ -134,7 +134,7 @@ final class QuotaCheckerServiceTest extends TestCase
 
     public function testCanAddMoreItemsRespecteQuotaPourAgent(): void
     {
-        $param = (new Parametre())->setCle('quota_articles_max')->setValeur('2');
+        $param = (new Parametre())->setCle('max_produits_par_commande')->setValeur('2');
         $paramRepo = $this->createMock(ParametreRepository::class);
         $paramRepo->method('findOneByKey')->willReturn($param);
         $service = new QuotaCheckerService($paramRepo, $this->createMock(CommandeRepository::class));
@@ -155,7 +155,7 @@ final class QuotaCheckerServiceTest extends TestCase
 
     public function testGetCartQuotaForRolesRetourneQuotaPourAgent(): void
     {
-        $param = (new Parametre())->setCle('quota_articles_max')->setValeur('4');
+        $param = (new Parametre())->setCle('max_produits_par_commande')->setValeur('4');
         $paramRepo = $this->createMock(ParametreRepository::class);
         $paramRepo->method('findOneByKey')->willReturn($param);
         $service = new QuotaCheckerService($paramRepo, $this->createMock(CommandeRepository::class));

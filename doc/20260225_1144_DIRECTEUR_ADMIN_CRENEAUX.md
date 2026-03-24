@@ -10,6 +10,10 @@
 
 Permettre aux administrateurs de configurer des **journées de livraison** : jours ouverts, plages horaires, coupure méridienne libre, règle "exiger que la journée soit pleine avant de proposer le jour suivant". L'admin dispose d'une **vue visuelle par journée** affichant les créneaux générés, leur taux de remplissage, les commandes associées, avec la possibilité d'annuler une réservation individuelle.
 
+> Mise à jour 24/03/2026 :
+> la fonctionnalité est implémentée, avec quelques écarts par rapport au cadrage initial.
+> Les sections ci-dessous sont réalignées sur le code existant.
+
 ---
 
 ## DÉCISIONS ARCHITECTURALES
@@ -30,9 +34,9 @@ Un `JourLivraison` possède plusieurs `Creneau`. La FK `jour_livraison_id` est a
 
 ### D3 — Champ `exigerJourneePleine` : booléen sur `JourLivraison`
 
-Ce champ remplace et généralise l'ancienne logique couplée au type `TELETRAVAILLEUR`. Il est **indépendant du type** : n'importe quelle journée (GENERAL ou TELETRAVAILLEUR) peut activer cette règle.
+Le code actuel applique cette règle sans type porté par `JourLivraison`. La recherche du "jour bloquant" se fait uniquement par date croissante sur les journées actives marquées `exigerJourneePleine = true`.
 
-**Règle métier :** lors du checkout, si un `JourLivraison` actif du **même type** avec `exigerJourneePleine = true` existe chronologiquement **avant** le jour sélectionné et n'est pas encore plein, la sélection est bloquée.
+**Règle métier :** lors du checkout, si un `JourLivraison` actif avec `exigerJourneePleine = true` existe chronologiquement avant le jour sélectionné et n'est pas encore plein, la sélection est bloquée.
 
 **Définition de "plein" :** tous les créneaux du jour ont `capaciteUtilisee >= capaciteMax`.
 
@@ -42,7 +46,7 @@ Ce champ remplace et généralise l'ancienne logique couplée au type `TELETRAVA
 
 ### D4 — Capacité et durée des créneaux : paramètres globaux
 
-Les champs `capaciteMax` (défaut 10) et `dureeCreneauMinutes` (défaut 30) restent dans `Parametre`. Le générateur lit ces valeurs **au moment de la génération** et les fige dans chaque `Creneau` créé (pour éviter les effets de bord d'une modification ultérieure des globaux sur des créneaux existants).
+Les champs `capaciteMax` (défaut 10) et `dureeCreneauMinutes` (défaut 30) sont lus via `Parametre` avec fallback sur plusieurs clés historiques (`capacite_creneau_max` / `capaciteMax`, `duree_creneau_minutes` / `dureeCreneauMinutes`).
 
 ---
 
@@ -70,9 +74,16 @@ L'annulation passe **obligatoirement** par le Workflow `commande_lifecycle` (tra
 
 Aucun accès direct au Repository pour annuler depuis cette vue.
 
+### D7 — Ouverture/Fermeture des réservations par journée
+
+Le code ajoute un booléen `reservationsOuvertes` sur `JourLivraison`, pilotable depuis l'admin. Cette information est utilisée :
+- dans l'affichage des créneaux disponibles au checkout
+- dans la validation finale de commande
+- dans la vue admin des journées
+
 ---
 
-### D7 — Coupure méridienne libre
+### D8 — Coupure méridienne libre
 
 L'admin définit librement `heureCoupureDebut` et `heureCoupureFin` (ex : 11h30–13h30). Ces deux champs sont **nullables** et ignorés si `coupureMeridienne = false`. Des contraintes de cohérence temporelle sont validées côté formulaire.
 
@@ -91,13 +102,13 @@ src/Entity/JourLivraison.php
 | `id`                | int (PK auto)         | —       | Identifiant                                          |
 | `date`              | date_immutable        | —       | Date de la journée de livraison                      |
 | `actif`             | bool                  | `true`  | Jour ouvert ou fermé                                 |
+| `reservationsOuvertes` | bool               | `true`  | Réservations autorisées ou bloquées pour ce jour     |
 | `heureOuverture`    | time                  | `08:00` | Début de la première plage horaire                   |
 | `heureFermeture`    | time                  | `17:00` | Fin de la dernière plage horaire                     |
 | `coupureMeridienne` | bool                  | `false` | Active la pause méridienne                           |
 | `heureCoupureDebut` | time (nullable)       | `null`  | Début de la pause (ex : 12:00)                       |
 | `heureCoupureFin`   | time (nullable)       | `null`  | Fin de la pause (ex : 13:00)                         |
 | `exigerJourneePleine` | bool                | `false` | Doit être plein avant de proposer le jour suivant    |
-| `type`              | CreneauTypeEnum       | GENERAL | GENERAL ou TELETRAVAILLEUR                           |
 | `creneaux`          | Collection\<Creneau\> | []      | OneToMany (mapped by `jourLivraison`)                |
 
 **Contraintes de validation (Assert) :**
@@ -154,15 +165,13 @@ src/Form/JourLivraisonType.php
 Champs :
 - `date` → `DateType` (widget: single_text)
 - `actif` → `CheckboxType`
-- `type` → `EnumType` (CreneauTypeEnum)
 - `heureOuverture` → `TimeType` (widget: single_text, with_seconds: false)
 - `heureFermeture` → `TimeType`
 - `coupureMeridienne` → `CheckboxType`
 - `heureCoupureDebut` → `TimeType` (required: false)
 - `heureCoupureFin` → `TimeType` (required: false)
 - `exigerJourneePleine` → `CheckboxType`
-
-`heureCoupureDebut` et `heureCoupureFin` sont affichés/masqués dynamiquement via un contrôleur **Stimulus** réagissant au toggle de `coupureMeridienne`.
+- `reservationsOuvertes` n'est pas géré dans le formulaire principal ; il est piloté par une action dédiée depuis la liste ou la vue créneaux
 
 ---
 
@@ -193,11 +202,12 @@ src/DTO/GenerationResult.php
 | `avertissements`| string[] | Conflits horaires non résolus        |
 
 **Algorithme principal :**
-1. Lire `Parametre` → `dureeCreneauMinutes`, `capaciteMax`
+1. Lire `Parametre` → `dureeCreneauMinutes` / `capaciteMax` avec fallback de clés
 2. Calculer la grille théorique : plage matin (`heureOuverture` → `heureCoupureDebut`) + plage après-midi (`heureCoupureFin` → `heureFermeture`) si coupure active, sinon plage unique
 3. Récupérer les `Creneau` existants du jour, partitioner en "verrouillés" vs "libres"
 4. Supprimer les libres hors grille théorique
-5. Créer les créneaux manquants, sauf si conflit horaire exact avec un créneau verrouillé (→ avertissement)
+5. Déterminer le `type` des nouveaux créneaux à partir du premier créneau existant, sinon `GENERAL`
+6. Créer les créneaux manquants, sauf si conflit horaire exact avec un créneau verrouillé (→ avertissement)
 6. Flush et retourner `GenerationResult`
 
 ---
@@ -212,8 +222,10 @@ Méthodes à exposer :
 
 | Méthode                                                    | Description                                                                 |
 |------------------------------------------------------------|-----------------------------------------------------------------------------|
-| `findActifsByTypeOrderedByDate(CreneauTypeEnum): array`    | Jours actifs d'un type, triés ASC par date                                 |
-| `findPremierJourNonPleinAvant(\DateTimeImmutable, CreneauTypeEnum): ?JourLivraison` | Premier jour actif avec `exigerJourneePleine=true`, non plein, avant la date cible — utilisé dans le checkout |
+| `findAllWithCreneauxOrderedByDate(): array` | Liste admin des journées avec leurs créneaux |
+| `findPremierJourNonPleinAvant(\DateTimeImmutable): ?JourLivraison` | Premier jour actif avec `exigerJourneePleine=true`, non plein, avant la date cible |
+| `findNextActiveDeliveryDay(): ?JourLivraison` | Prochaine journée active pour la logistique |
+| `findNextOpenDeliveryDayFrom(\DateTimeImmutable): ?JourLivraison` | Prochaine journée active avec réservations ouvertes pour le checkout |
 
 La méthode `findPremierJourNonPleinAvant` utilise un `JOIN` sur `creneaux` avec agrégation pour calculer "plein" directement en SQL (performance).
 
@@ -230,8 +242,8 @@ templates/admin/jours_livraison/
 
 #### Structure de `creneaux.html.twig`
 
-- En-tête : date, type, stats globales (X/Y commandes, Z créneaux)
-- Bouton "Régénérer les créneaux" → POST vers `generer`, avec **modal de confirmation** affichant les stats `GenerationResult` avant validation
+- En-tête : date, stats globales (X/Y réservations, Z créneaux), statut d'ouverture
+- Bouton "Régénérer les créneaux" → POST vers `generer`
 - Tableau chronologique des créneaux :
 
 | Heure | Capacité | Commandes | Action |
@@ -241,7 +253,8 @@ templates/admin/jours_livraison/
 | 09:00–09:30 | 0/10 🟢 | — | — |
 
 - Pour chaque commande dans un créneau : numéro agent, nom, prénom, statut
-- Bouton "Annuler" par commande → POST vers `annulerReservation`, avec confirmation JS
+- Bouton "Annuler" par commande → POST vers `annulerReservation`
+- Bouton "Dévalider" par commande → POST vers `devaliderReservation`
 
 **Badges de remplissage :**
 - 🟢 0 % → < 50 %
@@ -256,7 +269,7 @@ Intégrer la règle `exigerJourneePleine` dans la méthode de sélection/validat
 
 ```
 Avant de valider le créneau choisi :
-  → appeler JourLivraisonRepository::findPremierJourNonPleinAvant($dateChoisie, $type)
+  → appeler JourLivraisonRepository::findPremierJourNonPleinAvant($dateChoisie)
   → si résultat non null : lever une exception métier "Le jour du [date] doit être complet avant de choisir cette date"
   → le CheckoutController affiche le message à l'utilisateur sans invalider le panier
 ```

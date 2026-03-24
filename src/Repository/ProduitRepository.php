@@ -181,7 +181,15 @@ class ProduitRepository extends ServiceEntityRepository
             }
         }
         if ($q !== null && $q !== '') {
-            $keyword = mb_strtolower(trim($q));
+            $keyword = trim($q);
+            if (preg_match('/^#(\d+)$/', $keyword, $matches) === 1) {
+                $qb->andWhere('p.id = :productId')
+                    ->setParameter('productId', (int) $matches[1]);
+
+                return $qb;
+            }
+
+            $keyword = mb_strtolower($keyword);
             $escapedKeyword = addcslashes($keyword, '%_');
             $qb->andWhere('LOWER(p.libelle) LIKE :keyword OR LOWER(COALESCE(p.description, \'\')) LIKE :keyword')
                 ->setParameter('keyword', '%'.$escapedKeyword.'%');

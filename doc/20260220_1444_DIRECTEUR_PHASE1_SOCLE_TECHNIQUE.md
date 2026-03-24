@@ -15,6 +15,10 @@ Mettre en place le squelette Symfony 6.4 / PHP 8.2, le modèle de données compl
 
 **Critère de succès unique :** Un `symfony server:start` fonctionnel sur le VPS avec toutes les entités migrées en base, tous les profils de sécurité actifs et les interfaces de service créées — sans aucune logique métier implémentée.
 
+> Mise à jour 24/03/2026 :
+> ce document reste la référence de cadrage Phase 1, mais le dépôt a largement dépassé ce stade.
+> Les sections ci-dessous ont été réalignées lorsque le code a divergé de manière significative.
+
 ---
 
 ## DÉCISIONS
@@ -38,7 +42,7 @@ src/
 ├── Controller/
 │   ├── Admin/              # Gestion boutique, comptes, paramètres
 │   ├── Dmax/               # Back-office inventaire + tableau remise
-│   └── Shop/               # Front-office boutique (agents, télétravailleurs, partenaires)
+│   └── Shop/               # Répertoire prévu côté front
 ├── Entity/                 # 11 entités Doctrine
 ├── Repository/             # Repositories Doctrine (1 par entité)
 ├── Service/                # Implémentations des interfaces
@@ -48,6 +52,10 @@ src/
 └── Command/                # Commandes console (cron purge nocturne, exports)
 ```
 
+**État code**
+- Les contrôleurs front réellement utilisés sont aujourd'hui majoritairement dans `src/Controller/` à la racine: `ShopController`, `CartController`, `CheckoutController`, `LogistiqueController`, `SecurityController`, `HomeController`.
+- Les sous-répertoires `Admin/` et `Dmax/` sont bien utilisés ; `Shop/` existe mais le front principal n'y a pas été déplacé.
+
 ### D3 — Sécurité multi-profils : un seul firewall, rôles distincts
 
 Un seul firewall `main` avec `LoginFormAuthenticator`. Hiérarchie des rôles :
@@ -56,14 +64,14 @@ Un seul firewall `main` avec `LoginFormAuthenticator`. Hiérarchie des rôles :
 ROLE_ADMIN > ROLE_DMAX > ROLE_AGENT_RECUPERATION
 ROLE_ADMIN > ROLE_PARTENAIRE
 ROLE_ADMIN > ROLE_AGENT
-ROLE_ADMIN > ROLE_TELÉTRAVAILLEUR
+ROLE_ADMIN > ROLE_TELETRAVAILLEUR
 ```
 
-> ⚠️ **Décision critique :** `ROLE_AGENT` et `ROLE_TELÉTRAVAILLEUR` sont **distincts et non hiérarchiques**. Un télétravailleur possède les DEUX rôles sur son compte, ce qui lui permet de passer deux commandes séparées (une par profil), chacune avec son propre créneau et son propre quota. Un agent non-télétravailleur ne possède que `ROLE_AGENT`.
+> ⚠️ **Décision critique :** `ROLE_AGENT` et `ROLE_TELETRAVAILLEUR` sont distincts et non hiérarchiques. Le code de sécurité actuel utilise bien `ROLE_TELETRAVAILLEUR` sans accent.
 
 ### D4 — Modèle de données figé en Phase 1, migration unique
 
-Le schéma complet des 11 entités est créé via **une seule migration Doctrine** (`Version20260220000000`). Cela facilite le rollback et garantit un état de base reproductible sur le VPS. Aucun ajout de colonne ne sera fait par les agents IA dans les phases suivantes sans passer par une nouvelle migration versionnée.
+Le schéma n'est plus figé à 11 entités ni à une migration unique. Le dépôt a évolué avec plusieurs ajouts structurants (`JourLivraison`, `ReservationTemporaire`, `AgentEligible`, `RegleTagger`, enrichissements produit et logistique). Ne plus lire cette section comme une contrainte encore valable.
 
 ### D5 — Workflow Symfony natif pour le cycle de vie des commandes
 
@@ -73,50 +81,67 @@ Le composant `symfony/workflow` gère les transitions de statut de `Commande`. L
 
 ## COMPOSANTS
 
-### C1 — Les 11 entités Doctrine (schéma complet CdC §14)
+### C1 — Entités Doctrine présentes dans le dépôt
 
 | Entité | Table BDD | Points d'attention |
 |---|---|---|
-| `Produit` | `produits` | Statut en enum PHP : `disponible`, `réservé_temporaire`, `réservé`, `remis` |
-| `Utilisateur` | `utilisateurs` | Implémente `UserInterface` + `PasswordAuthenticatedUserInterface`. Champ `roles` JSON. |
-| `Partenaire` | `partenaires` | Relation OneToOne vers `Utilisateur`. Champ `type` enum : `institution`, `association` |
-| `TeletravaitleurListe` | `télétravailleurs_liste` | Table de référence uniquement — colonne `numéro_agent` CHAR(5) unique |
-| `Commande` | `commandes` | Champ `statut` géré par Symfony Workflow. `id_créneau` nullable (partenaires) |
-| `LigneCommande` | `lignes_commande` | ManyToOne vers `Commande` et `Produit` |
-| `Panier` | `paniers` | `date_expiration` = `CURRENT_TIMESTAMP + 30min`. OneToOne vers `Utilisateur` |
-| `LignePanier` | `lignes_panier` | ManyToOne vers `Panier` et `Produit` |
-| `Creneau` | `créneaux` | Type enum : `télétravailleur`, `général`. Champ `capacité_utilisée` incrémenté à la commande |
-| `BonLivraison` | `bons_livraison` | OneToOne vers `Commande`. Champ `signé` booléen |
-| `CommandeContactTmp` | `commande_contacts_tmp` | Contient email + téléphone. Purgé automatiquement à `retirée` ou `annulée` |
-| `Parametre` | `parametres` | Table clé-valeur : `boutique_ouverte_agents`, `boutique_ouverte_télétravailleurs`, `boutique_ouverte_partenaires`, `max_produits_par_commande`, `durée_panier_minutes` |
+Le dépôt contient actuellement 16 entités principales :
 
-### C2 — Les 11 interfaces de service (contrats pour les agents IA)
+| Entité | Table BDD | Note |
+|---|---|---|
+| `Produit` | `produits` | Produit enrichi : quantité, description, VNC, données Copernic |
+| `Utilisateur` | `utilisateurs` | `roles` JSON + `profil` enum |
+| `Partenaire` | `partenaires` | OneToOne vers `Utilisateur` |
+| `TeletravailleurListe` | `teletravailleurs_liste` | Référentiel télétravailleurs |
+| `AgentEligible` | `agent_eligible` | Référentiel agents autorisés |
+| `Commande` | `commandes` | Statut piloté par workflow |
+| `LigneCommande` | `lignes_commande` | Lignes de commande |
+| `Panier` | `paniers` | Panier rattaché à session et/ou utilisateur |
+| `LignePanier` | `lignes_panier` | Lignes de panier |
+| `ReservationTemporaire` | `reservations_temporaires` | Réservation de stock temporaire |
+| `JourLivraison` | `jours_livraison` | Gabarit de journée avec ouverture/réservations |
+| `Creneau` | `creneaux` | Créneau généré, rattachable à un `JourLivraison` |
+| `BonLivraison` | `bons_livraison` | Bon de livraison |
+| `CommandeContactTmp` | `commande_contacts_tmp` | Contacts GRH jetables |
+| `Parametre` | `parametres` | Paramètres applicatifs clé/valeur |
+| `RegleTagger` | `regles_tagger` | Taggage automatique télétravailleur |
 
-Ces fichiers sont créés **vides** en Phase 1. Les agents IA reçoivent l'interface comme contexte de prompt dans les phases suivantes.
+### C2 — Interfaces de service présentes
+
+Le dépôt ne se limite plus aux 11 contrats initiaux. Il contient aujourd'hui un ensemble plus large d'interfaces couvrant :
+- inventaire, checkout, panier et créneaux
+- workflow de commande, décisions admin et contrôles d'éligibilité
+- import GRH CSV/XLSX
+- génération PDF, bons et exports
+- logistique, dashboard admin et contrôles d'ouverture boutique
 
 ```php
-interface InventoryManagerInterface       // CRUD produits, gestion tag télétravailleur, règles de taggage par libellé
-interface CartManagerInterface            // Ajout/suppression articles panier, calcul expiration
-interface StockReservationInterface       // Réservation temporaire (30min) et définitive à la validation
-interface CheckoutServiceInterface        // Validation commande : contrôle quota, choix créneau, création Commande
-interface SlotManagerInterface            // Gestion créneaux : disponibilité, saturation, libération
-interface OrderWorkflowInterface          // Déclenchement des transitions Symfony Workflow
-interface GrhImportServiceInterface       // Parsing et insertion CSV GRH dans commande_contacts_tmp
-interface NotificationServiceInterface    // Envoi emails acceptation/refus via données GRH importées
-interface DeliverySheetGeneratorInterface // Génération bon de livraison (HTML print-friendly ou PDF)
-interface ExportServiceInterface          // Exports CSV : ventes, stocks restants, comptabilité
-interface PurgeServiceInterface           // Suppression données commande_contacts_tmp (RGPD)
+InventoryManagerInterface
+CartManagerInterface
+CheckoutServiceInterface
+SlotManagerInterface
+GrhImportServiceInterface
+CommandeGrhImportServiceInterface
+MailerNotifierInterface
+DocumentPdfGeneratorInterface
+LogistiqueServiceInterface
+ExportServiceInterface
+PurgeServiceInterface
 ```
 
-### C3 — Les 6 DTOs `readonly class` PHP 8.2
+### C3 — DTOs `readonly class`
+
+Le dépôt contient actuellement les DTOs `readonly` suivants :
 
 ```php
-readonly class CreateProduitDTO           // Saisie DMAX : libellé, état, dimensions, étage, porte, tag
-readonly class CartAddItemDTO             // id_produit + id_utilisateur
-readonly class CheckoutAgentDTO           // numéro_agent (format \d{5}), nom, prénom, id_créneau
-readonly class CheckoutPartenaireDTO      // Validation sans créneau, liée au compte partenaire
-readonly class GrhImportRowDTO            // numéro_agent, nom, prénom, email, téléphone (jetable)
-readonly class ProduitFilterDTO           // Filtres catalogue : tag_télétravailleur, état, disponibilité
+readonly class CreateProduitDTO
+readonly class CartAddItemDTO
+readonly class CheckoutAgentDTO
+readonly class CheckoutPartenaireDTO
+readonly class GrhImportRowDTO
+readonly class ProduitFilterDTO
+readonly class CommandeGrhImportResult
+readonly class GenerationResult
 ```
 
 ### C4 — Configuration sécurité (`security.yaml`)
@@ -127,7 +152,10 @@ Accès contrôlé par préfixe de chemin :
 |---|---|
 | `/admin/**` | `ROLE_ADMIN` uniquement |
 | `/dmax/**` | `ROLE_DMAX`, `ROLE_AGENT_RECUPERATION` |
-| `/shop/**` | `ROLE_AGENT`, `ROLE_TELÉTRAVAILLEUR`, `ROLE_PARTENAIRE` |
+| `/boutique/**` | `ROLE_ADMIN`, `ROLE_AGENT`, `ROLE_TELETRAVAILLEUR`, `ROLE_PARTENAIRE` |
+| `/panier/**` | `ROLE_ADMIN`, `ROLE_AGENT`, `ROLE_TELETRAVAILLEUR`, `ROLE_PARTENAIRE` |
+| `/commande/**` | `ROLE_ADMIN`, `ROLE_AGENT`, `ROLE_TELETRAVAILLEUR`, `ROLE_PARTENAIRE` |
+| `/logistique/**` | `ROLE_DMAX`, `ROLE_AGENT_RECUPERATION` |
 | `/login` | Public |
 
 ### C5 — Workflow Symfony pour `Commande`
@@ -135,33 +163,28 @@ Accès contrôlé par préfixe de chemin :
 ```
 [en_attente_validation]
         │
-        ├─ confirmer ──────────────────► [confirmée]
-        │                                     │
-        └─ refuser ──► [refusée]         à_préparer
-                       (produits                │
-                        remis en vente)    [à_préparer]
-                                               │
-                                          préparer
-                                               │
-                                         [en_préparation]
-                                               │
-                                           terminer
-                                               │
-                                            [prête]
-                                               │
-                              ┌────────────────┤
-                              │                │
-                           retirer          annuler
-                              │                │
-                          [retirée]        [annulée]
-                         (purge RGPD)    (purge RGPD +
-                                         remise en vente)
+        ├─ valider ─────────────────────► [validee]
+        │                                    │
+        │                             demarrer_preparation
+        │                                    │
+        │                              [en_preparation]
+        │                                    │
+        │                           terminer_preparation
+        │                                    │
+        │                                  [prete]
+        │                                    │
+        │                               acter_retrait
+        │                                    │
+        │                                 [retiree]
+        │
+        └─ annuler_commande ────────────► [annulee]
 ```
 
-**Listener sur `retirée` ET `annulée` :**
-1. Suppression de `CommandeContactTmp` associé
-2. Libération du créneau (`capacité_utilisée--`)
-3. Remise des produits à `disponible` (uniquement sur `annulée`)
+**Effets observés dans le code :**
+1. Email de validation sur `valider`
+2. Email de refus/annulation sur `annuler_commande`
+3. Purge/anonymisation RGPD sur `acter_retrait` et `annuler_commande`
+4. Libération du créneau et remise en stock gérées côté service d'annulation
 
 ---
 

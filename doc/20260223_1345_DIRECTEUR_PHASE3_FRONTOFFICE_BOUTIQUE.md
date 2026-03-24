@@ -6,16 +6,20 @@ Date: 2026-02-23 | Projet: Caramel | Type: Architecture
 
 ## OBJECTIF
 
-Développer les tunnels de commande différenciés par profil (filtrage télétravailleurs, quotas d'articles, exemptions pour les partenaires) et sécuriser la réservation physique des produits via un mécanisme de réservation temporaire anti-surréservation.
+Développer les tunnels de commande différenciés par profil et sécuriser la réservation physique des produits.
+
+> Mise à jour 24/03/2026 :
+> cette phase est implémentée et a évolué au-delà du plan initial.
+> Les points ci-dessous décrivent désormais l'architecture réellement en place.
 
 ---
 
 ## DÉCISIONS ARCHITECTURALES
 
-### D1 — Réservation temporaire de stock (30 min)
-- Entité `ReservationTemporaire` liée à la session utilisateur avec champ `expire_at` (DateTime +30min).
-- Un `EventSubscriber` (ou commande console optionnelle) libère les réservations expirées à chaque requête entrante.
-- Lors de l'ajout au panier : décrémentation du **stock disponible calculé** (`produit.quantite - SUM(reservations actives)`) — le champ `Produit.quantite` reste intact jusqu'à la validation finale.
+### D1 — Réservation temporaire de stock
+- L'entité `ReservationTemporaire` est bien utilisée pour porter la réservation par session.
+- `CartManager` gère l'ajout, la suppression, l'expiration et la prolongation des réservations actives.
+- Le stock fonctionnel repose sur `Produit.quantite` et sur le nettoyage des réservations temporaires avant validation.
 
 ### D2 — Prévention des race conditions (conflits de stock)
 - Utilisation du **verrouillage pessimiste Doctrine** (`LOCK_PESSIMISTIC_WRITE` / `SELECT FOR UPDATE`) lors de la validation du panier.
@@ -23,50 +27,55 @@ Développer les tunnels de commande différenciés par profil (filtrage télétr
 - Méthode critique : `CartManager::validateCart()` — toujours encapsulée dans `$em->wrapInTransaction(...)`.
 
 ### D3 — Gestion des quotas et profils
-- `ProfilUtilisateur` Enum PHP 8.1 backed (string) : `DMAX`, `TELETRAVAILLEUR`, `PARTENAIRE`, `PUBLIC`.
-- `QuotaCheckerService` : vérifie le nombre d'articles en commande (max configurable via `Parametre.quota_articles_max`, défaut : **3**).
-- Les partenaires sont exemptés des quotas — la vérification est conditionnelle sur le profil.
-- Les produits "tagués télétravailleur" sont filtrés par un champ booléen `Produit.isTeletravailleur`.
+- `ProfilUtilisateur` est défini par `dmax`, `teletravailleur`, `partenaire`, `public`.
+- `QuotaCheckerService` lit prioritairement le quota sur la clé `max_produits_par_commande`, avec fallback sur l'ancienne clé `quota_articles_max`, et défaut à `3`.
+- `CommandeLimitCheckerService` bloque les commandes multiples actives pour un même `numeroAgent` et un même `profilCommande`.
+- `AgentEligibilityCheckerService` peut bloquer un checkout selon le référentiel `agent_eligible`.
+- Les produits télétravailleurs sont filtrés via `Produit.tagTeletravailleur`.
 
 ### D4 — Gestion des créneaux de retrait
-- Entité `Creneau` avec `nbMax` (jauge, défaut : **10 commandes/30min**).
-- Comptage temps réel des commandes validées par créneau (requête SQL `COUNT` avec mise en cache Symfony Cache courte durée — 30s max).
-- `CreneauManager::reserverCreneau()` vérifie et réserve dans la même transaction que la validation panier.
+- `Creneau` utilise `capaciteMax`, `capaciteUtilisee`, `dateHeure`, `heureDebut`, `heureFin`, `type`.
+- Les créneaux sont désormais généralement générés via `JourLivraison` et `CreneauGeneratorService`.
+- `CreneauManager` calcule la jauge par comptage des commandes non annulées, avec cache court.
+- Le checkout applique en plus les règles `reservationsOuvertes` et `exigerJourneePleine` au niveau `JourLivraison`.
 
 ---
 
 ## COMPOSANTS À CRÉER
 
-### Entités (`src/Entity`)
+### Entités concernées (`src/Entity`)
 | Entité | Champs clés |
 |---|---|
-| `Panier` | id, user (nullable), sessionId, createdAt, expireAt, statut |
-| `PanierItem` | id, panier (ManyToOne), produit (ManyToOne), quantite |
+| `Panier` | id, utilisateur *(nullable)*, sessionId, dateExpiration |
+| `LignePanier` | id, panier (ManyToOne), produit (ManyToOne) |
 | `ReservationTemporaire` | id, produit (ManyToOne), quantite, sessionId, expireAt |
-| `Commande` | id, panier (OneToOne), creneau (ManyToOne), statut, createdAt |
-| `Creneau` | id, dateHeure (DateTime), nbMax (int), label (string) |
+| `Commande` | utilisateur, sessionId, numeroAgent, nom, prenom, creneau, statut, profilCommande, dateValidation |
+| `JourLivraison` | date, actif, reservationsOuvertes, horaires, coupure méridienne, exigerJourneePleine |
+| `Creneau` | dateHeure, heureDebut, heureFin, capaciteMax, capaciteUtilisee, type, jourLivraison *(nullable)* |
 
 ### Interfaces (`src/Interface`)
-- `CartManagerInterface` : `addItem`, `removeItem`, `getContents`, `validateCart`, `releaseExpired`, `clear`
-- `CheckoutServiceInterface` : `checkQuota`, `assignCreneau`, `confirmCommande`, `annulerCommande`
-- `CreneauManagerInterface` : `getDisponibles`, `reserverCreneau`, `getJaugeDisponible`, `libererCreneau`
+- `CartManagerInterface` : `addItem`, `removeItem`, `getContents`, `validateCart`, `releaseExpired`, `extendActiveReservations`, `clear`
+- `CheckoutServiceInterface` : `hasItems`, `confirmCommande`, `checkQuota`, `assignCreneau`, `modifierCreneau`, `annulerCommande`
+- `SlotManagerInterface` : `getDisponibles`, `getDisponiblesPourCheckout`, `reserverCreneau`, `getJaugeDisponible`, `libererCreneau`
 
 ### Services (`src/Service`)
-- `CartManager` → implémente `CartManagerInterface` (gestion panier + reservations temporaires)
-- `CheckoutService` → implémente `CheckoutServiceInterface` (tunnel validation, transaction atomique)
-- `CreneauManager` → implémente `CreneauManagerInterface`
-- `QuotaCheckerService` → vérifie les quotas selon profil (injecte `ParametreRepository`)
+- `CartManager` : panier + réservations temporaires + validation
+- `CheckoutService` : transaction de confirmation, règles de quota, limitation de commande, règles de journées
+- `CreneauManager` : disponibilité et réservation/libération de créneau
+- `QuotaCheckerService` : contrôle du nombre d'articles
+- `CommandeLimitCheckerService` : unicité de commande active par agent/profil
+- `ToutDoitDisparaitreService` : support du mode de complétion d'une commande existante
 
 ### Controllers (`src/Controller`)
-- `ShopController` : catalogue vitrine + filtres par profil
-- `CartController` : add / remove / view panier + affichage timer
-- `CheckoutController` : sélection créneau + confirmation commande
+- `ShopController` : catalogue `/boutique`
+- `CartController` : panier `/panier`
+- `CheckoutController` : tunnel `/commande`
 
 ### Templates (`templates/`)
-- `shop/catalogue.html.twig` : Vitrine produits avec filtres (profil, catégorie, dispo)
-- `cart/index.html.twig` : Résumé panier + timer JS d'expiration (affichage seulement)
-- `checkout/creneaux.html.twig` : Sélection créneau avec jauge visuelle (% remplissage)
-- `checkout/confirmation.html.twig` : Récapitulatif commande validée
+- `shop/catalogue.html.twig`
+- `cart/index.html.twig`
+- `checkout/creneaux.html.twig`
+- `checkout/confirmation.html.twig`
 
 ---
 
@@ -76,10 +85,12 @@ Développer les tunnels de commande différenciés par profil (filtrage télétr
 |---|---|---|
 | C1 | Réponse catalogue < 2s au pic d'ouverture | Mise en cache Symfony HttpCache sur `ShopController::catalogue` (TTL 30s, invalidé à chaque modif produit) |
 | C2 | Race conditions interdites | `CartManager::validateCart()` dans `$em->wrapInTransaction(...)` + `LOCK_PESSIMISTIC_WRITE` sur `Produit` |
-| C3 | Quota configurable | Clé `Parametre.quota_articles_max` (défaut 3), lu depuis la BDD via `ParametreRepository` |
+| C3 | Quota configurable | Clé `Parametre.max_produits_par_commande` (fallback historique `quota_articles_max`, défaut 3) |
 | C4 | Timer serveur uniquement | `Panier.expireAt` calculé côté serveur ; le JS affiche seulement un décompte basé sur la valeur retournée |
-| C5 | Profil PARTENAIRE exempté quota | Condition dans `QuotaCheckerService::check(ProfilUtilisateur $profil)` |
+| C5 | Profil PARTENAIRE exempté quota | Géré dans `QuotaCheckerService` |
 | C6 | Chaque étape du tunnel indépendante | Catalogue, Panier et Checkout = 3 controllers découplés, pas de dépendance circulaire |
+| C7 | Journée fermée non réservable | Contrôle `JourLivraison.actif` et `reservationsOuvertes` avant confirmation |
+| C8 | Journée précédente prioritaire | Contrôle `exigerJourneePleine` avant réservation |
 
 ---
 
@@ -109,6 +120,9 @@ Développer les tunnels de commande différenciés par profil (filtrage télétr
 
 ---
 
-## POINT D'ATTENTION — DÉPENDANCE PHASE 4
+## ÉTAT ACTUEL
 
-La structure de l'entité `Commande` doit anticiper le cycle de vie géré par le composant Symfony Workflow (Phase 4). Le champ `statut` doit être une **string simple** dans un premier temps, mais sa valeur initiale doit être `en_attente_validation` pour être compatible sans migration supplémentaire lors de l'intégration du Workflow en Phase 4.
+La dépendance vers la phase 4 n'est plus théorique :
+- `Commande.statut` est un enum PHP `CommandeStatutEnum`
+- le workflow Symfony `commande_lifecycle` est branché
+- les parcours d'annulation, de validation et de remise sont déjà reliés au front-office et à la logistique
